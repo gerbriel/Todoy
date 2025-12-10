@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple } from '@phosphor-icons/react'
+import { useState, useRef, useEffect, DragEvent } from 'react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical } from '@phosphor-icons/react'
 import { Board, FilterState } from '@/lib/types'
 import { generateId, getRootProjects, getStandaloneBoards, getChildBoards, getCampaignStageLabel } from '@/lib/helpers'
 import { Button } from './ui/button'
@@ -49,6 +49,7 @@ export default function Sidebar({
   const [newTitle, setNewTitle] = useState('')
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
+  const [draggingBoardId, setDraggingBoardId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const rootProjects = getRootProjects(boards)
@@ -145,15 +146,90 @@ export default function Sidebar({
     setEditingTitle('')
   }
 
+  const handleBoardDragStart = (e: DragEvent<HTMLDivElement>, board: Board) => {
+    e.stopPropagation()
+    setDraggingBoardId(board.id)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('boardId', board.id)
+    e.dataTransfer.setData('boardParentId', board.parentId || 'root')
+  }
+
+  const handleBoardDragEnd = () => {
+    setDraggingBoardId(null)
+  }
+
+  const handleBoardDragOver = (e: DragEvent<HTMLDivElement>, targetBoard: Board) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const boardId = e.dataTransfer.types.includes('text/plain') ? null : e.dataTransfer.getData('boardId')
+    if (boardId && boardId !== targetBoard.id) {
+      e.dataTransfer.dropEffect = 'move'
+    }
+  }
+
+  const handleBoardDrop = (e: DragEvent<HTMLDivElement>, targetBoard: Board) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const draggedBoardId = e.dataTransfer.getData('boardId')
+    const draggedBoardParentId = e.dataTransfer.getData('boardParentId')
+
+    if (!draggedBoardId || draggedBoardId === targetBoard.id) return
+
+    const parentId = targetBoard.parentId || 'root'
+    if (draggedBoardParentId !== parentId) return
+
+    setBoards(currentBoards => {
+      const draggedBoard = currentBoards.find(b => b.id === draggedBoardId)
+      if (!draggedBoard) return currentBoards
+
+      const siblingBoards = currentBoards
+        .filter(b => (b.parentId || 'root') === parentId)
+        .sort((a, b) => a.order - b.order)
+
+      const draggedIndex = siblingBoards.findIndex(b => b.id === draggedBoardId)
+      const targetIndex = siblingBoards.findIndex(b => b.id === targetBoard.id)
+
+      if (draggedIndex === targetIndex) return currentBoards
+
+      const reorderedBoards = [...siblingBoards]
+      const [movedBoard] = reorderedBoards.splice(draggedIndex, 1)
+      reorderedBoards.splice(targetIndex, 0, movedBoard)
+
+      const updatedBoards = reorderedBoards.map((b, index) => ({
+        ...b,
+        order: index,
+      }))
+
+      return currentBoards.map(b => {
+        const updated = updatedBoards.find(ub => ub.id === b.id)
+        return updated || b
+      })
+    })
+
+    toast.success('Board reordered')
+  }
+
   const renderBoardItem = (board: Board, depth: number = 0) => {
     const isActive = activeBoardId === board.id && !filters.showAllBoards
     const hasChildren = board.type !== 'board' && getChildBoards(boards, board.id).length > 0
     const isExpanded = expandedProjects.has(board.id)
     const isEditing = editingBoardId === board.id
+    const isDragging = draggingBoardId === board.id
 
     return (
       <div key={board.id}>
-        <div className="flex items-center gap-1 group">
+        <div
+          draggable={!isEditing}
+          onDragStart={(e) => handleBoardDragStart(e, board)}
+          onDragEnd={handleBoardDragEnd}
+          onDragOver={(e) => handleBoardDragOver(e, board)}
+          onDrop={(e) => handleBoardDrop(e, board)}
+          className={cn(
+            "flex items-center gap-1 group transition-opacity",
+            isDragging && "opacity-40"
+          )}
+        >
           {hasChildren && (
             <button
               onClick={(e) => {
@@ -170,6 +246,10 @@ export default function Sidebar({
             </button>
           )}
           {!hasChildren && <div className="w-6" />}
+          
+          {!isEditing && (
+            <DotsSixVertical size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" weight="bold" />
+          )}
           
           {isEditing ? (
             <div className="flex-1 flex items-center gap-1" style={{ paddingLeft: `${depth * 12 + 8}px` }}>

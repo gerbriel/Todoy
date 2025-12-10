@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, DragEvent } from 'react'
 import { Clock, Tag, CurrencyDollar, CheckSquare } from '@phosphor-icons/react'
 import { Card, Label, List, Board } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue, formatCurrency } from '@/lib/helpers'
@@ -14,6 +14,7 @@ interface KanbanCardProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   lists: List[]
   boards: Board[]
+  onDragOver?: () => void
 }
 
 export default function KanbanCard({
@@ -24,8 +25,10 @@ export default function KanbanCard({
   setLabels,
   lists,
   boards,
+  onDragOver,
 }: KanbanCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const cardLabels = labels.filter(l => card.labelIds.includes(l.id))
   const visibleLabels = cardLabels.slice(0, 3)
@@ -35,11 +38,38 @@ export default function KanbanCard({
   const completedTasks = tasks.filter(t => t.completed).length
   const totalTasks = tasks.length
 
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    setIsDragging(true)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('cardId', card.id)
+    e.dataTransfer.setData('sourceListId', card.listId)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onDragOver) {
+      onDragOver()
+    }
+  }
+
   return (
     <>
-      <button
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
         onClick={() => setIsDialogOpen(true)}
-        className="w-full bg-card border border-border rounded-lg p-3 text-left hover:shadow-md transition-shadow duration-200 group"
+        className={cn(
+          "w-full bg-card border border-border rounded-lg p-3 text-left hover:shadow-md transition-all duration-200 group cursor-pointer",
+          isDragging && "opacity-40 cursor-grabbing"
+        )}
       >
         <h4 className="text-sm font-medium text-foreground mb-2 group-hover:text-accent transition-colors">
           {card.title}
@@ -100,7 +130,7 @@ export default function KanbanCard({
             </div>
           )}
         </div>
-      </button>
+      </div>
 
       <CardDetailDialog
         card={card}

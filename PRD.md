@@ -54,12 +54,12 @@ This is a hierarchical project management system with three-level organization (
 - **Progression**: Toggle all boards view → See aggregated cards grouped by status/date → Filter by board/label/date → Click card to edit → Card updates reflect in source board
 - **Success criteria**: All cards from all boards appear correctly; filters work across the entire dataset; changes sync to source boards; performance remains smooth with 100+ cards
 
-### Kanban View
-- **Functionality**: Visual board with draggable columns (lists) and cards
-- **Purpose**: Primary workflow visualization showing cards moving through stages
+### Kanban View with Comprehensive Drag & Drop
+- **Functionality**: Visual board with draggable columns (lists) and cards. Full drag and drop support for cards within lists, cards between lists, list reordering within boards, and board reordering in sidebar.
+- **Purpose**: Primary workflow visualization showing cards moving through stages with intuitive direct manipulation
 - **Trigger**: Default view when opening a board or selecting kanban view mode
-- **Progression**: View board → See lists as columns → See cards in lists → Drag cards between lists → Drag lists to reorder → Click card for details
-- **Success criteria**: Drag and drop works smoothly; visual feedback during drag; cards update position immediately; mobile-friendly touch interactions
+- **Progression**: View board → See lists as columns → See cards in lists → Drag cards within same list to reorder → Drag cards between lists to move → Drag lists to reorder columns → Drag boards in sidebar to reorganize → Click card for details → Visual feedback during all drag operations
+- **Success criteria**: All drag and drop operations work smoothly with visual feedback (opacity changes, hover states, drop indicators); cards update position immediately; list order persists; board order in sidebar persists; mobile-friendly touch interactions; drag handles visible on hover
 
 ### Calendar View
 - **Functionality**: Month calendar displaying cards on their due dates
@@ -84,14 +84,18 @@ This is a hierarchical project management system with three-level organization (
 
 ## Edge Case Handling
 
-- **Empty States**: Helpful illustrations and CTAs when boards, lists, or cards are empty, guiding users to create their first items
+- **Empty States**: Helpful illustrations and CTAs when boards, lists, or cards are empty, guiding users to create their first items; empty lists show "Drop cards here" message during drag operations
 - **Card with No Due Date**: Calendar view shows "Unscheduled" section for cards without dates; they still appear in kanban views
 - **Deleting Board with Cards**: Confirmation dialog warns about data loss; deleted boards are archived (soft delete) for potential recovery
 - **Drag Over Mobile**: Touch-and-hold to activate drag mode on mobile; visual feedback shows draggable state
 - **Filter No Results**: Clear message showing active filters and option to clear them when no cards match
 - **Long Card Titles**: Truncate with ellipsis in compact views, show full title in detail dialog and on hover
 - **Many Labels on Card**: Show first 2-3 labels with "+N more" indicator; expand in detail view
-- **Cross-Board Card Move**: When viewing all boards, dragging a card to a different board's list prompts confirmation or shows origin board indicator
+- **Cross-Board Card Move**: When dragging cards between lists from different boards, card automatically updates its board association and appears in the new board's context
+- **List Reordering Across Boards**: Lists can only be reordered within the same board; dragging a list to a different board's list is prevented
+- **Board Reordering Hierarchy**: Boards can only be reordered within their sibling group (same parent); projects stay with projects, campaigns with campaigns within the same project, boards with boards within the same campaign
+- **Drag Visual Feedback**: Clear opacity changes (40%) and cursor changes (grab/grabbing) indicate draggable state; drop zones highlight with accent colors when valid; invalid drop targets don't highlight
+- **Simultaneous Drags**: System handles only one drag operation at a time; multiple users can drag different items without conflicts due to optimistic UI updates
 
 ## Design Direction
 
@@ -139,12 +143,15 @@ Typography should convey clarity and hierarchy while maintaining GitHub's system
 
 Animations should reinforce the systematic, tool-like nature of the interface - precise and purposeful, never playful or bouncy. Focus on functional transitions that guide the user's eye and provide feedback.
 
-- **Card Drag**: Subtle lift with shadow increase during drag; smooth snap into position on drop (200ms ease-out)
+- **Card Drag**: Opacity reduction to 40% during drag with cursor change to grabbing; smooth snap into position on drop with visual indicator showing target position; hover over valid drop zones shows accent border (200ms ease-out)
+- **List Drag**: Six-dot drag handle visible on hover; opacity reduction during drag; drop zones highlight with ring; smooth reordering animation (200ms ease-out)
+- **Board Drag**: Six-dot drag handle in sidebar items; subtle opacity change during drag; drop target highlighting; immediate position update on drop
 - **View Transitions**: Quick fade-slide when switching between kanban/calendar views (250ms)
 - **Filter Panel**: Slide-in from right with backdrop fade (200ms ease-out)
 - **Card Details**: Dialog scales in from center with backdrop fade (200ms)
 - **List Hover**: Gentle background color shift (150ms) to indicate interactivity
 - **Button States**: Quick color transitions on hover/press (100ms) for immediate feedback
+- **Drag Over States**: Target lists/cards show accent border when card is dragged over them, providing clear visual feedback of drop destination
 
 ## Component Selection
 
@@ -173,9 +180,11 @@ Animations should reinforce the systematic, tool-like nature of the interface - 
 
 - **States**:
   - **Buttons**: Default with subtle border, hover with background shift, active with slight scale-down, disabled with opacity reduction
-  - **Cards**: Rest state with border, hover with shadow lift, dragging with elevated shadow and rotation, selected with accent border
+  - **Cards**: Rest state with border, hover with shadow lift and cursor pointer, dragging with 40% opacity and grabbing cursor, drag-over state with accent border indicator, selected with accent border
   - **Inputs**: Default with border, focus with accent ring and border color change, error with destructive color, disabled with muted appearance
-  - **Lists**: Hover with background tint, drag-over with accent border and background highlight
+  - **Lists**: Hover with background tint, dragging with 40% opacity, drag-over with accent ring (2px), cursor grab on hover over header, cursor grabbing when dragging
+  - **Boards (Sidebar)**: Hover shows drag handle, dragging with 40% opacity, cursor grab on hover, smooth reordering with immediate visual feedback
+  - **Drag Handles**: Six-dot icons that appear on hover, indicating draggable elements; change cursor to grab/grabbing
 
 - **Icon Selection**:
   - **Plus** (Plus): Add board, list, card
@@ -184,11 +193,12 @@ Animations should reinforce the systematic, tool-like nature of the interface - 
   - **Funnel** (FunnelSimple): Filter panel toggle
   - **Tag** (Tag): Labels section
   - **DotsThree** (DotsThreeVertical): Context menu trigger
+  - **DotsSixVertical** (DotsSixVertical): Drag handles for lists and boards
   - **X** (X): Close dialogs, remove filters
   - **Check** (Check): Complete status
   - **Clock** (Clock): Due date indicator
   - **MagnifyingGlass** (MagnifyingGlass): Search functionality
-  - **ArrowLeft/Right** (CaretLeft/CaretRight): Calendar navigation
+  - **ArrowLeft/Right** (CaretLeft/CaretRight): Calendar navigation, collapsible sections
 
 - **Spacing**:
   - Container padding: `p-6` (24px) for main views

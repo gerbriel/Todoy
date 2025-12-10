@@ -151,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           name,
         },
+        emailRedirectTo: `${window.location.origin}/`,
       },
     })
 
@@ -162,16 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Failed to create user')
     }
 
-    // Create profile
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      email,
-      name,
-    })
-
-    if (profileError) {
-      throw new Error(profileError.message)
+    // Check if email confirmation is required
+    if (authData.session === null) {
+      // Email confirmation required - don't create org yet
+      throw new Error('CONFIRM_EMAIL')
     }
+
+    // If we have a session, user is confirmed - continue with org creation
+    // Note: Profile is auto-created by database trigger
 
     // Create or join organization based on user's choice
     if (organizationData.option === 'create' || organizationData.option === 'solo') {
@@ -207,7 +206,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } else if (organizationData.option === 'join') {
       // TODO: Implement join organization logic with invite code
-      // For now, throw error
       throw new Error('Join organization feature coming soon')
     }
 

@@ -23,6 +23,7 @@ export default function LoginView() {
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,8 +92,13 @@ export default function LoginView() {
       } else {
         await login(email, password)
       }
-    } catch (err) {
-      setError('Authentication failed. Please try again.')
+    } catch (err: any) {
+      if (err.message === 'CONFIRM_EMAIL') {
+        setShowEmailConfirmation(true)
+        setError('')
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -120,28 +126,59 @@ export default function LoginView() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Rocket size={32} weight="duotone" className="text-primary" />
-          </div>
-          <CardTitle className="text-2xl">
-            {isSignup 
-              ? `Create Account ${signupStep > 1 ? `(${signupStep}/3)` : '(1/3)'}`
-              : 'Welcome to Todoy'}
-          </CardTitle>
-          <CardDescription>
-            {isSignup 
-              ? signupStep === 1 
-                ? 'Enter your details to get started' 
-                : signupStep === 2
-                ? 'Choose how you want to work'
-                : 'Complete your workspace setup'
-              : 'Sign in to continue to your workspace'}
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
+      {showEmailConfirmation ? (
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Rocket size={32} weight="duotone" className="text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Check your email</CardTitle>
+            <CardDescription>
+              We sent a confirmation link to <strong>{email}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-muted-foreground text-center">
+              <p>Click the link in the email to confirm your account and get started.</p>
+              <p className="mt-2">After confirming, you'll be redirected back to set up your workspace.</p>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                setShowEmailConfirmation(false)
+                setIsSignup(false)
+                setSignupStep(1)
+                setError('')
+              }}
+            >
+              Back to Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Rocket size={32} weight="duotone" className="text-primary" />
+            </div>
+            <CardTitle className="text-2xl">
+              {isSignup 
+                ? `Create Account ${signupStep > 1 ? `(${signupStep}/3)` : '(1/3)'}`
+                : 'Welcome to Todoy'}
+            </CardTitle>
+            <CardDescription>
+              {isSignup 
+                ? signupStep === 1 
+                  ? 'Enter your details to get started' 
+                  : signupStep === 2
+                  ? 'Choose how you want to work'
+                  : 'Complete your workspace setup'
+                : 'Sign in to continue to your workspace'}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Step 1: Basic Information */}
             {isSignup && signupStep === 1 && (
@@ -416,6 +453,7 @@ export default function LoginView() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

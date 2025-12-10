@@ -95,8 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileError) {
         console.error('Profile error:', profileError)
-        // If profile doesn't exist, user still needs to complete signup
-        // This is OK - they might be in email confirmation flow
+        // If profile doesn't exist, clear the session and show login
+        await supabase.auth.signOut()
+        setUser(null)
+        setOrganization(null)
         setLoading(false)
         return
       }

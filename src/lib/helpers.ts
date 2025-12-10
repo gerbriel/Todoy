@@ -1,4 +1,4 @@
-import { Card, Board, Label, FilterState, CampaignType, CampaignStage } from './types'
+import { Task, Campaign, Project, Label, FilterState, CampaignType, CampaignStage } from './types'
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -39,16 +39,16 @@ export function getCampaignStageColor(stage: CampaignStage): string {
   return colors[stage]
 }
 
-export function getChildBoards(boards: Board[], parentId: string): Board[] {
-  return boards.filter(b => b.parentId === parentId).sort((a, b) => a.order - b.order)
+export function getCampaignsForProject(campaigns: Campaign[], projectId: string): Campaign[] {
+  return campaigns.filter(c => c.projectId === projectId).sort((a, b) => a.order - b.order)
 }
 
-export function getRootProjects(boards: Board[]): Board[] {
-  return boards.filter(b => !b.parentId && b.type === 'project').sort((a, b) => a.order - b.order)
+export function getProjects(projects: Project[]): Project[] {
+  return projects.sort((a, b) => a.order - b.order)
 }
 
-export function getStandaloneBoards(boards: Board[]): Board[] {
-  return boards.filter(b => !b.parentId && b.type === 'board').sort((a, b) => a.order - b.order)
+export function getStandaloneCampaigns(campaigns: Campaign[]): Campaign[] {
+  return campaigns.filter(c => !c.projectId).sort((a, b) => a.order - b.order)
 }
 
 export function formatCurrency(amount: number): string {
@@ -60,53 +60,53 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-export function filterCards(
-  cards: Card[],
-  boards: Board[],
+export function filterTasks(
+  tasks: Task[],
+  campaigns: Campaign[],
   labels: Label[],
   filters: FilterState
-): Card[] {
-  return cards.filter(card => {
-    if (filters.boardIds.length > 0 && !filters.boardIds.includes(card.boardId)) {
+): Task[] {
+  return tasks.filter(task => {
+    if (filters.campaignIds.length > 0 && !filters.campaignIds.includes(task.campaignId)) {
       return false
     }
     
     if (filters.campaignTypes && filters.campaignTypes.length > 0) {
-      const cardBoard = boards.find(b => b.id === card.boardId)
-      if (!cardBoard || cardBoard.type !== 'campaign') return false
-      if (!cardBoard.campaignType || !filters.campaignTypes.includes(cardBoard.campaignType)) {
+      const taskCampaign = campaigns.find(c => c.id === task.campaignId)
+      if (!taskCampaign) return false
+      if (!taskCampaign.campaignType || !filters.campaignTypes.includes(taskCampaign.campaignType)) {
         return false
       }
     }
     
     if (filters.campaignStages && filters.campaignStages.length > 0) {
-      const cardBoard = boards.find(b => b.id === card.boardId)
-      if (!cardBoard || cardBoard.type !== 'campaign') return false
-      if (!cardBoard.campaignStage || !filters.campaignStages.includes(cardBoard.campaignStage)) {
+      const taskCampaign = campaigns.find(c => c.id === task.campaignId)
+      if (!taskCampaign) return false
+      if (!taskCampaign.campaignStage || !filters.campaignStages.includes(taskCampaign.campaignStage)) {
         return false
       }
     }
     
     if (filters.labelIds.length > 0) {
       const hasMatchingLabel = filters.labelIds.some(labelId => 
-        card.labelIds.includes(labelId)
+        task.labelIds.includes(labelId)
       )
       if (!hasMatchingLabel) return false
     }
     
     if (filters.searchText) {
       const searchLower = filters.searchText.toLowerCase()
-      const matchesTitle = card.title.toLowerCase().includes(searchLower)
-      const matchesDescription = card.description.toLowerCase().includes(searchLower)
+      const matchesTitle = task.title.toLowerCase().includes(searchLower)
+      const matchesDescription = task.description.toLowerCase().includes(searchLower)
       if (!matchesTitle && !matchesDescription) return false
     }
     
     if (filters.dateRange) {
-      if (!card.dueDate) return false
-      const cardDate = new Date(card.dueDate)
+      if (!task.dueDate) return false
+      const taskDate = new Date(task.dueDate)
       const startDate = new Date(filters.dateRange.start)
       const endDate = new Date(filters.dateRange.end)
-      if (cardDate < startDate || cardDate > endDate) return false
+      if (taskDate < startDate || taskDate > endDate) return false
     }
     
     return true
@@ -129,9 +129,9 @@ export function formatDate(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const cardDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   
-  const diffTime = cardDate.getTime() - today.getTime()
+  const diffTime = taskDate.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   
   if (diffDays === 0) return 'Today'
@@ -150,16 +150,16 @@ export function isOverdue(dateString: string): boolean {
   return date < today
 }
 
-export function groupCardsByDate(cards: Card[]): Record<string, Card[]> {
-  const grouped: Record<string, Card[]> = {}
+export function groupTasksByDate(tasks: Task[]): Record<string, Task[]> {
+  const grouped: Record<string, Task[]> = {}
   
-  cards.forEach(card => {
-    if (card.dueDate) {
-      const dateKey = card.dueDate.split('T')[0]
+  tasks.forEach(task => {
+    if (task.dueDate) {
+      const dateKey = task.dueDate.split('T')[0]
       if (!grouped[dateKey]) {
         grouped[dateKey] = []
       }
-      grouped[dateKey].push(card)
+      grouped[dateKey].push(task)
     }
   })
   

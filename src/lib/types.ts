@@ -10,7 +10,7 @@ export type CampaignType = 'webinar' | 'tradeshow' | 'paid-social' | 'content' |
 
 export type CampaignStage = 'planning' | 'in-progress' | 'launched' | 'completed' | 'follow-up'
 
-export interface Task {
+export interface Subtask {
   id: string
   title: string
   completed: boolean
@@ -18,38 +18,34 @@ export interface Task {
   createdAt: string
 }
 
-export interface Card {
+export interface Task {
   id: string
   title: string
   description: string
   listId: string
-  boardId: string
+  campaignId: string
   labelIds: string[]
   dueDate?: string
   order: number
   createdAt: string
-  budget?: number
-  actualSpend?: number
-  goals?: string
-  tasks?: Task[]
+  subtasks?: Subtask[]
 }
 
 export interface List {
   id: string
   title: string
-  boardId: string
+  campaignId: string
   order: number
-  cardIds: string[]
+  taskIds: string[]
 }
 
-export interface Board {
+export interface Campaign {
   id: string
   title: string
   description: string
   order: number
   createdAt: string
-  parentId?: string
-  type: 'project' | 'campaign' | 'board'
+  projectId?: string
   campaignType?: CampaignType
   campaignStage?: CampaignStage
   budget?: number
@@ -61,17 +57,25 @@ export interface Board {
   followUpDate?: string
 }
 
+export interface Project {
+  id: string
+  title: string
+  description: string
+  order: number
+  createdAt: string
+}
+
 export type ViewMode = 'kanban' | 'calendar'
 
 export interface FilterState {
-  boardIds: string[]
+  campaignIds: string[]
   labelIds: string[]
   searchText: string
   dateRange?: {
     start: string
     end: string
   }
-  showAllBoards: boolean
+  showAllCampaigns: boolean
   campaignTypes?: CampaignType[]
   campaignStages?: CampaignStage[]
   projectId?: string

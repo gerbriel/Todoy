@@ -1,79 +1,79 @@
 import { Plus } from '@phosphor-icons/react'
-import { Board, List, Card, Label, FilterState } from '@/lib/types'
-import { generateId, filterCards } from '@/lib/helpers'
+import { Campaign, List, Task, Label, FilterState } from '@/lib/types'
+import { generateId, filterTasks } from '@/lib/helpers'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { toast } from 'sonner'
-import KanbanList from './KanbanList'
+import TaskList from './TaskList'
 import EmptyState from './EmptyState'
 
 interface KanbanViewProps {
-  boards: Board[]
+  campaigns: Campaign[]
   lists: List[]
   setLists: (updater: (lists: List[]) => List[]) => void
-  cards: Card[]
-  setCards: (updater: (cards: Card[]) => Card[]) => void
+  tasks: Task[]
+  setTasks: (updater: (tasks: Task[]) => Task[]) => void
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
-  activeBoardId: string | null
+  activeCampaignId: string | null
   filters: FilterState
 }
 
 export default function KanbanView({
-  boards,
+  campaigns,
   lists,
   setLists,
-  cards,
-  setCards,
+  tasks,
+  setTasks,
   labels,
   setLabels,
-  activeBoardId,
+  activeCampaignId,
   filters,
 }: KanbanViewProps) {
   const handleCreateList = () => {
-    if (!activeBoardId) return
+    if (!activeCampaignId) return
     
     const newList: List = {
       id: generateId(),
       title: 'New List',
-      boardId: activeBoardId,
-      order: lists.filter(l => l.boardId === activeBoardId).length,
-      cardIds: [],
+      campaignId: activeCampaignId,
+      order: lists.filter(l => l.campaignId === activeCampaignId).length,
+      taskIds: [],
     }
     
     setLists(currentLists => [...currentLists, newList])
     toast.success('List created')
   }
 
-  const displayBoards = filters.showAllBoards 
-    ? boards 
-    : boards.filter(b => b.id === activeBoardId)
+  const displayCampaigns = filters.showAllCampaigns 
+    ? campaigns 
+    : campaigns.filter(c => c.id === activeCampaignId)
 
-  const displayLists = filters.showAllBoards
+  const displayLists = filters.showAllCampaigns
     ? lists
-    : lists.filter(l => l.boardId === activeBoardId)
+    : lists.filter(l => l.campaignId === activeCampaignId)
 
-  const filteredCards = filterCards(cards, boards, labels, filters)
+  const filteredTasks = filterTasks(tasks, campaigns, labels, filters)
 
-  if (!activeBoardId && !filters.showAllBoards) {
+  if (!activeCampaignId && !filters.showAllCampaigns) {
     return (
       <EmptyState
-        title="No board selected"
-        description="Select a board from the sidebar or create a new one to get started"
+        title="No campaign selected"
+        description="Select a campaign from the sidebar or create a new one to get started"
       />
     )
   }
 
-  if (filters.showAllBoards && boards.length === 0) {
+  if (filters.showAllCampaigns && campaigns.length === 0) {
     return (
       <EmptyState
-        title="No boards yet"
-        description="Create your first board to start organizing your work"
+        title="No campaigns yet"
+        description="Create your first campaign to start organizing your work"
       />
     )
   }
 
-  if (!filters.showAllBoards && displayLists.length === 0) {
+  if (!filters.showAllCampaigns && displayLists.length === 0) {
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="text-center">
@@ -81,7 +81,7 @@ export default function KanbanView({
             No lists yet
           </h3>
           <p className="text-muted-foreground mb-4">
-            Create your first list to organize cards
+            Create your first list to organize tasks
           </p>
           <Button onClick={handleCreateList}>
             <Plus size={16} weight="bold" />
@@ -92,43 +92,34 @@ export default function KanbanView({
     )
   }
 
-  if (filters.showAllBoards) {
-    const groupedByBoard = displayBoards.map(board => {
-      const boardLists = displayLists.filter(l => l.boardId === board.id)
-      return { board, lists: boardLists }
+  if (filters.showAllCampaigns) {
+    const groupedByCampaign = displayCampaigns.map(campaign => {
+      const campaignLists = displayLists.filter(l => l.campaignId === campaign.id)
+      return { campaign, lists: campaignLists }
     }).filter(group => group.lists.length > 0)
-
-    if (groupedByBoard.length === 0) {
-      return (
-        <EmptyState
-          title="No lists in any board"
-          description="Create lists in your boards to start adding cards"
-        />
-      )
-    }
 
     return (
       <ScrollArea className="h-full">
         <div className="p-6 space-y-8">
-          {groupedByBoard.map(({ board, lists: boardLists }) => (
-            <div key={board.id} className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                {board.title}
+          {groupedByCampaign.map(({ campaign, lists: campaignLists }) => (
+            <div key={campaign.id}>
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                {campaign.title}
               </h3>
-              <div className="flex gap-4 pb-4">
-                {boardLists
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {campaignLists
                   .sort((a, b) => a.order - b.order)
                   .map(list => (
-                    <KanbanList
+                    <TaskList
                       key={list.id}
                       list={list}
                       lists={lists}
                       setLists={setLists}
-                      cards={filteredCards.filter(c => c.listId === list.id)}
-                      setCards={setCards}
+                      tasks={filteredTasks}
+                      setTasks={setTasks}
                       labels={labels}
                       setLabels={setLabels}
-                      boards={boards}
+                      campaigns={campaigns}
                     />
                   ))}
               </div>
@@ -141,32 +132,34 @@ export default function KanbanView({
 
   return (
     <ScrollArea className="h-full">
-      <div className="flex gap-4 p-6 h-full">
-        {displayLists
-          .sort((a, b) => a.order - b.order)
-          .map(list => (
-            <KanbanList
-              key={list.id}
-              list={list}
-              lists={lists}
-              setLists={setLists}
-              cards={filteredCards.filter(c => c.listId === list.id)}
-              setCards={setCards}
-              labels={labels}
-              setLabels={setLabels}
-              boards={boards}
-            />
-          ))}
-        
-        <div className="flex-shrink-0">
-          <Button
-            onClick={handleCreateList}
-            variant="outline"
-            className="h-auto min-h-[100px] min-w-[280px] border-dashed"
-          >
-            <Plus size={20} weight="bold" />
-            Add List
-          </Button>
+      <div className="h-full p-6">
+        <div className="flex gap-4 h-full overflow-x-auto pb-4">
+          {displayLists
+            .sort((a, b) => a.order - b.order)
+            .map(list => (
+              <TaskList
+                key={list.id}
+                list={list}
+                lists={lists}
+                setLists={setLists}
+                tasks={filteredTasks}
+                setTasks={setTasks}
+                labels={labels}
+                setLabels={setLabels}
+                campaigns={campaigns}
+              />
+            ))}
+          
+          <div className="flex-shrink-0">
+            <Button
+              onClick={handleCreateList}
+              variant="outline"
+              className="h-full min-h-[100px] whitespace-nowrap"
+            >
+              <Plus size={16} weight="bold" />
+              Add List
+            </Button>
+          </div>
         </div>
       </div>
     </ScrollArea>

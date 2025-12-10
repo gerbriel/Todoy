@@ -1,44 +1,51 @@
 # Planning Guide
 
-A comprehensive marketing campaign management application that organizes work hierarchically (Projects → Campaigns → Action Items) with cross-board visibility, budget tracking, campaign timelines, and multiple view modes - combining the flexibility of Trello with enterprise campaign management capabilities.
+A comprehensive marketing campaign management application that organizes work hierarchically (Projects → Campaigns → Tasks) with cross-campaign visibility, budget tracking, campaign timelines, and multiple view modes - combining the flexibility of Trello with enterprise campaign management capabilities.
 
 **Experience Qualities**:
-1. **Hierarchical** - Organize marketing work from high-level projects down to individual campaigns and action items, maintaining clear relationships and context
+1. **Hierarchical** - Organize marketing work from high-level projects down to individual campaigns and tasks, maintaining clear relationships and context
 2. **Campaign-Focused** - Purpose-built for marketing teams to track campaign types, stages, budgets, goals, and timelines from planning through follow-up
 3. **Unified** - View and filter across all projects and campaigns without silos, while maintaining the ability to drill down into specific initiatives
 
 **Complexity Level**: Complex Application (advanced functionality, likely with multiple views)
-This is a hierarchical project management system with three-level organization (projects/campaigns/boards), campaign-specific features (types, stages, budgets, timelines), cross-board aggregation, multiple visualization modes, and comprehensive tracking of marketing initiatives from planning through completion.
+This is a hierarchical project management system with two-level organization (Projects → Campaigns), where campaigns contain tasks organized in lists. Includes campaign-specific features (types, stages, budgets, timelines), cross-campaign aggregation, multiple visualization modes, and comprehensive drag-and-drop functionality throughout the interface.
 
 ## Essential Features
 
-### Hierarchical Board Organization with Flexible Nesting
-- **Functionality**: Three-level hierarchy - Projects contain Campaigns, Campaigns contain Boards (action item boards). Items can be nested, un-nested, and reorganized via parent selection. All items support inline renaming throughout the interface.
+### Hierarchical Organization: Projects and Campaigns
+- **Functionality**: Two-level hierarchy - Projects contain Campaigns. Campaigns contain Lists of Tasks. Items can be created, renamed inline, reorganized via drag and drop, and deleted. Full drag-and-drop support for reordering projects, campaigns, and tasks.
 - **Purpose**: Organize marketing work from strategic initiatives down to tactical execution, maintaining clear parent-child relationships with flexibility to reorganize as needs change
-- **Trigger**: "New Project" or "New Campaign" buttons in sidebar, context menus on existing items, inline editing via click or context menu
-- **Progression**: Create project → Expand project in sidebar → Add campaigns to project → Expand campaign → Add boards to campaign → Navigate between levels → Rename items inline (click or context menu) → Reorganize hierarchy via edit dialog (change parent)
-- **Success criteria**: Clear visual hierarchy in sidebar; expandable/collapsible tree structure; ability to move cards between any board; parent-child relationships persist; inline editing works smoothly; reorganization updates reflect immediately
+- **Trigger**: "New Project" or "New Campaign" buttons in sidebar, context menus on existing items, inline editing via click or context menu, drag handles on all items
+- **Progression**: Create project → Expand project in sidebar → Add campaigns to project → Select campaign → Add lists to campaign → Add tasks to lists → Rename items inline (click or context menu) → Drag items to reorder → Visual feedback during drag → Drop to complete reorder
+- **Success criteria**: Clear visual hierarchy in sidebar; expandable/collapsible tree structure; ability to drag tasks between lists and campaigns; drag handles appear on hover; opacity changes during drag (40%); smooth animations on drop; parent-child relationships persist; inline editing works smoothly
 
 ### Campaign Management
 - **Functionality**: Campaigns have types (webinar, tradeshow, paid social, content, email, event), stages (planning, in-progress, launched, completed, follow-up), budgets, goals, and multi-phase timelines
 - **Purpose**: Track marketing campaigns through their entire lifecycle with campaign-specific metadata and financial tracking
-- **Trigger**: Create campaign within a project, edit campaign details from header
+- **Trigger**: Create campaign within a project or standalone, edit campaign details from header
 - **Progression**: Create campaign → Set type and stage → Define budget and goals → Set planning/launch/end/follow-up dates → Track progress through stages → Monitor budget vs. actual spend
 - **Success criteria**: Campaign type and stage visible in sidebar and header; budget tracking shows percentage used; timeline dates help identify what to work on when; stage updates reflect campaign progress
 
-### Board & Card Management with Cross-Board Movement and Task Lists
-- **Functionality**: Create boards (as standalone or within campaigns), create lists within boards, create cards within lists, add tasks within cards, move cards between any list/board. Cards support nested task lists with completion tracking.
-- **Purpose**: Manage action items and tasks that can be organized hierarchically or standalone, with flexibility to reorganize. Break down cards into granular tasks for detailed tracking.
-- **Trigger**: "Add Board" button, "Add List" within board, "Add Card" within list, "Add Task" within card detail
-- **Progression**: Create board → Add lists → Add cards → Edit card → Add tasks to card → Check off tasks as completed → Change board/list via dropdown → Card moves to new location → View card in new context → Track task progress
-- **Success criteria**: Cards can move between any boards regardless of hierarchy; board/list selection in card editor shows all options; moved cards maintain all properties including tasks; visual feedback confirms movement; task completion shows on card preview; task list is intuitive to use
+### Task Management with Drag & Drop
+- **Functionality**: Create lists within campaigns, create tasks within lists, add subtasks within tasks. Full drag-and-drop: tasks within lists, tasks between lists, tasks between campaigns, list reordering. Tasks support nested subtask lists with completion tracking.
+- **Purpose**: Manage action items and tasks that can be organized and reorganized through direct manipulation. Break down tasks into granular subtasks for detailed tracking.
+- **Trigger**: "Add List" within campaign, "Add Task" within list, "Add Subtask" within task detail, drag task card to move
+- **Progression**: Create list → Add tasks → Edit task → Add subtasks → Check off subtasks → Drag task to reorder within list → Drag task to different list → Drag task to different campaign → Visual feedback shows valid drop zones → Drop completes move → Track subtask progress on task card
+- **Success criteria**: Tasks can be dragged anywhere with clear visual feedback; drag handles visible on hover; 40% opacity during drag; valid drop zones highlight with accent colors; tasks maintain all properties after move including subtasks; subtask completion shows on task card preview; touch-friendly for mobile
+
+### List Management with Drag & Drop
+- **Functionality**: Lists organize tasks within a campaign. Lists can be created, renamed inline, reordered via drag-and-drop, and deleted. Lists show task count and provide drop zones for tasks.
+- **Purpose**: Provide flexible organization of tasks within campaigns (e.g., To Do, In Progress, Done or Planning, Execution, Review)
+- **Trigger**: "Add List" button in campaign view, list header for inline editing, drag handle in list header
+- **Progression**: Create list → Name list → Add tasks → Drag list header to reorder → Visual feedback during drag → Drop to new position → Lists reorder smoothly
+- **Success criteria**: List reordering works smoothly; six-dot drag handle appears on hover; cursor changes to grab/grabbing; smooth animations; list order persists; inline editing works for list names
 
 ### Budget & Goals Tracking
-- **Functionality**: Set budgets and track actual spend at both campaign and card levels; define goals and objectives; visual progress indicators
-- **Purpose**: Monitor financial performance of campaigns and individual initiatives, track ROI, identify budget risks
-- **Trigger**: Edit campaign/card details, view budget in header bar
+- **Functionality**: Set budgets and track actual spend at campaign level; define goals and objectives; visual progress indicators
+- **Purpose**: Monitor financial performance of campaigns, track ROI, identify budget risks
+- **Trigger**: Edit campaign details, view budget in header bar
 - **Progression**: Set budget amount → Enter actual spend → View progress bar and percentage → See remaining/over-budget amount → Update as spend changes
-- **Success criteria**: Budget progress bars show accurate percentages; over-budget situations clearly flagged; campaign header shows budget summary; card budgets roll up conceptually to campaign view
+- **Success criteria**: Budget progress bars show accurate percentages; over-budget situations clearly flagged; campaign header shows budget summary
 
 ### Campaign Timeline & Stage Management
 - **Functionality**: Four-phase timeline (Planning Start, Launch Date, End Date, Follow-up Date) plus stage tracking (planning, in-progress, launched, completed, follow-up)
@@ -47,55 +54,55 @@ This is a hierarchical project management system with three-level organization (
 - **Progression**: Set planning start → Work during planning stage → Update stage to in-progress → Set launch date → Update stage to launched → Campaign runs → Set end date → Update to completed → Set follow-up date → Handle follow-up items → Mark completed
 - **Success criteria**: Timeline dates visible in campaign header; stages accurately reflect current phase; visual indicators show stage status; dates help prioritize what needs attention now vs. future
 
-### Cross-Board Unified View
-- **Functionality**: Toggle to view all cards from all boards in a single aggregated kanban or calendar view
-- **Purpose**: Break down board silos to see all work holistically, identifying patterns and priorities across projects
-- **Trigger**: "All Boards" toggle in header or dedicated view mode
-- **Progression**: Toggle all boards view → See aggregated cards grouped by status/date → Filter by board/label/date → Click card to edit → Card updates reflect in source board
-- **Success criteria**: All cards from all boards appear correctly; filters work across the entire dataset; changes sync to source boards; performance remains smooth with 100+ cards
+### Cross-Campaign Unified View
+- **Functionality**: Toggle to view all tasks from all campaigns in a single aggregated kanban or calendar view
+- **Purpose**: Break down campaign silos to see all work holistically, identifying patterns and priorities across projects
+- **Trigger**: "All Campaigns" toggle in header or dedicated view mode
+- **Progression**: Toggle all campaigns view → See aggregated tasks grouped by status/date → Filter by campaign/label/date → Click task to edit → Task updates reflect in source campaign
+- **Success criteria**: All tasks from all campaigns appear correctly; filters work across the entire dataset; changes sync to source campaigns; performance remains smooth with 100+ tasks
 
 ### Kanban View with Comprehensive Drag & Drop
-- **Functionality**: Visual board with draggable columns (lists) and cards. Full drag and drop support for cards within lists, cards between lists, list reordering within boards, and board reordering in sidebar.
-- **Purpose**: Primary workflow visualization showing cards moving through stages with intuitive direct manipulation
-- **Trigger**: Default view when opening a board or selecting kanban view mode
-- **Progression**: View board → See lists as columns → See cards in lists → Drag cards within same list to reorder → Drag cards between lists to move → Drag lists to reorder columns → Drag boards in sidebar to reorganize → Click card for details → Visual feedback during all drag operations
-- **Success criteria**: All drag and drop operations work smoothly with visual feedback (opacity changes, hover states, drop indicators); cards update position immediately; list order persists; board order in sidebar persists; mobile-friendly touch interactions; drag handles visible on hover
+- **Functionality**: Visual board with draggable columns (lists) and tasks. Full drag and drop support for tasks within lists, tasks between lists, tasks between campaigns, list reordering within campaigns, and campaign reordering in sidebar.
+- **Purpose**: Primary workflow visualization showing tasks moving through stages with intuitive direct manipulation
+- **Trigger**: Default view when opening a campaign or selecting kanban view mode
+- **Progression**: View campaign → See lists as columns → See tasks in lists → Drag tasks within same list to reorder → Drag tasks between lists to move → Drag tasks between campaigns → Drag lists to reorder columns → Drag campaigns in sidebar to reorganize → Click task for details → Visual feedback during all drag operations (opacity, hover states, drop indicators)
+- **Success criteria**: All drag and drop operations work smoothly with visual feedback (opacity changes, hover states, drop indicators); tasks update position immediately; list order persists; campaign order in sidebar persists; mobile-friendly touch interactions; drag handles visible on hover; cursor changes appropriately (grab/grabbing)
 
 ### Calendar View
-- **Functionality**: Month calendar displaying cards on their due dates
+- **Functionality**: Month calendar displaying tasks on their due dates
 - **Purpose**: Visualize work by timeline, identify deadline clustering, and manage time-based priorities
 - **Trigger**: Calendar icon in view switcher
-- **Progression**: Switch to calendar view → See current month with cards on due dates → Click date to see all cards → Click card to edit → Navigate months → Filter by board/label
-- **Success criteria**: Cards appear on correct dates; cards without dates show in "unscheduled" area; multiple cards per date are visible; navigation between months is smooth
+- **Progression**: Switch to calendar view → See current month with tasks on due dates → Click date to see all tasks → Click task to edit → Navigate months → Filter by campaign/label
+- **Success criteria**: Tasks appear on correct dates; tasks without dates show in "unscheduled" area; multiple tasks per date are visible; navigation between months is smooth
 
 ### Advanced Filtering
-- **Functionality**: Filter cards by board, list, label, due date, and search text across all views
+- **Functionality**: Filter tasks by campaign, list, label, due date, and search text across all views
 - **Purpose**: Surface specific subsets of work without losing context of the larger system
 - **Trigger**: Filter panel toggle in header
-- **Progression**: Click filter icon → Select filter criteria (board/label/date range) → View updates instantly → Multiple filters combine (AND logic) → Clear filters to reset
+- **Progression**: Click filter icon → Select filter criteria (campaign/label/date range) → View updates instantly → Multiple filters combine (AND logic) → Clear filters to reset
 - **Success criteria**: Filters apply to current view (kanban/calendar); filter state persists during session; filter combinations work logically; filter count badge shows active filters
 
 ### Labels & Tags
-- **Functionality**: Create custom labels with colors, assign to cards, filter by labels
+- **Functionality**: Create custom labels with colors, assign to tasks, filter by labels
 - **Purpose**: Categorize work by type, priority, department, or any custom taxonomy
-- **Trigger**: Label selector in card edit dialog
-- **Progression**: Edit card → Click labels → Create new label with name/color → Select labels to assign → Labels appear on card → Filter by label in any view
-- **Success criteria**: Labels are color-coded and visible; labels are reusable across cards; label filtering works in all views; label colors follow design system
+- **Trigger**: Label selector in task edit dialog
+- **Progression**: Edit task → Click labels → Create new label with name/color → Select labels to assign → Labels appear on task → Filter by label in any view
+- **Success criteria**: Labels are color-coded and visible; labels are reusable across tasks; label filtering works in all views; label colors follow design system
 
 ## Edge Case Handling
 
-- **Empty States**: Helpful illustrations and CTAs when boards, lists, or cards are empty, guiding users to create their first items; empty lists show "Drop cards here" message during drag operations
-- **Card with No Due Date**: Calendar view shows "Unscheduled" section for cards without dates; they still appear in kanban views
-- **Deleting Board with Cards**: Confirmation dialog warns about data loss; deleted boards are archived (soft delete) for potential recovery
+- **Empty States**: Helpful illustrations and CTAs when campaigns, lists, or tasks are empty, guiding users to create their first items; empty lists show "Drop tasks here" message during drag operations
+- **Task with No Due Date**: Calendar view shows "Unscheduled" section for tasks without dates; they still appear in kanban views
+- **Deleting Campaign with Tasks**: Confirmation dialog warns about data loss; option to archive instead of permanent delete
 - **Drag Over Mobile**: Touch-and-hold to activate drag mode on mobile; visual feedback shows draggable state
-- **Filter No Results**: Clear message showing active filters and option to clear them when no cards match
-- **Long Card Titles**: Truncate with ellipsis in compact views, show full title in detail dialog and on hover
-- **Many Labels on Card**: Show first 2-3 labels with "+N more" indicator; expand in detail view
-- **Cross-Board Card Move**: When dragging cards between lists from different boards, card automatically updates its board association and appears in the new board's context
-- **List Reordering Across Boards**: Lists can only be reordered within the same board; dragging a list to a different board's list is prevented
-- **Board Reordering Hierarchy**: Boards can only be reordered within their sibling group (same parent); projects stay with projects, campaigns with campaigns within the same project, boards with boards within the same campaign
+- **Filter No Results**: Clear message showing active filters and option to clear them when no tasks match
+- **Long Task Titles**: Truncate with ellipsis in compact views, show full title in detail dialog and on hover
+- **Many Labels on Task**: Show first 2-3 labels with "+N more" indicator; expand in detail view
+- **Cross-Campaign Task Move**: When dragging tasks between lists from different campaigns, task automatically updates its campaign association and appears in the new campaign's context
+- **List Reordering Across Campaigns**: Lists can only be reordered within the same campaign; dragging a list to a different campaign's list is prevented
+- **Campaign Reordering Hierarchy**: Campaigns can only be reordered within their sibling group (same project or standalone); campaigns within projects stay together
 - **Drag Visual Feedback**: Clear opacity changes (40%) and cursor changes (grab/grabbing) indicate draggable state; drop zones highlight with accent colors when valid; invalid drop targets don't highlight
-- **Simultaneous Drags**: System handles only one drag operation at a time; multiple users can drag different items without conflicts due to optimistic UI updates
+- **Simultaneous Drags**: System handles only one drag operation at a time; optimistic UI updates ensure smooth experience
 
 ## Design Direction
 

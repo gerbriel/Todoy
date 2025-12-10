@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
 import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical } from '@phosphor-icons/react'
-import { Board, FilterState } from '@/lib/types'
-import { generateId, getRootProjects, getStandaloneBoards, getChildBoards, getCampaignStageLabel } from '@/lib/helpers'
+import { Project, Campaign, FilterState } from '@/lib/types'
+import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { toast } from 'sonner'
@@ -23,44 +23,49 @@ import {
 } from './ui/dialog'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 interface SidebarProps {
-  boards: Board[]
-  setBoards: (updater: (boards: Board[]) => Board[]) => void
-  activeBoardId: string | null
-  setActiveBoardId: (id: string | null) => void
+  projects: Project[]
+  setProjects: (updater: (projects: Project[]) => Project[]) => void
+  campaigns: Campaign[]
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  activeCampaignId: string | null
+  setActiveCampaignId: (id: string | null) => void
   filters: FilterState
   setFilters: (filters: FilterState) => void
 }
 
 export default function Sidebar({
-  boards,
-  setBoards,
-  activeBoardId,
-  setActiveBoardId,
+  projects,
+  setProjects,
+  campaigns,
+  setCampaigns,
+  activeCampaignId,
+  setActiveCampaignId,
   filters,
   setFilters,
 }: SidebarProps) {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [createType, setCreateType] = useState<'project' | 'campaign' | 'board'>('project')
-  const [createParentId, setCreateParentId] = useState<string | undefined>()
+  const [createType, setCreateType] = useState<'project' | 'campaign'>('project')
+  const [createProjectId, setCreateProjectId] = useState<string | undefined>()
   const [newTitle, setNewTitle] = useState('')
-  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
-  const [draggingBoardId, setDraggingBoardId] = useState<string | null>(null)
+  const [draggingCampaignId, setDraggingCampaignId] = useState<string | null>(null)
+  const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const rootProjects = getRootProjects(boards)
-  const standaloneBoards = getStandaloneBoards(boards)
+  const sortedProjects = getProjects(projects)
+  const standaloneCampaigns = getStandaloneCampaigns(campaigns)
 
   useEffect(() => {
-    if (editingBoardId && inputRef.current) {
+    if ((editingCampaignId || editingProjectId) && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
     }
-  }, [editingBoardId])
+  }, [editingCampaignId, editingProjectId])
 
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects)
@@ -72,9 +77,9 @@ export default function Sidebar({
     setExpandedProjects(newExpanded)
   }
 
-  const handleCreateNew = (type: 'project' | 'campaign' | 'board', parentId?: string) => {
+  const handleCreateNew = (type: 'project' | 'campaign', projectId?: string) => {
     setCreateType(type)
-    setCreateParentId(parentId)
+    setCreateProjectId(projectId)
     setNewTitle('')
     setShowCreateDialog(true)
   }
@@ -85,167 +90,180 @@ export default function Sidebar({
       return
     }
 
-    const newBoard: Board = {
-      id: generateId(),
-      title: newTitle.trim(),
-      description: '',
-      order: boards.length,
-      createdAt: new Date().toISOString(),
-      type: createType,
-      parentId: createParentId,
-      ...(createType === 'campaign' && {
+    if (createType === 'project') {
+      const newProject: Project = {
+        id: generateId(),
+        title: newTitle.trim(),
+        description: '',
+        order: projects.length,
+        createdAt: new Date().toISOString(),
+      }
+      setProjects(currentProjects => [...currentProjects, newProject])
+      toast.success('Project created')
+    } else {
+      const newCampaign: Campaign = {
+        id: generateId(),
+        title: newTitle.trim(),
+        description: '',
+        order: campaigns.length,
+        createdAt: new Date().toISOString(),
+        projectId: createProjectId,
         campaignType: 'other',
         campaignStage: 'planning',
-      }),
+      }
+      setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
+      setActiveCampaignId(newCampaign.id)
+      
+      if (createProjectId) {
+        setExpandedProjects(prev => new Set(prev).add(createProjectId))
+      }
+      
+      toast.success('Campaign created')
     }
     
-    setBoards(currentBoards => [...currentBoards, newBoard])
-    setActiveBoardId(newBoard.id)
     setShowCreateDialog(false)
-    
-    if (createParentId) {
-      setExpandedProjects(prev => new Set(prev).add(createParentId))
-    }
-    
-    toast.success(`${createType === 'project' ? 'Project' : createType === 'campaign' ? 'Campaign' : 'Board'} created`)
   }
 
-  const handleToggleAllBoards = () => {
-    const newShowAll = !filters.showAllBoards
+  const handleToggleAllCampaigns = () => {
+    const newShowAll = !filters.showAllCampaigns
     setFilters({
       ...filters,
-      showAllBoards: newShowAll,
+      showAllCampaigns: newShowAll,
     })
     if (newShowAll) {
-      setActiveBoardId(null)
+      setActiveCampaignId(null)
     }
   }
 
-  const handleStartEdit = (board: Board) => {
-    setEditingBoardId(board.id)
-    setEditingTitle(board.title)
+  const handleStartEditCampaign = (campaign: Campaign) => {
+    setEditingCampaignId(campaign.id)
+    setEditingTitle(campaign.title)
   }
 
-  const handleSaveEdit = (boardId: string) => {
+  const handleStartEditProject = (project: Project) => {
+    setEditingProjectId(project.id)
+    setEditingTitle(project.title)
+  }
+
+  const handleSaveEditCampaign = (campaignId: string) => {
     if (!editingTitle.trim()) {
       toast.error('Title cannot be empty')
       return
     }
     
-    setBoards(currentBoards =>
-      currentBoards.map(b =>
-        b.id === boardId ? { ...b, title: editingTitle.trim() } : b
+    setCampaigns(currentCampaigns =>
+      currentCampaigns.map(c =>
+        c.id === campaignId ? { ...c, title: editingTitle.trim() } : c
       )
     )
-    setEditingBoardId(null)
+    setEditingCampaignId(null)
+    toast.success('Renamed')
+  }
+
+  const handleSaveEditProject = (projectId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('Title cannot be empty')
+      return
+    }
+    
+    setProjects(currentProjects =>
+      currentProjects.map(p =>
+        p.id === projectId ? { ...p, title: editingTitle.trim() } : p
+      )
+    )
+    setEditingProjectId(null)
     toast.success('Renamed')
   }
 
   const handleCancelEdit = () => {
-    setEditingBoardId(null)
+    setEditingCampaignId(null)
+    setEditingProjectId(null)
     setEditingTitle('')
   }
 
-  const handleBoardDragStart = (e: DragEvent<HTMLDivElement>, board: Board) => {
+  const handleCampaignDragStart = (e: DragEvent<HTMLDivElement>, campaign: Campaign) => {
     e.stopPropagation()
-    setDraggingBoardId(board.id)
+    setDraggingCampaignId(campaign.id)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('boardId', board.id)
-    e.dataTransfer.setData('boardParentId', board.parentId || 'root')
+    e.dataTransfer.setData('campaignId', campaign.id)
+    e.dataTransfer.setData('campaignProjectId', campaign.projectId || 'root')
   }
 
-  const handleBoardDragEnd = () => {
-    setDraggingBoardId(null)
+  const handleCampaignDragEnd = () => {
+    setDraggingCampaignId(null)
   }
 
-  const handleBoardDragOver = (e: DragEvent<HTMLDivElement>, targetBoard: Board) => {
+  const handleCampaignDragOver = (e: DragEvent<HTMLDivElement>, targetCampaign: Campaign) => {
     e.preventDefault()
     e.stopPropagation()
-    const boardId = e.dataTransfer.types.includes('text/plain') ? null : e.dataTransfer.getData('boardId')
-    if (boardId && boardId !== targetBoard.id) {
+    const campaignId = e.dataTransfer.types.includes('text/plain') ? null : e.dataTransfer.getData('campaignId')
+    if (campaignId && campaignId !== targetCampaign.id) {
       e.dataTransfer.dropEffect = 'move'
     }
   }
 
-  const handleBoardDrop = (e: DragEvent<HTMLDivElement>, targetBoard: Board) => {
+  const handleCampaignDrop = (e: DragEvent<HTMLDivElement>, targetCampaign: Campaign) => {
     e.preventDefault()
     e.stopPropagation()
     
-    const draggedBoardId = e.dataTransfer.getData('boardId')
-    const draggedBoardParentId = e.dataTransfer.getData('boardParentId')
+    const draggedCampaignId = e.dataTransfer.getData('campaignId')
+    const draggedCampaignProjectId = e.dataTransfer.getData('campaignProjectId')
 
-    if (!draggedBoardId || draggedBoardId === targetBoard.id) return
+    if (!draggedCampaignId || draggedCampaignId === targetCampaign.id) return
 
-    const parentId = targetBoard.parentId || 'root'
-    if (draggedBoardParentId !== parentId) return
+    const projectId = targetCampaign.projectId || 'root'
+    if (draggedCampaignProjectId !== projectId) return
 
-    setBoards(currentBoards => {
-      const draggedBoard = currentBoards.find(b => b.id === draggedBoardId)
-      if (!draggedBoard) return currentBoards
+    setCampaigns(currentCampaigns => {
+      const draggedCampaign = currentCampaigns.find(c => c.id === draggedCampaignId)
+      if (!draggedCampaign) return currentCampaigns
 
-      const siblingBoards = currentBoards
-        .filter(b => (b.parentId || 'root') === parentId)
+      const siblingCampaigns = currentCampaigns
+        .filter(c => (c.projectId || 'root') === projectId)
         .sort((a, b) => a.order - b.order)
 
-      const draggedIndex = siblingBoards.findIndex(b => b.id === draggedBoardId)
-      const targetIndex = siblingBoards.findIndex(b => b.id === targetBoard.id)
+      const draggedIndex = siblingCampaigns.findIndex(c => c.id === draggedCampaignId)
+      const targetIndex = siblingCampaigns.findIndex(c => c.id === targetCampaign.id)
 
-      if (draggedIndex === targetIndex) return currentBoards
+      if (draggedIndex === targetIndex) return currentCampaigns
 
-      const reorderedBoards = [...siblingBoards]
-      const [movedBoard] = reorderedBoards.splice(draggedIndex, 1)
-      reorderedBoards.splice(targetIndex, 0, movedBoard)
+      const reorderedCampaigns = [...siblingCampaigns]
+      const [movedCampaign] = reorderedCampaigns.splice(draggedIndex, 1)
+      reorderedCampaigns.splice(targetIndex, 0, movedCampaign)
 
-      const updatedBoards = reorderedBoards.map((b, index) => ({
-        ...b,
+      const updatedCampaigns = reorderedCampaigns.map((c, index) => ({
+        ...c,
         order: index,
       }))
 
-      return currentBoards.map(b => {
-        const updated = updatedBoards.find(ub => ub.id === b.id)
-        return updated || b
+      return currentCampaigns.map(c => {
+        const updated = updatedCampaigns.find(uc => uc.id === c.id)
+        return updated || c
       })
     })
 
-    toast.success('Board reordered')
+    toast.success('Campaign reordered')
   }
 
-  const renderBoardItem = (board: Board, depth: number = 0) => {
-    const isActive = activeBoardId === board.id && !filters.showAllBoards
-    const hasChildren = board.type !== 'board' && getChildBoards(boards, board.id).length > 0
-    const isExpanded = expandedProjects.has(board.id)
-    const isEditing = editingBoardId === board.id
-    const isDragging = draggingBoardId === board.id
+  const renderCampaignItem = (campaign: Campaign, depth: number = 0) => {
+    const isActive = activeCampaignId === campaign.id && !filters.showAllCampaigns
+    const isEditing = editingCampaignId === campaign.id
+    const isDragging = draggingCampaignId === campaign.id
 
     return (
-      <div key={board.id}>
+      <div key={campaign.id}>
         <div
           draggable={!isEditing}
-          onDragStart={(e) => handleBoardDragStart(e, board)}
-          onDragEnd={handleBoardDragEnd}
-          onDragOver={(e) => handleBoardDragOver(e, board)}
-          onDrop={(e) => handleBoardDrop(e, board)}
+          onDragStart={(e) => handleCampaignDragStart(e, campaign)}
+          onDragEnd={handleCampaignDragEnd}
+          onDragOver={(e) => handleCampaignDragOver(e, campaign)}
+          onDrop={(e) => handleCampaignDrop(e, campaign)}
           className={cn(
             "flex items-center gap-1 group transition-opacity",
             isDragging && "opacity-40"
           )}
         >
-          {hasChildren && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleProject(board.id)
-              }}
-              className="p-1 hover:bg-muted rounded transition-colors"
-            >
-              {isExpanded ? (
-                <CaretDown size={14} weight="bold" />
-              ) : (
-                <CaretRight size={14} weight="bold" />
-              )}
-            </button>
-          )}
-          {!hasChildren && <div className="w-6" />}
+          <div className="w-6" />
           
           {!isEditing && (
             <DotsSixVertical size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" weight="bold" />
@@ -259,20 +277,20 @@ export default function Sidebar({
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    handleSaveEdit(board.id)
+                    handleSaveEditCampaign(campaign.id)
                   } else if (e.key === 'Escape') {
                     handleCancelEdit()
                   }
                 }}
-                onBlur={() => handleSaveEdit(board.id)}
+                onBlur={() => handleSaveEditCampaign(campaign.id)}
                 className="h-7 text-sm"
               />
             </div>
           ) : (
             <button
               onClick={() => {
-                setActiveBoardId(board.id)
-                setFilters({ ...filters, showAllBoards: false })
+                setActiveCampaignId(campaign.id)
+                setFilters({ ...filters, showAllCampaigns: false })
               }}
               className={cn(
                 'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2',
@@ -280,15 +298,14 @@ export default function Sidebar({
                   ? 'bg-accent text-accent-foreground font-medium'
                   : 'text-foreground hover:bg-muted'
               )}
-              title={board.title}
+              title={campaign.title}
               style={{ paddingLeft: `${depth * 12 + 8}px` }}
             >
-              {board.type === 'project' && <Folder size={14} weight="duotone" />}
-              {board.type === 'campaign' && <Target size={14} weight="duotone" />}
-              <span className="flex-1 truncate">{board.title}</span>
-              {board.campaignStage && (
+              <Target size={14} weight="duotone" />
+              <span className="flex-1 truncate">{campaign.title}</span>
+              {campaign.campaignStage && (
                 <span className="text-[10px] opacity-60 uppercase tracking-wide">
-                  {getCampaignStageLabel(board.campaignStage).slice(0, 3)}
+                  {getCampaignStageLabel(campaign.campaignStage).slice(0, 3)}
                 </span>
               )}
             </button>
@@ -304,35 +321,112 @@ export default function Sidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleStartEdit(board)}>
+              <DropdownMenuItem onClick={() => handleStartEditCampaign(campaign)}>
                 <PencilSimple size={14} className="mr-2" />
                 Rename
               </DropdownMenuItem>
-              {board.type === 'project' && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleCreateNew('campaign', board.id)}>
-                    <Plus size={14} className="mr-2" />
-                    Add Campaign
-                  </DropdownMenuItem>
-                </>
-              )}
-              {board.type === 'campaign' && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleCreateNew('board', board.id)}>
-                    <Plus size={14} className="mr-2" />
-                    Add Board
-                  </DropdownMenuItem>
-                </>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => {
-                  if (confirm(`Delete ${board.title}?`)) {
-                    setBoards(currentBoards => currentBoards.filter(b => b.id !== board.id && b.parentId !== board.id))
-                    if (activeBoardId === board.id) setActiveBoardId(null)
+                  if (confirm(`Delete ${campaign.title}?`)) {
+                    setCampaigns(currentCampaigns => currentCampaigns.filter(c => c.id !== campaign.id))
+                    if (activeCampaignId === campaign.id) setActiveCampaignId(null)
+                    toast.success('Deleted')
+                  }
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    )
+  }
+
+  const renderProjectItem = (project: Project) => {
+    const projectCampaigns = getCampaignsForProject(campaigns, project.id)
+    const hasChildren = projectCampaigns.length > 0
+    const isExpanded = expandedProjects.has(project.id)
+    const isEditing = editingProjectId === project.id
+
+    return (
+      <div key={project.id}>
+        <div className="flex items-center gap-1 group">
+          {hasChildren ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleProject(project.id)
+              }}
+              className="p-1 hover:bg-muted rounded transition-colors"
+            >
+              {isExpanded ? (
+                <CaretDown size={14} weight="bold" />
+              ) : (
+                <CaretRight size={14} weight="bold" />
+              )}
+            </button>
+          ) : (
+            <div className="w-6" />
+          )}
+          
+          {isEditing ? (
+            <div className="flex-1 flex items-center gap-1">
+              <Input
+                ref={inputRef}
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveEditProject(project.id)
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit()
+                  }
+                }}
+                onBlur={() => handleSaveEditProject(project.id)}
+                className="h-7 text-sm"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => toggleProject(project.id)}
+              className="flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2 text-foreground hover:bg-muted"
+              title={project.title}
+            >
+              <Folder size={14} weight="duotone" />
+              <span className="flex-1 truncate">{project.title}</span>
+              <span className="text-xs text-muted-foreground">{projectCampaigns.length}</span>
+            </button>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DotsThreeVertical size={14} weight="bold" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleStartEditProject(project)}>
+                <PencilSimple size={14} className="mr-2" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleCreateNew('campaign', project.id)}>
+                <Plus size={14} className="mr-2" />
+                Add Campaign
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => {
+                  if (confirm(`Delete ${project.title} and all its campaigns?`)) {
+                    setProjects(currentProjects => currentProjects.filter(p => p.id !== project.id))
+                    setCampaigns(currentCampaigns => currentCampaigns.filter(c => c.projectId !== project.id))
                     toast.success('Deleted')
                   }
                 }}
@@ -345,7 +439,7 @@ export default function Sidebar({
 
         {hasChildren && isExpanded && (
           <div className="ml-3">
-            {getChildBoards(boards, board.id).map(child => renderBoardItem(child, depth + 1))}
+            {projectCampaigns.map(campaign => renderCampaignItem(campaign, 1))}
           </div>
         )}
       </div>
@@ -371,7 +465,7 @@ export default function Sidebar({
               Project
             </Button>
             <Button
-              onClick={() => handleCreateNew('board')}
+              onClick={() => handleCreateNew('campaign')}
               variant="outline"
               size="sm"
             >
@@ -383,35 +477,35 @@ export default function Sidebar({
         <ScrollArea className="flex-1">
           <div className="p-2">
             <button
-              onClick={handleToggleAllBoards}
+              onClick={handleToggleAllCampaigns}
               className={cn(
                 'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors mb-3',
-                filters.showAllBoards
+                filters.showAllCampaigns
                   ? 'bg-accent text-accent-foreground'
                   : 'text-foreground hover:bg-muted'
               )}
             >
-              All Boards
+              All Campaigns
             </button>
             
-            {rootProjects.length > 0 && (
+            {sortedProjects.length > 0 && (
               <div className="mb-4">
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Projects
                 </div>
                 <div className="space-y-0.5">
-                  {rootProjects.map(project => renderBoardItem(project))}
+                  {sortedProjects.map(project => renderProjectItem(project))}
                 </div>
               </div>
             )}
 
-            {standaloneBoards.length > 0 && (
+            {standaloneCampaigns.length > 0 && (
               <div>
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Boards
+                  Campaigns
                 </div>
                 <div className="space-y-0.5">
-                  {standaloneBoards.map(board => renderBoardItem(board))}
+                  {standaloneCampaigns.map(campaign => renderCampaignItem(campaign))}
                 </div>
               </div>
             )}
@@ -423,12 +517,11 @@ export default function Sidebar({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Create New {createType === 'project' ? 'Project' : createType === 'campaign' ? 'Campaign' : 'Board'}
+              Create New {createType === 'project' ? 'Project' : 'Campaign'}
             </DialogTitle>
             <DialogDescription>
-              {createType === 'project' && 'Projects contain campaigns and help organize your marketing initiatives.'}
-              {createType === 'campaign' && 'Campaigns track specific marketing activities like webinars or trade shows.'}
-              {createType === 'board' && 'Boards contain lists and cards for task management.'}
+              {createType === 'project' && 'Projects help organize your marketing campaigns.'}
+              {createType === 'campaign' && 'Campaigns contain tasks for specific marketing activities.'}
             </DialogDescription>
           </DialogHeader>
           

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Board, List, Card, Label, ViewMode, FilterState } from './lib/types'
 import { Toaster } from './components/ui/sonner'
@@ -24,6 +24,20 @@ function App() {
     showAllBoards: false,
   })
 
+  useEffect(() => {
+    if (boards && boards.length > 0) {
+      const needsMigration = boards.some(b => !(b as any).type)
+      if (needsMigration) {
+        setBoards(currentBoards => 
+          (currentBoards || []).map(b => ({
+            ...b,
+            type: (b as any).type || 'board',
+          }))
+        )
+      }
+    }
+  }, [])
+
   const activeBoard = boards?.find(b => b.id === activeBoardId)
 
   return (
@@ -41,6 +55,7 @@ function App() {
         <Header
           activeBoard={activeBoard}
           boards={boards || []}
+          setBoards={setBoards}
           viewMode={viewMode}
           setViewMode={setViewMode}
           showFilterPanel={showFilterPanel}

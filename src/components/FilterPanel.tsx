@@ -1,12 +1,13 @@
 import { X } from '@phosphor-icons/react'
-import { Board, Label, FilterState } from '@/lib/types'
+import { Board, Label, FilterState, CampaignType, CampaignStage } from '@/lib/types'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Label as UILabel } from './ui/label'
 import { Separator } from './ui/separator'
 import { ScrollArea } from './ui/scroll-area'
-import { getLabelColor } from '@/lib/helpers'
+import { getLabelColor, getCampaignTypeLabel, getCampaignStageLabel, getCampaignStageColor } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
+import { Badge } from './ui/badge'
 
 interface FilterPanelProps {
   boards: Board[]
@@ -15,6 +16,9 @@ interface FilterPanelProps {
   setFilters: (filters: FilterState) => void
   onClose: () => void
 }
+
+const CAMPAIGN_TYPES: CampaignType[] = ['webinar', 'tradeshow', 'paid-social', 'content', 'email', 'event', 'other']
+const CAMPAIGN_STAGES: CampaignStage[] = ['planning', 'in-progress', 'launched', 'completed', 'follow-up']
 
 export default function FilterPanel({
   boards,
@@ -37,19 +41,41 @@ export default function FilterPanel({
     setFilters({ ...filters, labelIds: newLabelIds })
   }
 
+  const toggleCampaignType = (type: CampaignType) => {
+    const current = filters.campaignTypes || []
+    const newTypes = current.includes(type)
+      ? current.filter(t => t !== type)
+      : [...current, type]
+    setFilters({ ...filters, campaignTypes: newTypes })
+  }
+
+  const toggleCampaignStage = (stage: CampaignStage) => {
+    const current = filters.campaignStages || []
+    const newStages = current.includes(stage)
+      ? current.filter(s => s !== stage)
+      : [...current, stage]
+    setFilters({ ...filters, campaignStages: newStages })
+  }
+
   const clearFilters = () => {
     setFilters({
       boardIds: [],
       labelIds: [],
       searchText: '',
       showAllBoards: filters.showAllBoards,
+      campaignTypes: [],
+      campaignStages: [],
     })
   }
 
   const hasActiveFilters = 
     filters.boardIds.length > 0 || 
     filters.labelIds.length > 0 || 
-    filters.searchText !== ''
+    filters.searchText !== '' ||
+    (filters.campaignTypes?.length || 0) > 0 ||
+    (filters.campaignStages?.length || 0) > 0
+
+  const campaigns = boards.filter(b => b.type === 'campaign')
 
   return (
     <div className="absolute top-0 right-0 bottom-0 w-80 bg-card border-l border-border shadow-lg z-50 flex flex-col">
@@ -78,9 +104,66 @@ export default function FilterPanel({
                       />
                       <label
                         htmlFor={`board-${board.id}`}
-                        className="text-sm text-foreground cursor-pointer flex-1"
+                        className="text-sm text-foreground cursor-pointer flex-1 truncate"
+                        title={board.title}
                       >
                         {board.title}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator />
+            </>
+          )}
+
+          {campaigns.length > 0 && (
+            <>
+              <div>
+                <UILabel className="text-sm font-medium mb-2 block">
+                  Campaign Type
+                </UILabel>
+                <div className="space-y-2">
+                  {CAMPAIGN_TYPES.map(type => (
+                    <div key={type} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`type-${type}`}
+                        checked={filters.campaignTypes?.includes(type) || false}
+                        onCheckedChange={() => toggleCampaignType(type)}
+                      />
+                      <label
+                        htmlFor={`type-${type}`}
+                        className="text-sm text-foreground cursor-pointer flex-1"
+                      >
+                        {getCampaignTypeLabel(type)}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator />
+
+              <div>
+                <UILabel className="text-sm font-medium mb-2 block">
+                  Campaign Stage
+                </UILabel>
+                <div className="space-y-2">
+                  {CAMPAIGN_STAGES.map(stage => (
+                    <div key={stage} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`stage-${stage}`}
+                        checked={filters.campaignStages?.includes(stage) || false}
+                        onCheckedChange={() => toggleCampaignStage(stage)}
+                      />
+                      <label
+                        htmlFor={`stage-${stage}`}
+                        className="text-sm cursor-pointer flex-1 flex items-center gap-2"
+                      >
+                        <Badge className={cn('text-xs border', getCampaignStageColor(stage))}>
+                          {getCampaignStageLabel(stage)}
+                        </Badge>
                       </label>
                     </div>
                   ))}

@@ -1,37 +1,51 @@
 # Planning Guide
 
-A comprehensive project management application that unifies kanban boards with cross-board filtering and multiple view modes, combining the simplicity of Trello with the power of enterprise tools like Monday and Wrike in a GitHub-inspired aesthetic.
+A comprehensive marketing campaign management application that organizes work hierarchically (Projects → Campaigns → Action Items) with cross-board visibility, budget tracking, campaign timelines, and multiple view modes - combining the flexibility of Trello with enterprise campaign management capabilities.
 
 **Experience Qualities**:
-1. **Unified** - Seamlessly view and manage cards across all boards without siloed limitations, giving users a holistic view of their work
-2. **Flexible** - Switch between kanban and calendar views effortlessly, with powerful filtering to surface exactly what matters
-3. **Clean** - GitHub-inspired interface that feels professional and focused, removing visual noise to emphasize content
+1. **Hierarchical** - Organize marketing work from high-level projects down to individual campaigns and action items, maintaining clear relationships and context
+2. **Campaign-Focused** - Purpose-built for marketing teams to track campaign types, stages, budgets, goals, and timelines from planning through follow-up
+3. **Unified** - View and filter across all projects and campaigns without silos, while maintaining the ability to drill down into specific initiatives
 
 **Complexity Level**: Complex Application (advanced functionality, likely with multiple views)
-This is a multi-view project management system with cross-board aggregation, multiple visualization modes, advanced filtering, and comprehensive CRUD operations across boards, lists, and cards.
+This is a hierarchical project management system with three-level organization (projects/campaigns/boards), campaign-specific features (types, stages, budgets, timelines), cross-board aggregation, multiple visualization modes, and comprehensive tracking of marketing initiatives from planning through completion.
 
 ## Essential Features
 
-### Board Management
-- **Functionality**: Create, edit, archive, and delete project boards with custom names and descriptions
-- **Purpose**: Organize work into separate contexts (projects, teams, workflows) while maintaining the ability to view across them
-- **Trigger**: "New Board" button in sidebar or empty state
-- **Progression**: Click new board → Enter board name/description → Board created and appears in sidebar → Navigate to board
-- **Success criteria**: Multiple boards can be created, renamed, and deleted; boards persist between sessions; active board is visually indicated
+### Hierarchical Board Organization
+- **Functionality**: Three-level hierarchy - Projects contain Campaigns, Campaigns contain Boards (action item boards)
+- **Purpose**: Organize marketing work from strategic initiatives down to tactical execution, maintaining clear parent-child relationships
+- **Trigger**: "New Project" or "New Campaign" buttons in sidebar, context menus on existing items
+- **Progression**: Create project → Expand project in sidebar → Add campaigns to project → Expand campaign → Add boards to campaign → Navigate between levels
+- **Success criteria**: Clear visual hierarchy in sidebar; expandable/collapsible tree structure; ability to move cards between any board; parent-child relationships persist
 
-### List Management within Boards
-- **Functionality**: Create, reorder, rename, and delete lists (columns) within each board
-- **Purpose**: Define workflow stages or categories for cards (e.g., To Do, In Progress, Done)
-- **Trigger**: "Add List" button within a board view
-- **Progression**: Click add list → Enter list name → List appears as new column → Drag to reorder lists → Cards can be added to list
-- **Success criteria**: Lists can be added/removed/reordered within boards; list changes persist; empty lists display helpful prompts
+### Campaign Management
+- **Functionality**: Campaigns have types (webinar, tradeshow, paid social, content, email, event), stages (planning, in-progress, launched, completed, follow-up), budgets, goals, and multi-phase timelines
+- **Purpose**: Track marketing campaigns through their entire lifecycle with campaign-specific metadata and financial tracking
+- **Trigger**: Create campaign within a project, edit campaign details from header
+- **Progression**: Create campaign → Set type and stage → Define budget and goals → Set planning/launch/end/follow-up dates → Track progress through stages → Monitor budget vs. actual spend
+- **Success criteria**: Campaign type and stage visible in sidebar and header; budget tracking shows percentage used; timeline dates help identify what to work on when; stage updates reflect campaign progress
 
-### Card Management
-- **Functionality**: Create, edit, move, and delete cards with title, description, due date, and labels
-- **Purpose**: Represent individual tasks or items that move through workflow stages
-- **Trigger**: "Add Card" button within a list or quick-add from any view
-- **Progression**: Click add card → Enter card details (title required, description/date/labels optional) → Card appears in list → Drag between lists → Click to edit → Delete from card detail view
-- **Success criteria**: Cards contain rich data; cards can be moved between lists and boards; card changes save automatically; due dates and labels are filterable
+### Board & Card Management with Cross-Board Movement
+- **Functionality**: Create boards (as standalone or within campaigns), create lists within boards, create cards within lists, move cards between any list/board
+- **Purpose**: Manage action items and tasks that can be organized hierarchically or standalone, with flexibility to reorganize
+- **Trigger**: "Add Board" button, "Add List" within board, "Add Card" within list
+- **Progression**: Create board → Add lists → Add cards → Edit card → Change board/list via dropdown → Card moves to new location → View card in new context
+- **Success criteria**: Cards can move between any boards regardless of hierarchy; board/list selection in card editor shows all options; moved cards maintain all properties; visual feedback confirms movement
+
+### Budget & Goals Tracking
+- **Functionality**: Set budgets and track actual spend at both campaign and card levels; define goals and objectives; visual progress indicators
+- **Purpose**: Monitor financial performance of campaigns and individual initiatives, track ROI, identify budget risks
+- **Trigger**: Edit campaign/card details, view budget in header bar
+- **Progression**: Set budget amount → Enter actual spend → View progress bar and percentage → See remaining/over-budget amount → Update as spend changes
+- **Success criteria**: Budget progress bars show accurate percentages; over-budget situations clearly flagged; campaign header shows budget summary; card budgets roll up conceptually to campaign view
+
+### Campaign Timeline & Stage Management
+- **Functionality**: Four-phase timeline (Planning Start, Launch Date, End Date, Follow-up Date) plus stage tracking (planning, in-progress, launched, completed, follow-up)
+- **Purpose**: Plan when to work on campaigns, track current phase, identify upcoming launches and deadlines, manage post-campaign follow-up
+- **Trigger**: Edit campaign details to set dates and stage
+- **Progression**: Set planning start → Work during planning stage → Update stage to in-progress → Set launch date → Update stage to launched → Campaign runs → Set end date → Update to completed → Set follow-up date → Handle follow-up items → Mark completed
+- **Success criteria**: Timeline dates visible in campaign header; stages accurately reflect current phase; visual indicators show stage status; dates help prioritize what needs attention now vs. future
 
 ### Cross-Board Unified View
 - **Functionality**: Toggle to view all cards from all boards in a single aggregated kanban or calendar view

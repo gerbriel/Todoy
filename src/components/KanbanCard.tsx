@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Clock, Tag } from '@phosphor-icons/react'
+import { Clock, Tag, CurrencyDollar } from '@phosphor-icons/react'
 import { Card, Label, List, Board } from '@/lib/types'
-import { getLabelColor, formatDate, isOverdue } from '@/lib/helpers'
+import { getLabelColor, formatDate, isOverdue, formatCurrency } from '@/lib/helpers'
 import { Badge } from './ui/badge'
 import CardDetailDialog from './CardDetailDialog'
 import { cn } from '@/lib/utils'
@@ -76,6 +76,13 @@ export default function KanbanCard({
             >
               <Clock size={12} weight="bold" />
               <span>{formatDate(card.dueDate)}</span>
+            </div>
+          )}
+
+          {card.budget && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CurrencyDollar size={12} weight="bold" />
+              <span>{formatCurrency(card.actualSpend || 0)} / {formatCurrency(card.budget)}</span>
             </div>
           )}
         </div>

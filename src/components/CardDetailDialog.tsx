@@ -64,14 +64,19 @@ export default function CardDetailDialog({
 }: CardDetailDialogProps) {
   const [title, setTitle] = useState(card.title)
   const [description, setDescription] = useState(card.description)
+  const [selectedBoardId, setSelectedBoardId] = useState(card.boardId)
   const [selectedListId, setSelectedListId] = useState(card.listId)
+  const [budget, setBudget] = useState(card.budget?.toString() || '')
+  const [actualSpend, setActualSpend] = useState(card.actualSpend?.toString() || '')
+  const [goals, setGoals] = useState(card.goals || '')
   const [showLabelCreator, setShowLabelCreator] = useState(false)
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState<LabelColor>('blue')
 
   const currentList = lists.find(l => l.id === card.listId)
   const currentBoard = boards.find(b => b.id === card.boardId)
-  const boardLists = lists.filter(l => l.boardId === card.boardId)
+  const selectedBoard = boards.find(b => b.id === selectedBoardId)
+  const availableLists = lists.filter(l => l.boardId === selectedBoardId)
 
   const handleUpdate = () => {
     setCards(currentCards =>
@@ -81,7 +86,11 @@ export default function CardDetailDialog({
               ...c,
               title: title.trim(),
               description: description.trim(),
+              boardId: selectedBoardId,
               listId: selectedListId,
+              budget: budget ? parseFloat(budget) : undefined,
+              actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
+              goals: goals.trim() || undefined,
             }
           : c
       )
@@ -173,13 +182,38 @@ export default function CardDetailDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <UILabel htmlFor="card-board">Board</UILabel>
+              <Select 
+                value={selectedBoardId} 
+                onValueChange={(boardId) => {
+                  setSelectedBoardId(boardId)
+                  const newBoardLists = lists.filter(l => l.boardId === boardId)
+                  if (newBoardLists.length > 0) {
+                    setSelectedListId(newBoardLists[0].id)
+                  }
+                }}
+              >
+                <SelectTrigger id="card-board">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {boards.map(board => (
+                    <SelectItem key={board.id} value={board.id}>
+                      {board.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <UILabel htmlFor="card-list">List</UILabel>
               <Select value={selectedListId} onValueChange={setSelectedListId}>
                 <SelectTrigger id="card-list">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {boardLists.map(list => (
+                  {availableLists.map(list => (
                     <SelectItem key={list.id} value={list.id}>
                       {list.title}
                     </SelectItem>
@@ -187,40 +221,83 @@ export default function CardDetailDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <UILabel>Due Date</UILabel>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  <Clock size={16} />
+                  {card.dueDate
+                    ? new Date(card.dueDate).toLocaleDateString()
+                    : 'Set due date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={card.dueDate ? new Date(card.dueDate) : undefined}
+                  onSelect={handleSetDueDate}
+                />
+                {card.dueDate && (
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSetDueDate(undefined)}
+                      className="w-full"
+                    >
+                      Clear Date
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <Separator />
+
+          <div>
+            <UILabel htmlFor="card-goals">Goals & Notes</UILabel>
+            <Textarea
+              id="card-goals"
+              value={goals}
+              onChange={(e) => setGoals(e.target.value)}
+              placeholder="Track goals, objectives, or additional notes..."
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <UILabel htmlFor="card-budget">Budget</UILabel>
+              <Input
+                id="card-budget"
+                type="number"
+                min="0"
+                step="10"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="0"
+              />
+            </div>
 
             <div>
-              <UILabel>Due Date</UILabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Clock size={16} />
-                    {card.dueDate
-                      ? new Date(card.dueDate).toLocaleDateString()
-                      : 'Set due date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={card.dueDate ? new Date(card.dueDate) : undefined}
-                    onSelect={handleSetDueDate}
-                  />
-                  {card.dueDate && (
-                    <div className="p-2 border-t">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSetDueDate(undefined)}
-                        className="w-full"
-                      >
-                        Clear Date
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+              <UILabel htmlFor="card-actual-spend">Actual Spend</UILabel>
+              <Input
+                id="card-actual-spend"
+                type="number"
+                min="0"
+                step="10"
+                value={actualSpend}
+                onChange={(e) => setActualSpend(e.target.value)}
+                placeholder="0"
+              />
             </div>
           </div>
+
+          <Separator />
 
           <div>
             <UILabel className="mb-2 block">Labels</UILabel>

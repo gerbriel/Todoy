@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { CalendarBlank, Columns, FunnelSimple, MagnifyingGlass, DotsThreeVertical, Target, CurrencyDollar, Clock } from '@phosphor-icons/react'
+import { useState, useRef, useEffect } from 'react'
+import { CalendarBlank, Columns, FunnelSimple, MagnifyingGlass, DotsThreeVertical, Target, CurrencyDollar, Clock, PencilSimple } from '@phosphor-icons/react'
 import { Board, ViewMode, FilterState } from '@/lib/types'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import BoardDetailDialog from './BoardDetailDialog'
 import { getCampaignTypeLabel, getCampaignStageLabel, formatCurrency, getCampaignStageColor } from '@/lib/helpers'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface HeaderProps {
   activeBoard?: Board
@@ -39,6 +40,16 @@ export default function Header({
   setFilters,
 }: HeaderProps) {
   const [showBoardDialog, setShowBoardDialog] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editingTitle, setEditingTitle] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditingTitle])
   
   const activeFilterCount = 
     filters.boardIds.length + 
@@ -52,14 +63,61 @@ export default function Header({
     ? 'All Boards' 
     : activeBoard?.title || 'Select a board'
 
+  const handleStartEdit = () => {
+    if (activeBoard && !filters.showAllBoards) {
+      setEditingTitle(activeBoard.title)
+      setIsEditingTitle(true)
+    }
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingTitle.trim() || !activeBoard) {
+      toast.error('Title cannot be empty')
+      setIsEditingTitle(false)
+      return
+    }
+    
+    setBoards(currentBoards =>
+      currentBoards.map(b =>
+        b.id === activeBoard.id ? { ...b, title: editingTitle.trim() } : b
+      )
+    )
+    setIsEditingTitle(false)
+    toast.success('Renamed')
+  }
+
   return (
     <>
       <header className="border-b border-border bg-card">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-xl font-semibold text-foreground">
-              {boardTitle}
-            </h2>
+            {isEditingTitle && activeBoard ? (
+              <Input
+                ref={inputRef}
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveEdit()
+                  } else if (e.key === 'Escape') {
+                    setIsEditingTitle(false)
+                  }
+                }}
+                onBlur={handleSaveEdit}
+                className="text-xl font-semibold h-9 max-w-md"
+              />
+            ) : (
+              <button
+                onClick={handleStartEdit}
+                className={cn(
+                  'text-xl font-semibold text-foreground',
+                  activeBoard && !filters.showAllBoards && 'hover:text-accent transition-colors'
+                )}
+                disabled={!activeBoard || filters.showAllBoards}
+              >
+                {boardTitle}
+              </button>
+            )}
             
             {activeBoard && !filters.showAllBoards && (
               <>
@@ -75,6 +133,10 @@ export default function Header({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={handleStartEdit}>
+                      <PencilSimple size={14} className="mr-2" />
+                      Rename
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowBoardDialog(true)}>
                       Edit {activeBoard.type === 'project' ? 'Project' : activeBoard.type === 'campaign' ? 'Campaign' : 'Board'}
                     </DropdownMenuItem>

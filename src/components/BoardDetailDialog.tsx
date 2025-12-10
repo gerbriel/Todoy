@@ -38,6 +38,7 @@ export default function BoardDetailDialog({
 }: BoardDetailDialogProps) {
   const [title, setTitle] = useState(board.title)
   const [description, setDescription] = useState(board.description)
+  const [parentId, setParentId] = useState<string | undefined>(board.parentId)
   const [campaignType, setCampaignType] = useState<CampaignType>(board.campaignType || 'other')
   const [campaignStage, setCampaignStage] = useState<CampaignStage>(board.campaignStage || 'planning')
   const [budget, setBudget] = useState(board.budget?.toString() || '')
@@ -59,6 +60,7 @@ export default function BoardDetailDialog({
   useEffect(() => {
     setTitle(board.title)
     setDescription(board.description)
+    setParentId(board.parentId)
     setCampaignType(board.campaignType || 'other')
     setCampaignStage(board.campaignStage || 'planning')
     setBudget(board.budget?.toString() || '')
@@ -76,6 +78,11 @@ export default function BoardDetailDialog({
       return
     }
 
+    if (parentId === board.id) {
+      toast.error('Cannot set item as its own parent')
+      return
+    }
+
     setBoards(currentBoards =>
       currentBoards.map(b =>
         b.id === board.id
@@ -83,6 +90,7 @@ export default function BoardDetailDialog({
               ...b,
               title: title.trim(),
               description: description.trim(),
+              parentId: parentId || undefined,
               ...(board.type === 'campaign' && {
                 campaignType,
                 campaignStage,
@@ -102,6 +110,16 @@ export default function BoardDetailDialog({
     toast.success('Saved')
     onClose()
   }
+
+  const availableParents = boards.filter(b => {
+    if (b.id === board.id) return false
+    
+    if (board.type === 'project') return false
+    if (board.type === 'campaign') return b.type === 'project'
+    if (board.type === 'board') return b.type === 'campaign' || b.type === 'project'
+    
+    return false
+  })
 
   const budgetNum = budget ? parseFloat(budget) : 0
   const spendNum = actualSpend ? parseFloat(actualSpend) : 0
@@ -142,6 +160,25 @@ export default function BoardDetailDialog({
                 rows={3}
               />
             </div>
+
+            {availableParents.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="parent">Parent {board.type === 'campaign' ? 'Project' : board.type === 'board' ? 'Campaign/Project' : ''}</Label>
+                <Select value={parentId || 'none'} onValueChange={(v) => setParentId(v === 'none' ? undefined : v)}>
+                  <SelectTrigger id="parent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Standalone)</SelectItem>
+                    {availableParents.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.title} ({p.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {board.type === 'campaign' && (

@@ -10,6 +10,14 @@ export type CampaignType = 'webinar' | 'tradeshow' | 'paid-social' | 'content' |
 
 export type CampaignStage = 'planning' | 'in-progress' | 'launched' | 'completed' | 'follow-up'
 
+export interface Task {
+  id: string
+  title: string
+  completed: boolean
+  order: number
+  createdAt: string
+}
+
 export interface Card {
   id: string
   title: string
@@ -23,6 +31,7 @@ export interface Card {
   budget?: number
   actualSpend?: number
   goals?: string
+  tasks?: Task[]
 }
 
 export interface List {

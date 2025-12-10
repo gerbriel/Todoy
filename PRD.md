@@ -12,12 +12,12 @@ This is a hierarchical project management system with three-level organization (
 
 ## Essential Features
 
-### Hierarchical Board Organization
-- **Functionality**: Three-level hierarchy - Projects contain Campaigns, Campaigns contain Boards (action item boards)
-- **Purpose**: Organize marketing work from strategic initiatives down to tactical execution, maintaining clear parent-child relationships
-- **Trigger**: "New Project" or "New Campaign" buttons in sidebar, context menus on existing items
-- **Progression**: Create project → Expand project in sidebar → Add campaigns to project → Expand campaign → Add boards to campaign → Navigate between levels
-- **Success criteria**: Clear visual hierarchy in sidebar; expandable/collapsible tree structure; ability to move cards between any board; parent-child relationships persist
+### Hierarchical Board Organization with Flexible Nesting
+- **Functionality**: Three-level hierarchy - Projects contain Campaigns, Campaigns contain Boards (action item boards). Items can be nested, un-nested, and reorganized via parent selection. All items support inline renaming throughout the interface.
+- **Purpose**: Organize marketing work from strategic initiatives down to tactical execution, maintaining clear parent-child relationships with flexibility to reorganize as needs change
+- **Trigger**: "New Project" or "New Campaign" buttons in sidebar, context menus on existing items, inline editing via click or context menu
+- **Progression**: Create project → Expand project in sidebar → Add campaigns to project → Expand campaign → Add boards to campaign → Navigate between levels → Rename items inline (click or context menu) → Reorganize hierarchy via edit dialog (change parent)
+- **Success criteria**: Clear visual hierarchy in sidebar; expandable/collapsible tree structure; ability to move cards between any board; parent-child relationships persist; inline editing works smoothly; reorganization updates reflect immediately
 
 ### Campaign Management
 - **Functionality**: Campaigns have types (webinar, tradeshow, paid social, content, email, event), stages (planning, in-progress, launched, completed, follow-up), budgets, goals, and multi-phase timelines
@@ -26,12 +26,12 @@ This is a hierarchical project management system with three-level organization (
 - **Progression**: Create campaign → Set type and stage → Define budget and goals → Set planning/launch/end/follow-up dates → Track progress through stages → Monitor budget vs. actual spend
 - **Success criteria**: Campaign type and stage visible in sidebar and header; budget tracking shows percentage used; timeline dates help identify what to work on when; stage updates reflect campaign progress
 
-### Board & Card Management with Cross-Board Movement
-- **Functionality**: Create boards (as standalone or within campaigns), create lists within boards, create cards within lists, move cards between any list/board
-- **Purpose**: Manage action items and tasks that can be organized hierarchically or standalone, with flexibility to reorganize
-- **Trigger**: "Add Board" button, "Add List" within board, "Add Card" within list
-- **Progression**: Create board → Add lists → Add cards → Edit card → Change board/list via dropdown → Card moves to new location → View card in new context
-- **Success criteria**: Cards can move between any boards regardless of hierarchy; board/list selection in card editor shows all options; moved cards maintain all properties; visual feedback confirms movement
+### Board & Card Management with Cross-Board Movement and Task Lists
+- **Functionality**: Create boards (as standalone or within campaigns), create lists within boards, create cards within lists, add tasks within cards, move cards between any list/board. Cards support nested task lists with completion tracking.
+- **Purpose**: Manage action items and tasks that can be organized hierarchically or standalone, with flexibility to reorganize. Break down cards into granular tasks for detailed tracking.
+- **Trigger**: "Add Board" button, "Add List" within board, "Add Card" within list, "Add Task" within card detail
+- **Progression**: Create board → Add lists → Add cards → Edit card → Add tasks to card → Check off tasks as completed → Change board/list via dropdown → Card moves to new location → View card in new context → Track task progress
+- **Success criteria**: Cards can move between any boards regardless of hierarchy; board/list selection in card editor shows all options; moved cards maintain all properties including tasks; visual feedback confirms movement; task completion shows on card preview; task list is intuitive to use
 
 ### Budget & Goals Tracking
 - **Functionality**: Set budgets and track actual spend at both campaign and card levels; define goals and objectives; visual progress indicators

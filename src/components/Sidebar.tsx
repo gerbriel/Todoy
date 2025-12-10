@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical } from '@phosphor-icons/react'
+import { useState, useRef, useEffect } from 'react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple } from '@phosphor-icons/react'
 import { Board, FilterState } from '@/lib/types'
 import { generateId, getRootProjects, getStandaloneBoards, getChildBoards, getCampaignStageLabel } from '@/lib/helpers'
 import { Button } from './ui/button'
@@ -47,9 +47,19 @@ export default function Sidebar({
   const [createType, setCreateType] = useState<'project' | 'campaign' | 'board'>('project')
   const [createParentId, setCreateParentId] = useState<string | undefined>()
   const [newTitle, setNewTitle] = useState('')
+  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const rootProjects = getRootProjects(boards)
   const standaloneBoards = getStandaloneBoards(boards)
+
+  useEffect(() => {
+    if (editingBoardId && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editingBoardId])
 
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects)
@@ -110,10 +120,36 @@ export default function Sidebar({
     }
   }
 
+  const handleStartEdit = (board: Board) => {
+    setEditingBoardId(board.id)
+    setEditingTitle(board.title)
+  }
+
+  const handleSaveEdit = (boardId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('Title cannot be empty')
+      return
+    }
+    
+    setBoards(currentBoards =>
+      currentBoards.map(b =>
+        b.id === boardId ? { ...b, title: editingTitle.trim() } : b
+      )
+    )
+    setEditingBoardId(null)
+    toast.success('Renamed')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingBoardId(null)
+    setEditingTitle('')
+  }
+
   const renderBoardItem = (board: Board, depth: number = 0) => {
     const isActive = activeBoardId === board.id && !filters.showAllBoards
     const hasChildren = board.type !== 'board' && getChildBoards(boards, board.id).length > 0
     const isExpanded = expandedProjects.has(board.id)
+    const isEditing = editingBoardId === board.id
 
     return (
       <div key={board.id}>
@@ -135,29 +171,48 @@ export default function Sidebar({
           )}
           {!hasChildren && <div className="w-6" />}
           
-          <button
-            onClick={() => {
-              setActiveBoardId(board.id)
-              setFilters({ ...filters, showAllBoards: false })
-            }}
-            className={cn(
-              'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2',
-              isActive
-                ? 'bg-accent text-accent-foreground font-medium'
-                : 'text-foreground hover:bg-muted'
-            )}
-            title={board.title}
-            style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          >
-            {board.type === 'project' && <Folder size={14} weight="duotone" />}
-            {board.type === 'campaign' && <Target size={14} weight="duotone" />}
-            <span className="flex-1 truncate">{board.title}</span>
-            {board.campaignStage && (
-              <span className="text-[10px] opacity-60 uppercase tracking-wide">
-                {getCampaignStageLabel(board.campaignStage).slice(0, 3)}
-              </span>
-            )}
-          </button>
+          {isEditing ? (
+            <div className="flex-1 flex items-center gap-1" style={{ paddingLeft: `${depth * 12 + 8}px` }}>
+              <Input
+                ref={inputRef}
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveEdit(board.id)
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit()
+                  }
+                }}
+                onBlur={() => handleSaveEdit(board.id)}
+                className="h-7 text-sm"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setActiveBoardId(board.id)
+                setFilters({ ...filters, showAllBoards: false })
+              }}
+              className={cn(
+                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2',
+                isActive
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-foreground hover:bg-muted'
+              )}
+              title={board.title}
+              style={{ paddingLeft: `${depth * 12 + 8}px` }}
+            >
+              {board.type === 'project' && <Folder size={14} weight="duotone" />}
+              {board.type === 'campaign' && <Target size={14} weight="duotone" />}
+              <span className="flex-1 truncate">{board.title}</span>
+              {board.campaignStage && (
+                <span className="text-[10px] opacity-60 uppercase tracking-wide">
+                  {getCampaignStageLabel(board.campaignStage).slice(0, 3)}
+                </span>
+              )}
+            </button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -169,24 +224,29 @@ export default function Sidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleStartEdit(board)}>
+                <PencilSimple size={14} className="mr-2" />
+                Rename
+              </DropdownMenuItem>
               {board.type === 'project' && (
                 <>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleCreateNew('campaign', board.id)}>
                     <Plus size={14} className="mr-2" />
                     Add Campaign
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                 </>
               )}
               {board.type === 'campaign' && (
                 <>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleCreateNew('board', board.id)}>
                     <Plus size={14} className="mr-2" />
                     Add Board
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                 </>
               )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => {

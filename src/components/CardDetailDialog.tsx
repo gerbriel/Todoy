@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { X, Tag, Clock, Trash } from '@phosphor-icons/react'
-import { Card, Label, List, Board, LabelColor } from '@/lib/types'
+import { X, Tag, Clock, Trash, Plus, Check } from '@phosphor-icons/react'
+import { Card, Label, List, Board, LabelColor, Task } from '@/lib/types'
 import { generateId, getLabelColor } from '@/lib/helpers'
 import {
   Dialog,
@@ -72,6 +72,8 @@ export default function CardDetailDialog({
   const [showLabelCreator, setShowLabelCreator] = useState(false)
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState<LabelColor>('blue')
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [tasks, setTasks] = useState<Task[]>(card.tasks || [])
 
   const currentList = lists.find(l => l.id === card.listId)
   const currentBoard = boards.find(b => b.id === card.boardId)
@@ -91,6 +93,7 @@ export default function CardDetailDialog({
               budget: budget ? parseFloat(budget) : undefined,
               actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
               goals: goals.trim() || undefined,
+              tasks: tasks,
             }
           : c
       )
@@ -149,6 +152,38 @@ export default function CardDetailDialog({
     toast.success(date ? 'Due date set' : 'Due date removed')
   }
 
+  const handleAddTask = () => {
+    if (!newTaskTitle.trim()) return
+
+    const newTask: Task = {
+      id: generateId(),
+      title: newTaskTitle.trim(),
+      completed: false,
+      order: tasks.length,
+      createdAt: new Date().toISOString(),
+    }
+
+    setTasks(currentTasks => [...currentTasks, newTask])
+    setNewTaskTitle('')
+    toast.success('Task added')
+  }
+
+  const handleToggleTask = (taskId: string) => {
+    setTasks(currentTasks =>
+      currentTasks.map(t =>
+        t.id === taskId ? { ...t, completed: !t.completed } : t
+      )
+    )
+  }
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(currentTasks => currentTasks.filter(t => t.id !== taskId))
+    toast.success('Task deleted')
+  }
+
+  const completedTaskCount = tasks.filter(t => t.completed).length
+  const totalTaskCount = tasks.length
+
   const cardLabels = labels.filter(l => card.labelIds.includes(l.id))
 
   return (
@@ -178,6 +213,66 @@ export default function CardDetailDialog({
               placeholder="Add a description..."
               rows={4}
             />
+          </div>
+
+          <Separator />
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <UILabel className="mb-0">Tasks</UILabel>
+              {totalTaskCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {completedTaskCount} / {totalTaskCount} completed
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2 mb-3">
+              {tasks.map(task => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/50 transition-colors group"
+                >
+                  <button
+                    onClick={() => handleToggleTask(task.id)}
+                    className={cn(
+                      'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0',
+                      task.completed
+                        ? 'bg-accent border-accent text-accent-foreground'
+                        : 'border-muted-foreground hover:border-accent'
+                    )}
+                  >
+                    {task.completed && <Check size={12} weight="bold" />}
+                  </button>
+                  <span
+                    className={cn(
+                      'flex-1 text-sm',
+                      task.completed && 'line-through text-muted-foreground'
+                    )}
+                  >
+                    {task.title}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 text-destructive rounded transition-all"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Input
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Add a task..."
+                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+              />
+              <Button size="sm" onClick={handleAddTask}>
+                <Plus size={16} />
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

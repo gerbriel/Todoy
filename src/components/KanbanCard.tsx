@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clock, Tag, CurrencyDollar } from '@phosphor-icons/react'
+import { Clock, Tag, CurrencyDollar, CheckSquare } from '@phosphor-icons/react'
 import { Card, Label, List, Board } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue, formatCurrency } from '@/lib/helpers'
 import { Badge } from './ui/badge'
@@ -30,6 +30,10 @@ export default function KanbanCard({
   const cardLabels = labels.filter(l => card.labelIds.includes(l.id))
   const visibleLabels = cardLabels.slice(0, 3)
   const remainingCount = cardLabels.length - 3
+  
+  const tasks = card.tasks || []
+  const completedTasks = tasks.filter(t => t.completed).length
+  const totalTasks = tasks.length
 
   return (
     <>
@@ -63,6 +67,16 @@ export default function KanbanCard({
             <Badge variant="secondary" className="text-xs">
               +{remainingCount}
             </Badge>
+          )}
+
+          {totalTasks > 0 && (
+            <div className={cn(
+              'flex items-center gap-1 text-xs',
+              completedTasks === totalTasks ? 'text-green-600' : 'text-muted-foreground'
+            )}>
+              <CheckSquare size={12} weight="bold" />
+              <span>{completedTasks}/{totalTasks}</span>
+            </div>
           )}
 
           {card.dueDate && (

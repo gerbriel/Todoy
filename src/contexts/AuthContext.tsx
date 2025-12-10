@@ -34,13 +34,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state from Supabase session
   useEffect(() => {
+    // Set timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing completion')
+      setLoading(false)
+    }, 5000)
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error)
+        setLoading(false)
+        return
+      }
+      
       if (session?.user) {
-        loadUserData(session.user.id)
+        loadUserData(session.user.id).finally(() => {
+          clearTimeout(timeout)
+        })
       } else {
         setLoading(false)
+        clearTimeout(timeout)
       }
+    }).catch((error) => {
+      console.error('Failed to get session:', error)
+      setLoading(false)
+      clearTimeout(timeout)
     })
 
     // Listen for auth changes
@@ -57,20 +76,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   // Load user profile and organization data
   const loadUserData = async (userId: string) => {
+    console.log('Loading user data for:', userId)
     try {
       // Load user profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
+      if (profileError) {
+        console.error('Profile error:', profileError)
+        // If profile doesn't exist, user still needs to complete signup
+        // This is OK - they might be in email confirmation flow
+        setLoading(false)
+        return
+      }
+
       if (profile) {
+        console.log('Profile loaded:', profile)
         const userData: User = {
           id: profile.id,
           email: profile.email,
@@ -80,12 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData)
 
         // Load user's organization memberships
-        const { data: memberships } = await supabase
+        const { data: memberships, error: memberError } = await supabase
           .from('org_members')
           .select('*, organizations(*)')
           .eq('user_id', userId)
 
+        if (memberError) {
+          console.error('Membership error:', memberError)
+        }
+
         if (memberships && memberships.length > 0) {
+          console.log('Memberships loaded:', memberships.length)
           // Use first org for now (TODO: support multiple orgs)
           const firstMembership = memberships[0]
           const orgData = firstMembership.organizations
@@ -118,11 +155,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               )
             }
           }
+        } else {
+          console.log('No organization memberships found')
         }
+      } else {
+        console.log('No profile found')
       }
     } catch (error) {
       console.error('Error loading user data:', error)
     } finally {
+      console.log('Finished loading user data')
       setLoading(false)
     }
   }

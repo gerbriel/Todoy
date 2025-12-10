@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState } from '@/lib/types'
+import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
@@ -29,8 +30,12 @@ interface SidebarProps {
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  activeProjectId: string | null
   activeCampaignId: string | null
-  setActiveCampaignId: (id: string | null) => void
+  navigationView: NavigationView
+  onNavigateToAllProjects: () => void
+  onNavigateToProject: (projectId: string) => void
+  onNavigateToCampaign: (campaignId: string) => void
   filters: FilterState
   setFilters: (filters: FilterState) => void
 }
@@ -40,8 +45,12 @@ export default function Sidebar({
   setProjects,
   campaigns,
   setCampaigns,
+  activeProjectId,
   activeCampaignId,
-  setActiveCampaignId,
+  navigationView,
+  onNavigateToAllProjects,
+  onNavigateToProject,
+  onNavigateToCampaign,
   filters,
   setFilters,
 }: SidebarProps) {
@@ -112,7 +121,7 @@ export default function Sidebar({
         campaignStage: 'planning',
       }
       setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
-      setActiveCampaignId(newCampaign.id)
+      onNavigateToCampaign(newCampaign.id)
       
       if (createProjectId) {
         setExpandedProjects(prev => new Set(prev).add(createProjectId))
@@ -124,16 +133,7 @@ export default function Sidebar({
     setShowCreateDialog(false)
   }
 
-  const handleToggleAllCampaigns = () => {
-    const newShowAll = !filters.showAllCampaigns
-    setFilters({
-      ...filters,
-      showAllCampaigns: newShowAll,
-    })
-    if (newShowAll) {
-      setActiveCampaignId(null)
-    }
-  }
+
 
   const handleStartEditCampaign = (campaign: Campaign) => {
     setEditingCampaignId(campaign.id)
@@ -246,7 +246,7 @@ export default function Sidebar({
   }
 
   const renderCampaignItem = (campaign: Campaign, depth: number = 0) => {
-    const isActive = activeCampaignId === campaign.id && !filters.showAllCampaigns
+    const isActive = activeCampaignId === campaign.id && navigationView === 'campaign'
     const isEditing = editingCampaignId === campaign.id
     const isDragging = draggingCampaignId === campaign.id
 
@@ -288,10 +288,7 @@ export default function Sidebar({
             </div>
           ) : (
             <button
-              onClick={() => {
-                setActiveCampaignId(campaign.id)
-                setFilters({ ...filters, showAllCampaigns: false })
-              }}
+              onClick={() => onNavigateToCampaign(campaign.id)}
               className={cn(
                 'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2',
                 isActive
@@ -331,7 +328,9 @@ export default function Sidebar({
                 onClick={() => {
                   if (confirm(`Delete ${campaign.title}?`)) {
                     setCampaigns(currentCampaigns => currentCampaigns.filter(c => c.id !== campaign.id))
-                    if (activeCampaignId === campaign.id) setActiveCampaignId(null)
+                    if (activeCampaignId === campaign.id) {
+                      onNavigateToAllProjects()
+                    }
                     toast.success('Deleted')
                   }
                 }}
@@ -350,6 +349,7 @@ export default function Sidebar({
     const hasChildren = projectCampaigns.length > 0
     const isExpanded = expandedProjects.has(project.id)
     const isEditing = editingProjectId === project.id
+    const isActive = activeProjectId === project.id && navigationView === 'project'
 
     return (
       <div key={project.id}>
@@ -391,8 +391,13 @@ export default function Sidebar({
             </div>
           ) : (
             <button
-              onClick={() => toggleProject(project.id)}
-              className="flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2 text-foreground hover:bg-muted"
+              onClick={() => onNavigateToProject(project.id)}
+              className={cn(
+                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors truncate flex items-center gap-2',
+                isActive
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-foreground hover:bg-muted'
+              )}
               title={project.title}
             >
               <Folder size={14} weight="duotone" />
@@ -477,15 +482,16 @@ export default function Sidebar({
         <ScrollArea className="flex-1">
           <div className="p-2">
             <button
-              onClick={handleToggleAllCampaigns}
+              onClick={onNavigateToAllProjects}
               className={cn(
-                'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors mb-3',
-                filters.showAllCampaigns
+                'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors mb-3 flex items-center gap-2',
+                navigationView === 'all-projects'
                   ? 'bg-accent text-accent-foreground'
                   : 'text-foreground hover:bg-muted'
               )}
             >
-              All Campaigns
+              <Stack size={16} weight="duotone" />
+              All Projects
             </button>
             
             {sortedProjects.length > 0 && (

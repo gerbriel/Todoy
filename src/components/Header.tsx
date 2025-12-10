@@ -1,8 +1,11 @@
-import { Campaign, ViewMode, FilterState } from '@/lib/types'
+import { Project, Campaign, ViewMode, FilterState } from '@/lib/types'
+import { NavigationView } from '@/App'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight } from '@phosphor-icons/react'
 
 interface HeaderProps {
+  navigationView: NavigationView
+  activeProject?: Project
   activeCampaign?: Campaign
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
@@ -12,9 +15,13 @@ interface HeaderProps {
   setShowFilterPanel: (show: boolean) => void
   filters: FilterState
   setFilters: (filters: FilterState) => void
+  onNavigateToAllProjects: () => void
+  onNavigateToProject: (projectId: string) => void
 }
 
 export default function Header({
+  navigationView,
+  activeProject,
   activeCampaign,
   viewMode,
   setViewMode,
@@ -22,28 +29,48 @@ export default function Header({
   return (
     <header className="border-b border-border bg-card px-6 py-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground">
-          {activeCampaign?.title || 'All Campaigns'}
-        </h2>
-        
         <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === 'kanban' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('kanban')}
-          >
-            <Kanban size={16} weight="bold" />
-            Kanban
-          </Button>
-          <Button
-            variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('calendar')}
-          >
-            <CalendarBlank size={16} weight="bold" />
-            Calendar
-          </Button>
+          {navigationView === 'all-projects' && (
+            <h2 className="text-xl font-semibold text-foreground">All Projects</h2>
+          )}
+          {navigationView === 'project' && activeProject && (
+            <h2 className="text-xl font-semibold text-foreground">{activeProject.title}</h2>
+          )}
+          {navigationView === 'campaign' && (
+            <>
+              {activeProject && (
+                <>
+                  <span className="text-muted-foreground">{activeProject.title}</span>
+                  <CaretRight size={16} className="text-muted-foreground" weight="bold" />
+                </>
+              )}
+              <h2 className="text-xl font-semibold text-foreground">
+                {activeCampaign?.title || 'Campaign'}
+              </h2>
+            </>
+          )}
         </div>
+        
+        {navigationView === 'campaign' && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <Kanban size={16} weight="bold" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+            >
+              <CalendarBlank size={16} weight="bold" />
+              Calendar
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   )

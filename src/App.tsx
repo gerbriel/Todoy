@@ -7,6 +7,10 @@ import KanbanView from './components/KanbanView'
 import CalendarView from './components/CalendarView'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
+import ProjectsView from './components/ProjectsView'
+import ProjectView from './components/ProjectView'
+
+export type NavigationView = 'all-projects' | 'project' | 'campaign'
 
 function App() {
   const [projects, setProjects] = useKV<Project[]>('projects', [])
@@ -15,6 +19,8 @@ function App() {
   const [tasks, setTasks] = useKV<Task[]>('tasks', [])
   const [labels, setLabels] = useKV<Label[]>('labels', [])
   
+  const [navigationView, setNavigationView] = useState<NavigationView>('all-projects')
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [showFilterPanel, setShowFilterPanel] = useState(false)
@@ -25,7 +31,28 @@ function App() {
     showAllCampaigns: false,
   })
 
+  const activeProject = projects?.find(p => p.id === activeProjectId)
   const activeCampaign = campaigns?.find(c => c.id === activeCampaignId)
+  const campaignProject = activeCampaign?.projectId 
+    ? projects?.find(p => p.id === activeCampaign.projectId)
+    : undefined
+
+  const handleNavigateToProject = (projectId: string) => {
+    setActiveProjectId(projectId)
+    setActiveCampaignId(null)
+    setNavigationView('project')
+  }
+
+  const handleNavigateToCampaign = (campaignId: string) => {
+    setActiveCampaignId(campaignId)
+    setNavigationView('campaign')
+  }
+
+  const handleNavigateToAllProjects = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('all-projects')
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -34,14 +61,20 @@ function App() {
         setProjects={setProjects}
         campaigns={campaigns || []}
         setCampaigns={setCampaigns}
+        activeProjectId={activeProjectId}
         activeCampaignId={activeCampaignId}
-        setActiveCampaignId={setActiveCampaignId}
+        navigationView={navigationView}
+        onNavigateToAllProjects={handleNavigateToAllProjects}
+        onNavigateToProject={handleNavigateToProject}
+        onNavigateToCampaign={handleNavigateToCampaign}
         filters={filters}
         setFilters={setFilters}
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
+          navigationView={navigationView}
+          activeProject={navigationView === 'campaign' ? campaignProject : activeProject}
           activeCampaign={activeCampaign}
           campaigns={campaigns || []}
           setCampaigns={setCampaigns}
@@ -51,32 +84,56 @@ function App() {
           setShowFilterPanel={setShowFilterPanel}
           filters={filters}
           setFilters={setFilters}
+          onNavigateToAllProjects={handleNavigateToAllProjects}
+          onNavigateToProject={handleNavigateToProject}
         />
         
         <main className="flex-1 overflow-hidden relative">
-          {viewMode === 'kanban' ? (
-            <KanbanView
-              campaigns={campaigns || []}
-              lists={lists || []}
-              setLists={setLists}
-              tasks={tasks || []}
-              setTasks={setTasks}
-              labels={labels || []}
-              setLabels={setLabels}
-              activeCampaignId={activeCampaignId}
-              filters={filters}
-            />
-          ) : (
-            <CalendarView
+          {navigationView === 'all-projects' && (
+            <ProjectsView
+              projects={projects || []}
               campaigns={campaigns || []}
               tasks={tasks || []}
-              setTasks={setTasks}
-              labels={labels || []}
-              setLabels={setLabels}
-              lists={lists || []}
-              activeCampaignId={activeCampaignId}
-              filters={filters}
+              onNavigateToProject={handleNavigateToProject}
             />
+          )}
+          
+          {navigationView === 'project' && activeProjectId && (
+            <ProjectView
+              project={activeProject!}
+              campaigns={campaigns || []}
+              tasks={tasks || []}
+              onNavigateToCampaign={handleNavigateToCampaign}
+            />
+          )}
+          
+          {navigationView === 'campaign' && activeCampaignId && (
+            <>
+              {viewMode === 'kanban' ? (
+                <KanbanView
+                  campaigns={campaigns || []}
+                  lists={lists || []}
+                  setLists={setLists}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  activeCampaignId={activeCampaignId}
+                  filters={filters}
+                />
+              ) : (
+                <CalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={activeCampaignId}
+                  filters={filters}
+                />
+              )}
+            </>
           )}
           
           {showFilterPanel && (

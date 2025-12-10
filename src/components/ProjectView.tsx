@@ -1,0 +1,116 @@
+import { Project, Campaign, Task } from '@/lib/types'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Target, CheckSquare, Calendar } from '@phosphor-icons/react'
+import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
+import { Badge } from './ui/badge'
+import { format } from 'date-fns'
+
+interface ProjectViewProps {
+  project: Project
+  campaigns: Campaign[]
+  tasks: Task[]
+  onNavigateToCampaign: (campaignId: string) => void
+}
+
+export default function ProjectView({
+  project,
+  campaigns,
+  tasks,
+  onNavigateToCampaign,
+}: ProjectViewProps) {
+  const projectCampaigns = getCampaignsForProject(campaigns, project.id)
+  const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
+
+  const getCampaignStats = (campaignId: string) => {
+    const campaignTasks = tasks.filter(task => task.campaignId === campaignId)
+    return {
+      taskCount: campaignTasks.length,
+    }
+  }
+
+  const getStageColor = (stage?: string) => {
+    switch (stage) {
+      case 'planning':
+        return 'bg-label-blue text-white'
+      case 'in-progress':
+        return 'bg-label-orange text-white'
+      case 'launched':
+        return 'bg-label-purple text-white'
+      case 'completed':
+        return 'bg-label-green text-white'
+      case 'follow-up':
+        return 'bg-label-teal text-white'
+      default:
+        return 'bg-muted text-muted-foreground'
+    }
+  }
+
+  return (
+    <div className="h-full overflow-auto p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-2">{project.title}</h2>
+          {project.description && (
+            <p className="text-muted-foreground">{project.description}</p>
+          )}
+        </div>
+
+        {sortedCampaigns.length === 0 ? (
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <Target size={64} className="text-muted-foreground mb-4" weight="duotone" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No campaigns yet</h3>
+              <p className="text-muted-foreground text-center">
+                Create your first campaign from the sidebar to get started
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedCampaigns.map(campaign => {
+              const stats = getCampaignStats(campaign.id)
+              return (
+                <Card
+                  key={campaign.id}
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                  onClick={() => onNavigateToCampaign(campaign.id)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-2">
+                      <Target size={32} className="text-accent" weight="duotone" />
+                      {campaign.campaignStage && (
+                        <Badge className={getStageColor(campaign.campaignStage)}>
+                          {getCampaignStageLabel(campaign.campaignStage)}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl">{campaign.title}</CardTitle>
+                    {campaign.description && (
+                      <CardDescription className="line-clamp-2">
+                        {campaign.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {campaign.launchDate && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar size={16} weight="duotone" />
+                          <span>Launch: {format(new Date(campaign.launchDate), 'MMM d, yyyy')}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckSquare size={16} weight="duotone" />
+                        <span>{stats.taskCount} task{stats.taskCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

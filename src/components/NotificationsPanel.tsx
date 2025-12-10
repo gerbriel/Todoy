@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { Notification } from '@/lib/types'
 import { Bell, Check, X } from '@phosphor-icons/react'
 import { Button } from './ui/button'
@@ -19,8 +18,16 @@ interface NotificationsPanelProps {
 }
 
 export default function NotificationsPanel({ userId, onNavigate }: NotificationsPanelProps) {
-  const [notifications, setNotifications] = useKV<Notification[]>('notifications', [])
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
+
+  // TODO: Load notifications from Supabase
+  // useEffect(() => {
+  //   if (userId) {
+  //     notificationsService.getByUser(userId).then(setNotifications)
+  //     return notificationsService.subscribe(userId, setNotifications)
+  //   }
+  // }, [userId])
 
   const userNotifications = notifications?.filter(n => n.userId === userId) || []
   const unreadCount = userNotifications.filter(n => !n.read).length

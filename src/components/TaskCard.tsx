@@ -3,6 +3,7 @@ import { Clock, Tag, CheckSquare } from '@phosphor-icons/react'
 import { Task, Label, List, Campaign } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue } from '@/lib/helpers'
 import { Badge } from './ui/badge'
+import { Checkbox } from './ui/checkbox'
 import TaskDetailDialog from './TaskDetailDialog'
 import { cn } from '@/lib/utils'
 
@@ -50,6 +51,14 @@ export default function TaskCard({
     setIsDragging(false)
   }
 
+  const handleToggleComplete = () => {
+    setTasks((currentTasks) =>
+      currentTasks.map((t) =>
+        t.id === task.id ? { ...t, completed: !t.completed } : t
+      )
+    )
+  }
+
   return (
     <>
       <div
@@ -60,12 +69,24 @@ export default function TaskCard({
         className={cn(
           'group bg-card border border-border rounded-md p-3 cursor-pointer transition-all',
           'hover:shadow-md hover:border-accent',
-          isDragging && 'opacity-40 cursor-grabbing'
+          isDragging && 'opacity-40 cursor-grabbing',
+          task.completed && 'opacity-60'
         )}
       >
-        <h4 className="text-sm font-medium text-foreground mb-2 leading-snug">
-          {task.title}
-        </h4>
+        <div className="flex items-start gap-2 mb-2">
+          <Checkbox
+            checked={task.completed || false}
+            onCheckedChange={handleToggleComplete}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-0.5"
+          />
+          <h4 className={cn(
+            "text-sm font-medium text-foreground leading-snug flex-1",
+            task.completed && "line-through text-muted-foreground"
+          )}>
+            {task.title}
+          </h4>
+        </div>
 
         <div className="flex flex-wrap gap-1.5 mb-2">
           {visibleLabels.map(label => (

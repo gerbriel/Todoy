@@ -1,5 +1,5 @@
 import { useState, DragEvent } from 'react'
-import { Plus, DotsThreeVertical, PencilSimple, DotsSixVertical } from '@phosphor-icons/react'
+import { Plus, DotsThreeVertical, PencilSimple, DotsSixVertical, ArrowsOutSimple } from '@phosphor-icons/react'
 import { Task, Campaign, List, Label } from '@/lib/types'
 import { generateId } from '@/lib/helpers'
 import { Button } from './ui/button'
@@ -24,6 +24,7 @@ interface TaskListProps {
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   campaigns: Campaign[]
+  onOpenStageView?: () => void
 }
 
 export default function TaskList({
@@ -35,6 +36,7 @@ export default function TaskList({
   labels,
   setLabels,
   campaigns,
+  onOpenStageView,
 }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -163,6 +165,15 @@ export default function TaskList({
             <h3 className="font-semibold text-foreground flex-1 truncate">
               {list.title} <span className="text-muted-foreground text-sm font-normal">({listTasks.length})</span>
             </h3>
+            {onOpenStageView && (
+              <button
+                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-all mr-1"
+                onClick={onOpenStageView}
+                title="Open stage view"
+              >
+                <ArrowsOutSimple size={16} weight="bold" />
+              </button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-all">

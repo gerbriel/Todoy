@@ -71,6 +71,17 @@ export function filterTasks(
       return false
     }
     
+    if (filters.listIds.length > 0 && !filters.listIds.includes(task.listId)) {
+      return false
+    }
+    
+    // Filter by task stage (currentStage field)
+    if (filters.stageNames.length > 0) {
+      if (!task.currentStage || !filters.stageNames.includes(task.currentStage)) {
+        return false
+      }
+    }
+    
     if (filters.campaignTypes && filters.campaignTypes.length > 0) {
       const taskCampaign = campaigns.find(c => c.id === task.campaignId)
       if (!taskCampaign) return false

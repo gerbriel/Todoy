@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase } from '@phosphor-icons/react'
-import { Project, Campaign, FilterState } from '@/lib/types'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel } from '@phosphor-icons/react'
+import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
 import { Button } from './ui/button'
@@ -30,12 +30,19 @@ interface SidebarProps {
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  lists: List[]
+  stageTemplates: StageTemplate[]
+  tasks: Task[]
   activeProjectId: string | null
   activeCampaignId: string | null
   navigationView: NavigationView
+  organization: Organization | null
   onNavigateToAllProjects: () => void
   onNavigateToAllCampaigns: () => void
   onNavigateToAllTasks: () => void
+  onNavigateToMaster?: () => void
+  onNavigateToArchive?: () => void
+  onNavigateToOrganization?: () => void
   onNavigateToProject: (projectId: string) => void
   onNavigateToCampaign: (campaignId: string) => void
   filters: FilterState
@@ -47,12 +54,19 @@ export default function Sidebar({
   setProjects,
   campaigns,
   setCampaigns,
+  lists,
+  stageTemplates,
+  tasks,
   activeProjectId,
   activeCampaignId,
   navigationView,
+  organization,
   onNavigateToAllProjects,
   onNavigateToAllCampaigns,
   onNavigateToAllTasks,
+  onNavigateToMaster,
+  onNavigateToArchive,
+  onNavigateToOrganization,
   onNavigateToProject,
   onNavigateToCampaign,
   filters,
@@ -111,6 +125,7 @@ export default function Sidebar({
         description: '',
         order: projects.length,
         createdAt: new Date().toISOString(),
+        orgId: organization?.id,
       }
       setProjects(currentProjects => [...currentProjects, newProject])
       toast.success('Project created')
@@ -124,6 +139,7 @@ export default function Sidebar({
         projectId: createProjectId,
         campaignType: 'other',
         campaignStage: 'planning',
+        orgId: organization?.id,
       }
       setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
       onNavigateToCampaign(newCampaign.id)
@@ -617,7 +633,116 @@ export default function Sidebar({
                 <CheckSquare size={16} weight="duotone" />
                 All Tasks
               </button>
+              
+              {onNavigateToMaster && (
+                <button
+                  onClick={onNavigateToMaster}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'master'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <ChartBar size={16} weight="duotone" />
+                  Master View
+                </button>
+              )}
+              
+              {onNavigateToArchive && (
+                <button
+                  onClick={onNavigateToArchive}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'archive'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Archive size={16} weight="duotone" />
+                  Archive
+                </button>
+              )}
+              
+              {onNavigateToOrganization && (
+                <button
+                  onClick={onNavigateToOrganization}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'organization'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Briefcase size={16} weight="duotone" />
+                  Organization
+                </button>
+              )}
             </div>
+
+            {/* Stage Filters - Filter by task current stage */}
+            {activeCampaignId && (() => {
+              // Get unique stage names from tasks in the current campaign
+              const campaignTasks = tasks.filter(t => t.campaignId === activeCampaignId)
+              const uniqueStageNames = Array.from(new Set(campaignTasks.map(t => t.currentStage).filter((s): s is string => !!s)))
+              
+              return uniqueStageNames.length > 0 && (
+                <div className="mb-4">
+                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                    <Funnel size={12} weight="bold" />
+                    Filter by Stage
+                  </div>
+                  <div className="space-y-0.5">
+                    {uniqueStageNames.sort().map(stageName => {
+                      const isFiltered = filters.stageNames.includes(stageName)
+                      // Find template to get color, if it exists
+                      const template = stageTemplates.find(t => t.name === stageName)
+                      
+                      return (
+                        <button
+                          key={stageName}
+                          onClick={() => {
+                            setFilters({
+                              ...filters,
+                              stageNames: isFiltered
+                                ? filters.stageNames.filter(s => s !== stageName)
+                                : [...filters.stageNames, stageName]
+                            })
+                          }}
+                          className={cn(
+                            'w-full text-left px-3 py-1.5 rounded text-sm transition-colors flex items-center justify-between',
+                            isFiltered
+                              ? 'bg-accent/50 text-accent-foreground'
+                              : 'text-foreground hover:bg-muted'
+                          )}
+                        >
+                          <span className="flex items-center gap-2">
+                            {template && (
+                              <span 
+                                className="w-2 h-2 rounded-full" 
+                                style={{ backgroundColor: template.color }}
+                              />
+                            )}
+                            {stageName}
+                          </span>
+                          {isFiltered && (
+                            <CheckSquare size={14} weight="fill" className="text-accent-foreground" />
+                          )}
+                        </button>
+                      )
+                    })}
+                    {filters.stageNames.length > 0 && (
+                      <button
+                        onClick={() => setFilters({ ...filters, stageNames: [] })}
+                        className="w-full text-left px-3 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
             
             {sortedProjects.length > 0 && (
               <div className="mb-4">

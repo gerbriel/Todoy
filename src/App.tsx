@@ -1,25 +1,112 @@
-import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
-import { Project, Campaign, List, Task, Label, ViewMode, FilterState } from './lib/types'
+import { useState, useEffect } from 'react'
+import { Project, Campaign, List, Task, Label, ViewMode, FilterState, StageTemplate, OrgMember, OrgInvite } from './lib/types'
 import { Toaster } from './components/ui/sonner'
+import { useAuth } from './contexts/AuthContext'
+import LoginView from './components/LoginView'
 import Sidebar from './components/Sidebar'
 import KanbanView from './components/KanbanView'
 import CalendarView from './components/CalendarView'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import ProjectsView from './components/ProjectsView'
+import ArchiveView from './components/ArchiveView'
 import ProjectView from './components/ProjectView'
 import CampaignsView from './components/CampaignsView'
 import TasksView from './components/TasksView'
+import MasterView from './components/MasterView'
+import OrganizationView from './components/OrganizationView'
+import { projectsService } from './services/projects.service'
+import { campaignsService } from './services/campaigns.service'
+import { tasksService } from './services/tasks.service'
+import { listsService } from './services/lists.service'
+import { labelsService } from './services/labels.service'
 
-export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign'
+export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization'
 
 function App() {
-  const [projects, setProjects] = useKV<Project[]>('projects', [])
-  const [campaigns, setCampaigns] = useKV<Campaign[]>('campaigns', [])
-  const [lists, setLists] = useKV<List[]>('lists', [])
-  const [tasks, setTasks] = useKV<Task[]>('tasks', [])
-  const [labels, setLabels] = useKV<Label[]>('labels', [])
+  const { isAuthenticated } = useAuth()
+  
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <LoginView />
+  }
+  
+  return <MainApp />
+}
+
+function MainApp() {
+  const { user, organization, setOrganization, users } = useAuth()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [lists, setLists] = useState<List[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [labels, setLabels] = useState<Label[]>([])
+  const [stageTemplates, setStageTemplates] = useState<StageTemplate[]>([])
+  const [orgMembers, setOrgMembers] = useState<OrgMember[]>([])
+  const [orgInvites, setOrgInvites] = useState<OrgInvite[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  // Load data from Supabase when organization changes
+  useEffect(() => {
+    if (!organization?.id) {
+      setLoading(false)
+      return
+    }
+
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load all data in parallel
+        const [projectsData, labelsData, tasksData] = await Promise.all([
+          projectsService.getAll(organization.id),
+          labelsService.getByOrg(organization.id),
+          tasksService.getByOrg(organization.id),
+        ])
+
+        setProjects(projectsData)
+        setLabels(labelsData)
+        setTasks(tasksData)
+
+        // Load campaigns for all projects
+        if (projectsData.length > 0) {
+          const campaignsPromises = projectsData.map(p => 
+            campaignsService.getByProject(p.id)
+          )
+          const campaignsArrays = await Promise.all(campaignsPromises)
+          const allCampaigns = campaignsArrays.flat()
+          setCampaigns(allCampaigns)
+
+          // Load lists for all campaigns
+          if (allCampaigns.length > 0) {
+            const listsPromises = allCampaigns.map(c => 
+              listsService.getByCampaign(c.id)
+            )
+            const listsArrays = await Promise.all(listsPromises)
+            const allLists = listsArrays.flat()
+            setLists(allLists)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+
+    // Set up real-time subscriptions
+    const unsubProjects = projectsService.subscribe(organization.id, setProjects)
+    const unsubLabels = labelsService.subscribe(organization.id, setLabels)
+    const unsubTasks = tasksService.subscribe(organization.id, setTasks)
+
+    return () => {
+      unsubProjects()
+      unsubLabels()
+      unsubTasks()
+    }
+  }, [organization?.id])
   
   const [navigationView, setNavigationView] = useState<NavigationView>('all-projects')
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
@@ -29,6 +116,8 @@ function App() {
   const [filters, setFilters] = useState<FilterState>({
     campaignIds: [],
     labelIds: [],
+    listIds: [],
+    stageNames: [],
     searchText: '',
     showAllCampaigns: false,
   })
@@ -68,6 +157,24 @@ function App() {
     setNavigationView('all-tasks')
   }
 
+  const handleNavigateToMaster = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('master')
+  }
+
+  const handleNavigateToArchive = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('archive')
+  }
+
+  const handleNavigateToOrganization = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('organization')
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar
@@ -75,12 +182,19 @@ function App() {
         setProjects={setProjects}
         campaigns={campaigns || []}
         setCampaigns={setCampaigns}
+        lists={lists || []}
+        stageTemplates={stageTemplates || []}
+        tasks={tasks || []}
         activeProjectId={activeProjectId}
         activeCampaignId={activeCampaignId}
         navigationView={navigationView}
+        organization={organization}
         onNavigateToAllProjects={handleNavigateToAllProjects}
         onNavigateToAllCampaigns={handleNavigateToAllCampaigns}
         onNavigateToAllTasks={handleNavigateToAllTasks}
+        onNavigateToMaster={handleNavigateToMaster}
+        onNavigateToArchive={handleNavigateToArchive}
+        onNavigateToOrganization={handleNavigateToOrganization}
         onNavigateToProject={handleNavigateToProject}
         onNavigateToCampaign={handleNavigateToCampaign}
         filters={filters}
@@ -104,6 +218,7 @@ function App() {
           onNavigateToProject={handleNavigateToProject}
           onNavigateToCampaign={handleNavigateToCampaign}
           projects={projects || []}
+          setProjects={setProjects}
           tasks={tasks || []}
         />
         
@@ -111,6 +226,7 @@ function App() {
           {navigationView === 'all-projects' && (
             <ProjectsView
               projects={projects || []}
+              setProjects={setProjects}
               campaigns={campaigns || []}
               tasks={tasks || []}
               onNavigateToProject={handleNavigateToProject}
@@ -138,13 +254,60 @@ function App() {
               onNavigateToCampaign={handleNavigateToCampaign}
             />
           )}
+
+          {navigationView === 'master' && (
+            <MasterView
+              projects={projects || []}
+              setProjects={setProjects}
+              campaigns={campaigns || []}
+              setCampaigns={setCampaigns}
+              tasks={tasks || []}
+              setTasks={setTasks}
+              lists={lists || []}
+              labels={labels || []}
+              setLabels={setLabels}
+              onNavigateToProject={handleNavigateToProject}
+              onNavigateToCampaign={handleNavigateToCampaign}
+            />
+          )}
+
+          {navigationView === 'archive' && (
+            <ArchiveView
+              projects={projects || []}
+              setProjects={setProjects}
+              campaigns={campaigns || []}
+              tasks={tasks || []}
+              onNavigateToProject={handleNavigateToProject}
+            />
+          )}
+          
+          {navigationView === 'organization' && (
+            <OrganizationView
+              organization={organization}
+              members={orgMembers || []}
+              users={users || []}
+              invites={orgInvites || []}
+              projects={projects || []}
+              campaigns={campaigns || []}
+              tasks={tasks || []}
+              setOrganization={setOrganization}
+              setMembers={setOrgMembers}
+              setInvites={setOrgInvites}
+              currentUserId={user?.id || ''}
+              onNavigateToProject={handleNavigateToProject}
+              onNavigateToCampaign={handleNavigateToCampaign}
+            />
+          )}
           
           {navigationView === 'project' && activeProjectId && (
             <ProjectView
               project={activeProject!}
+              projects={projects || []}
+              setProjects={setProjects}
               campaigns={campaigns || []}
               setCampaigns={setCampaigns}
               tasks={tasks || []}
+              organization={organization}
               onNavigateToCampaign={handleNavigateToCampaign}
             />
           )}
@@ -174,7 +337,10 @@ function App() {
                   activeCampaignId={activeCampaignId}
                   filters={filters}
                   projects={projects || []}
+                  users={users || []}
                   viewLevel="campaign"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
                 />
               )}
             </>

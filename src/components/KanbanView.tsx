@@ -1,4 +1,4 @@
-import { Plus } from '@phosphor-icons/react'
+import { Plus, SquaresFour } from '@phosphor-icons/react'
 import { Campaign, List, Task, Label, FilterState } from '@/lib/types'
 import { generateId, filterTasks } from '@/lib/helpers'
 import { Button } from './ui/button'
@@ -6,6 +6,8 @@ import { ScrollArea } from './ui/scroll-area'
 import { toast } from 'sonner'
 import TaskList from './TaskList'
 import EmptyState from './EmptyState'
+import StageView from './StageView'
+import { useState } from 'react'
 
 interface KanbanViewProps {
   campaigns: Campaign[]
@@ -30,6 +32,8 @@ export default function KanbanView({
   activeCampaignId,
   filters,
 }: KanbanViewProps) {
+  const [selectedListId, setSelectedListId] = useState<string | null>(null)
+
   const handleCreateList = () => {
     if (!activeCampaignId) return
     
@@ -54,6 +58,26 @@ export default function KanbanView({
     : lists.filter(l => l.campaignId === activeCampaignId)
 
   const filteredTasks = filterTasks(tasks, campaigns, labels, filters)
+
+  // Show stage view if a list is selected
+  if (selectedListId) {
+    const selectedList = lists.find(l => l.id === selectedListId)
+    if (selectedList) {
+      return (
+        <StageView
+          list={selectedList}
+          lists={lists}
+          setLists={setLists}
+          tasks={tasks}
+          setTasks={setTasks}
+          labels={labels}
+          setLabels={setLabels}
+          campaigns={campaigns}
+          onBack={() => setSelectedListId(null)}
+        />
+      )
+    }
+  }
 
   if (!activeCampaignId && !filters.showAllCampaigns) {
     return (
@@ -120,6 +144,7 @@ export default function KanbanView({
                       labels={labels}
                       setLabels={setLabels}
                       campaigns={campaigns}
+                      onOpenStageView={() => setSelectedListId(list.id)}
                     />
                   ))}
               </div>
@@ -147,6 +172,7 @@ export default function KanbanView({
                 labels={labels}
                 setLabels={setLabels}
                 campaigns={campaigns}
+                onOpenStageView={() => setSelectedListId(list.id)}
               />
             ))}
           

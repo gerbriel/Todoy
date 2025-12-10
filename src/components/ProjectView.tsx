@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Project, Campaign, Task } from '@/lib/types'
+import { Project, Campaign, Task, Organization } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Target, CheckSquare, Calendar, Plus } from '@phosphor-icons/react'
+import { Target, CheckSquare, Calendar, Plus, PencilSimple } from '@phosphor-icons/react'
 import { getCampaignsForProject, getCampaignStageLabel, generateId } from '@/lib/helpers'
 import { Badge } from './ui/badge'
 import { format } from 'date-fns'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
+import ProjectEditDialog from './ProjectEditDialog'
 import {
   Dialog,
   DialogContent,
@@ -20,20 +21,27 @@ import { Label } from './ui/label'
 
 interface ProjectViewProps {
   project: Project
+  projects: Project[]
+  setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   tasks: Task[]
+  organization: Organization | null
   onNavigateToCampaign: (campaignId: string) => void
 }
 
 export default function ProjectView({
   project,
+  projects,
+  setProjects,
   campaigns,
   setCampaigns,
   tasks,
+  organization,
   onNavigateToCampaign,
 }: ProjectViewProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [newCampaignTitle, setNewCampaignTitle] = useState('')
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
@@ -54,6 +62,7 @@ export default function ProjectView({
       projectId: project.id,
       campaignType: 'other',
       campaignStage: 'planning',
+      orgId: organization?.id,
     }
     
     setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
@@ -97,10 +106,16 @@ export default function ProjectView({
               <p className="text-muted-foreground">{project.description}</p>
             )}
           </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus size={16} weight="bold" />
-            New Campaign
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+              <PencilSimple size={16} weight="bold" />
+              Edit Project
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus size={16} weight="bold" />
+              New Campaign
+            </Button>
+          </div>
         </div>
 
         {sortedCampaigns.length === 0 ? (
@@ -196,6 +211,14 @@ export default function ProjectView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProjectEditDialog
+        project={project}
+        projects={projects}
+        setProjects={setProjects}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      />
     </div>
   )
 }

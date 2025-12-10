@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/types'
 import { NavigationView } from '@/App'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
+import CampaignEditDialog from './CampaignEditDialog'
+import NotificationsPanel from './NotificationsPanel'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 interface HeaderProps {
   navigationView: NavigationView
@@ -21,6 +31,7 @@ interface HeaderProps {
   onNavigateToAllProjects: () => void
   onNavigateToProject: (projectId: string) => void
   projects: Project[]
+  setProjects: (updater: (projects: Project[]) => Project[]) => void
   tasks: Task[]
 }
 
@@ -33,10 +44,23 @@ export default function Header({
   onNavigateToProject,
   onNavigateToCampaign,
   projects,
+  setProjects,
   campaigns,
+  setCampaigns,
   tasks,
 }: HeaderProps & { onNavigateToCampaign: (campaignId: string) => void }) {
   const [showSearch, setShowSearch] = useState(false)
+  const [showEditCampaign, setShowEditCampaign] = useState(false)
+  const { user, logout } = useAuth()
+
+  const handleNavigateFromNotification = (type: 'project' | 'campaign' | 'task', id: string) => {
+    if (type === 'project') {
+      onNavigateToProject(id)
+    } else if (type === 'campaign') {
+      onNavigateToCampaign(id)
+    }
+    // Task navigation would require additional logic
+  }
 
   return (
     <>
@@ -80,8 +104,23 @@ export default function Header({
               Search
             </Button>
 
-            {navigationView === 'campaign' && (
+            {user && (
+              <NotificationsPanel 
+                userId={user.id}
+                onNavigate={handleNavigateFromNotification}
+              />
+            )}
+
+            {navigationView === 'campaign' && activeCampaign && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditCampaign(true)}
+                >
+                  <PencilSimple size={16} weight="bold" />
+                  Edit Campaign
+                </Button>
                 <Button
                   variant={viewMode === 'kanban' ? 'default' : 'outline'}
                   size="sm"
@@ -99,6 +138,28 @@ export default function Header({
                   Calendar
                 </Button>
               </>
+            )}
+
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User size={16} weight="duotone" />
+                    {user.name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <SignOut size={16} className="mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
@@ -119,6 +180,17 @@ export default function Header({
           />
         </DialogContent>
       </Dialog>
+
+      {activeCampaign && (
+        <CampaignEditDialog
+          campaign={activeCampaign}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
+          projects={projects}
+          open={showEditCampaign}
+          onOpenChange={setShowEditCampaign}
+        />
+      )}
     </>
   )
 }

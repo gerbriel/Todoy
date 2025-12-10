@@ -9,8 +9,10 @@ import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import ProjectsView from './components/ProjectsView'
 import ProjectView from './components/ProjectView'
+import CampaignsView from './components/CampaignsView'
+import TasksView from './components/TasksView'
 
-export type NavigationView = 'all-projects' | 'project' | 'campaign'
+export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign'
 
 function App() {
   const [projects, setProjects] = useKV<Project[]>('projects', [])
@@ -54,6 +56,18 @@ function App() {
     setNavigationView('all-projects')
   }
 
+  const handleNavigateToAllCampaigns = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('all-campaigns')
+  }
+
+  const handleNavigateToAllTasks = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('all-tasks')
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar
@@ -65,6 +79,8 @@ function App() {
         activeCampaignId={activeCampaignId}
         navigationView={navigationView}
         onNavigateToAllProjects={handleNavigateToAllProjects}
+        onNavigateToAllCampaigns={handleNavigateToAllCampaigns}
+        onNavigateToAllTasks={handleNavigateToAllTasks}
         onNavigateToProject={handleNavigateToProject}
         onNavigateToCampaign={handleNavigateToCampaign}
         filters={filters}
@@ -86,6 +102,9 @@ function App() {
           setFilters={setFilters}
           onNavigateToAllProjects={handleNavigateToAllProjects}
           onNavigateToProject={handleNavigateToProject}
+          onNavigateToCampaign={handleNavigateToCampaign}
+          projects={projects || []}
+          tasks={tasks || []}
         />
         
         <main className="flex-1 overflow-hidden relative">
@@ -95,6 +114,28 @@ function App() {
               campaigns={campaigns || []}
               tasks={tasks || []}
               onNavigateToProject={handleNavigateToProject}
+            />
+          )}
+          
+          {navigationView === 'all-campaigns' && (
+            <CampaignsView
+              campaigns={campaigns || []}
+              projects={projects || []}
+              tasks={tasks || []}
+              onNavigateToCampaign={handleNavigateToCampaign}
+            />
+          )}
+          
+          {navigationView === 'all-tasks' && (
+            <TasksView
+              tasks={tasks || []}
+              campaigns={campaigns || []}
+              projects={projects || []}
+              lists={lists || []}
+              labels={labels || []}
+              setTasks={setTasks}
+              setLabels={setLabels}
+              onNavigateToCampaign={handleNavigateToCampaign}
             />
           )}
           
@@ -132,6 +173,8 @@ function App() {
                   lists={lists || []}
                   activeCampaignId={activeCampaignId}
                   filters={filters}
+                  projects={projects || []}
+                  viewLevel="campaign"
                 />
               )}
             </>

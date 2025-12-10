@@ -10,6 +10,14 @@ export type CampaignType = 'webinar' | 'tradeshow' | 'paid-social' | 'content' |
 
 export type CampaignStage = 'planning' | 'in-progress' | 'launched' | 'completed' | 'follow-up'
 
+export interface StageDate {
+  id: string
+  stageName: string
+  startDate: string
+  endDate: string
+  color?: string
+}
+
 export interface Subtask {
   id: string
   title: string
@@ -29,6 +37,7 @@ export interface Task {
   order: number
   createdAt: string
   subtasks?: Subtask[]
+  stageDates?: StageDate[]
 }
 
 export interface List {
@@ -55,6 +64,7 @@ export interface Campaign {
   launchDate?: string
   endDate?: string
   followUpDate?: string
+  stageDates?: StageDate[]
 }
 
 export interface Project {
@@ -63,6 +73,7 @@ export interface Project {
   description: string
   order: number
   createdAt: string
+  stageDates?: StageDate[]
 }
 
 export type ViewMode = 'kanban' | 'calendar'

@@ -1,14 +1,14 @@
 # Planning Guide
 
-A comprehensive marketing campaign management application that organizes work hierarchically (Projects → Campaigns → Tasks) with cross-campaign visibility, budget tracking, campaign timelines, and multiple view modes - combining the flexibility of Trello with enterprise campaign management capabilities.
+A comprehensive marketing campaign management application that organizes work hierarchically (Projects → Campaigns → Tasks) with unified views across all levels, global search, stage-based timeline planning with date ranges, and rich calendar visualization - combining the flexibility of Trello with enterprise campaign management capabilities.
 
 **Experience Qualities**:
 1. **Hierarchical** - Organize marketing work from high-level projects down to individual campaigns and tasks, maintaining clear relationships and context
-2. **Campaign-Focused** - Purpose-built for marketing teams to track campaign types, stages, budgets, goals, and timelines from planning through follow-up
-3. **Unified** - View and filter across all projects and campaigns without silos, while maintaining the ability to drill down into specific initiatives
+2. **Timeline-Driven** - Define custom stages with date ranges at project, campaign, and task levels to plan work phases from brainstorming through follow-up
+3. **Unified** - View and search across all projects, campaigns, and tasks without silos, while maintaining the ability to drill down into specific initiatives
 
 **Complexity Level**: Complex Application (advanced functionality, likely with multiple views)
-This is a hierarchical project management system with two-level organization (Projects → Campaigns), where campaigns contain tasks organized in lists. Includes campaign-specific features (types, stages, budgets, timelines), cross-campaign aggregation, multiple visualization modes, and comprehensive drag-and-drop functionality throughout the interface.
+This is a hierarchical project management system with three-level organization (Projects → Campaigns → Tasks), where campaigns contain tasks organized in lists. Includes campaign-specific features (types, stages, budgets, timelines), custom stage date ranges for planning phases, unified views for all entities, global search, cross-campaign aggregation, multiple visualization modes including enhanced calendar view, and comprehensive drag-and-drop functionality throughout the interface.
 
 ## Essential Features
 
@@ -48,18 +48,53 @@ This is a hierarchical project management system with two-level organization (Pr
 - **Success criteria**: Budget progress bars show accurate percentages; over-budget situations clearly flagged; campaign header shows budget summary
 
 ### Campaign Timeline & Stage Management
-- **Functionality**: Four-phase timeline (Planning Start, Launch Date, End Date, Follow-up Date) plus stage tracking (planning, in-progress, launched, completed, follow-up)
-- **Purpose**: Plan when to work on campaigns, track current phase, identify upcoming launches and deadlines, manage post-campaign follow-up
-- **Trigger**: Edit campaign details to set dates and stage
-- **Progression**: Set planning start → Work during planning stage → Update stage to in-progress → Set launch date → Update stage to launched → Campaign runs → Set end date → Update to completed → Set follow-up date → Handle follow-up items → Mark completed
-- **Success criteria**: Timeline dates visible in campaign header; stages accurately reflect current phase; visual indicators show stage status; dates help prioritize what needs attention now vs. future
+- **Functionality**: Four-phase timeline (Planning Start, Launch Date, End Date, Follow-up Date) plus stage tracking (planning, in-progress, launched, completed, follow-up). Additionally, custom stage dates can be defined with specific date ranges for any phase (e.g., brainstorming Dec 1-15, planning Dec 16-31, designing Jan 1-20, implementing Jan 21-Feb 10, running Feb 11-Mar 15, follow-up Mar 16-30).
+- **Purpose**: Plan when to work on campaigns, track current phase, identify upcoming launches and deadlines, manage post-campaign follow-up, and maintain visibility of all work phases without losing sight of planning done months in advance
+- **Trigger**: Edit campaign details to set dates and stage, add custom stage dates with specific date ranges
+- **Progression**: Define custom stages with date ranges → Set planning start → Work during planning stage → Update stage to in-progress → Set launch date → Update stage to launched → Campaign runs → Set end date → Update to completed → Set follow-up date → Handle follow-up items → Mark completed → View all stage dates in calendar
+- **Success criteria**: Timeline dates visible in campaign header; stages accurately reflect current phase; visual indicators show stage status; custom stage dates appear on calendar view; dates help prioritize what needs attention now vs. future; stage date ranges can overlap or be sequential as needed
 
-### Cross-Campaign Unified View
-- **Functionality**: Toggle to view all tasks from all campaigns in a single aggregated kanban or calendar view
-- **Purpose**: Break down campaign silos to see all work holistically, identifying patterns and priorities across projects
-- **Trigger**: "All Campaigns" toggle in header or dedicated view mode
-- **Progression**: Toggle all campaigns view → See aggregated tasks grouped by status/date → Filter by campaign/label/date → Click task to edit → Task updates reflect in source campaign
-- **Success criteria**: All tasks from all campaigns appear correctly; filters work across the entire dataset; changes sync to source campaigns; performance remains smooth with 100+ tasks
+### Stage Date Planning (New Feature)
+- **Functionality**: Define custom stages with specific date ranges at project, campaign, and task levels. Stages can be named anything (brainstorming, planning, designing, implementing, running, follow-up, etc.) and assigned start/end dates. Stage dates are visualized on the calendar view with color coding. Multiple stages can exist simultaneously or sequentially.
+- **Purpose**: Plan and visualize different phases of work across long timelines (e.g., planning 2026 campaigns in December 2024) without losing sight of what needs to happen when. Track multiple parallel work streams and their timelines.
+- **Trigger**: Stage date manager in task/campaign/project edit dialogs, "Add Stage" button
+- **Progression**: Open edit dialog → Access stage date manager → Enter stage name → Set start and end dates → Choose color → Add stage → Repeat for all phases → View stages on calendar → See all project/campaign/task stages simultaneously on master calendar view
+- **Success criteria**: Stage dates can be added to projects, campaigns, and tasks; each stage has name, start date, end date, and color; stages appear as colored bars on calendar view; calendar can filter between tasks only, stages only, or both; stages from different entities can be viewed together; stage date ranges are validated (start before end); stages can be deleted; color coding makes different stages visually distinct
+
+### All Campaigns View (New Feature)
+- **Functionality**: Unified view showing all campaigns across all projects in a grid layout with key metrics (tasks completed, budget, launch date, stage)
+- **Purpose**: Get a bird's-eye view of all campaign work without navigating through individual projects
+- **Trigger**: "All Campaigns" button in sidebar
+- **Progression**: Click All Campaigns → See grid of campaign cards → View progress, budget, dates at a glance → Click campaign to open → Filter/search across all campaigns
+- **Success criteria**: All campaigns visible in grid; cards show project parent, stage, dates, budget, and task progress; clicking campaign navigates to campaign detail view; responsive grid layout
+
+### All Tasks View (New Feature)
+- **Functionality**: Unified view showing all tasks across all campaigns and projects in a grid layout with task cards showing labels, due dates, and parent hierarchy
+- **Purpose**: See all work items in one place regardless of campaign or project structure; identify overdue or upcoming tasks globally
+- **Trigger**: "All Tasks" button in sidebar
+- **Progression**: Click All Tasks → See grid of task cards → View task details including parent campaign and project → Click task to edit → See breadcrumb showing project → campaign → list hierarchy
+- **Success criteria**: All tasks visible in grid; tasks show labels, due dates, completion status; parent hierarchy (project → campaign → list) displayed below each task; clicking task opens detail dialog; tasks sortable by due date
+
+### Global Search (New Feature)
+- **Functionality**: Search bar in header that searches across all projects, campaigns, and tasks by title and description. Shows results categorized by type with parent context. Keyboard navigation supported (arrow keys, enter to select, escape to close).
+- **Purpose**: Quickly find any entity without navigating through hierarchy; jump directly to specific work items
+- **Trigger**: Search button in header, keyboard shortcut
+- **Progression**: Click search → Type query → See live results grouped by type → Use arrow keys or mouse to select → Press enter or click to navigate → Search closes and navigates to selected item
+- **Success criteria**: Search finds projects, campaigns, and tasks; results update as user types; results show type badge and parent context; keyboard navigation works; selecting result navigates to that entity and closes search; search accessible from all views
+
+### Enhanced Calendar View (Upgraded Feature)
+- **Functionality**: Month calendar displaying tasks on due dates AND stage date ranges as colored bars spanning multiple days. Toggle between "Tasks Only", "Stages Only", or "Tasks & Stages" view. Stages show project/campaign/task names with their stage name. Calendar supports campaign-level, project-level, or master all-level views.
+- **Purpose**: Visualize work by timeline with both specific task due dates and extended stage periods; identify deadline clustering and work phase overlaps; plan capacity across multiple simultaneous stages
+- **Trigger**: Calendar icon in view switcher
+- **Progression**: Switch to calendar view → See current month → Toggle view mode (tasks/stages/both) → See tasks as small badges on dates → See stage ranges as colored bars spanning their duration → Click date to see all tasks → Click task to edit → Navigate months → Filter by campaign/label → Switch to master calendar to see all projects/campaigns/tasks stages simultaneously
+- **Success criteria**: Tasks appear on correct dates; stage dates appear as colored bars spanning their date range; view mode toggle works; stage bars show entity name and stage name; tasks without dates don't appear; multiple tasks per date are visible; stage bars from multiple entities are stacked; navigation between months is smooth; master calendar view shows stages from all projects, campaigns, and tasks; color coding distinguishes different stages
+
+### Unified Views & Navigation
+- **Functionality**: Navigation sidebar provides access to "All Projects", "All Campaigns", and "All Tasks" views in addition to hierarchical project/campaign navigation. Each unified view shows aggregated data with relevant metrics and allows clicking through to detail views.
+- **Purpose**: Break down organizational silos to see all work holistically at any level; quickly access any entity type; identify patterns and priorities across entire workspace
+- **Trigger**: Sidebar navigation buttons for "All Projects", "All Campaigns", "All Tasks"
+- **Progression**: Click unified view → See aggregated entity cards/list → View metrics and status → Filter/search within view → Click entity to navigate to detail view → Work updates reflect everywhere
+- **Success criteria**: All three unified views accessible from sidebar; each view shows all entities of that type; metrics display correctly (task counts, progress, dates, budgets); navigation to detail views works; changes sync across all views; performance remains smooth with 100+ entities
 
 ### Kanban View with Comprehensive Drag & Drop
 - **Functionality**: Visual board with draggable columns (lists) and tasks. Full drag and drop support for tasks within lists, tasks between lists, tasks between campaigns, list reordering within campaigns, and campaign reordering in sidebar.
@@ -67,13 +102,6 @@ This is a hierarchical project management system with two-level organization (Pr
 - **Trigger**: Default view when opening a campaign or selecting kanban view mode
 - **Progression**: View campaign → See lists as columns → See tasks in lists → Drag tasks within same list to reorder → Drag tasks between lists to move → Drag tasks between campaigns → Drag lists to reorder columns → Drag campaigns in sidebar to reorganize → Click task for details → Visual feedback during all drag operations (opacity, hover states, drop indicators)
 - **Success criteria**: All drag and drop operations work smoothly with visual feedback (opacity changes, hover states, drop indicators); tasks update position immediately; list order persists; campaign order in sidebar persists; mobile-friendly touch interactions; drag handles visible on hover; cursor changes appropriately (grab/grabbing)
-
-### Calendar View
-- **Functionality**: Month calendar displaying tasks on their due dates
-- **Purpose**: Visualize work by timeline, identify deadline clustering, and manage time-based priorities
-- **Trigger**: Calendar icon in view switcher
-- **Progression**: Switch to calendar view → See current month with tasks on due dates → Click date to see all tasks → Click task to edit → Navigate months → Filter by campaign/label
-- **Success criteria**: Tasks appear on correct dates; tasks without dates show in "unscheduled" area; multiple tasks per date are visible; navigation between months is smooth
 
 ### Advanced Filtering
 - **Functionality**: Filter tasks by campaign, list, label, due date, and search text across all views
@@ -106,6 +134,13 @@ This is a hierarchical project management system with two-level organization (Pr
 - **Campaign Reordering Hierarchy**: Campaigns can only be reordered within their sibling group (same project or standalone); campaigns within projects stay together
 - **Drag Visual Feedback**: Clear opacity changes (40%) and cursor changes (grab/grabbing) indicate draggable state; drop zones highlight with accent colors when valid; invalid drop targets don't highlight
 - **Simultaneous Drags**: System handles only one drag operation at a time; optimistic UI updates ensure smooth experience
+- **Empty Search Results**: Clear message showing "No results found" with option to clear search; search is live-updating as user types
+- **Stage Date Overlaps**: Multiple stage dates can exist simultaneously for the same entity; calendar view stacks them vertically to show all active stages
+- **Stage Date Validation**: Start date must be before end date; validation error shown if invalid dates entered
+- **Calendar with Many Stages**: Calendar day cells stack multiple stages/tasks; scrollable if too many items on a single day
+- **No Stage Dates on Calendar**: Calendar shows "No stages to display" message when in stages-only mode with no stage dates defined
+- **Global Search from Any View**: Search accessible from header regardless of current view; navigation from search works from any starting point
+- **Unified View Performance**: Views paginate or virtualize if entity counts exceed performance thresholds (>500 items)
 
 ## Design Direction
 

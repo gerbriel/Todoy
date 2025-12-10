@@ -8,6 +8,8 @@ import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
 import { Target, Trash } from '@phosphor-icons/react'
+import { Separator } from './ui/separator'
+import StageDateManager from './StageDateManager'
 
 interface TaskDetailDialogProps {
   task: Task
@@ -34,6 +36,8 @@ export default function TaskDetailDialog({
   const [description, setDescription] = useState(task.description)
   const [selectedCampaignId, setSelectedCampaignId] = useState(task.campaignId)
   const [selectedListId, setSelectedListId] = useState(task.listId)
+  const [dueDate, setDueDate] = useState(task.dueDate || '')
+  const [stageDates, setStageDates] = useState(task.stageDates || [])
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
   const availableLists = lists.filter(l => l.campaignId === selectedCampaignId)
@@ -53,6 +57,8 @@ export default function TaskDetailDialog({
               description: description.trim(),
               campaignId: selectedCampaignId,
               listId: selectedListId,
+              dueDate: dueDate || undefined,
+              stageDates,
             }
           : t
       )
@@ -79,7 +85,7 @@ export default function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
@@ -106,42 +112,62 @@ export default function TaskDetailDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <UILabel htmlFor="task-campaign">Campaign</UILabel>
-            <Select value={selectedCampaignId} onValueChange={handleCampaignChange}>
-              <SelectTrigger id="task-campaign">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {campaigns.map(campaign => (
-                  <SelectItem key={campaign.id} value={campaign.id}>
-                    <div className="flex items-center gap-2">
-                      <Target size={14} weight="duotone" />
-                      {campaign.title}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {availableLists.length > 0 && (
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <UILabel htmlFor="task-list">List</UILabel>
-              <Select value={selectedListId} onValueChange={setSelectedListId}>
-                <SelectTrigger id="task-list">
+              <UILabel htmlFor="task-campaign">Campaign</UILabel>
+              <Select value={selectedCampaignId} onValueChange={handleCampaignChange}>
+                <SelectTrigger id="task-campaign">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableLists.map(list => (
-                    <SelectItem key={list.id} value={list.id}>
-                      {list.title}
+                  {campaigns.map(campaign => (
+                    <SelectItem key={campaign.id} value={campaign.id}>
+                      <div className="flex items-center gap-2">
+                        <Target size={14} weight="duotone" />
+                        {campaign.title}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
+
+            {availableLists.length > 0 && (
+              <div className="space-y-2">
+                <UILabel htmlFor="task-list">List</UILabel>
+                <Select value={selectedListId} onValueChange={setSelectedListId}>
+                  <SelectTrigger id="task-list">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLists.map(list => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <UILabel htmlFor="task-due-date">Due Date</UILabel>
+            <Input
+              id="task-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+
+          <Separator />
+
+          <StageDateManager
+            stageDates={stageDates}
+            onChange={setStageDates}
+            entityType="task"
+          />
 
           <div className="flex justify-between pt-4">
             <Button variant="destructive" onClick={handleDelete}>

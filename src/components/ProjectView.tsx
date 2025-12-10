@@ -1,13 +1,27 @@
+import { useState } from 'react'
 import { Project, Campaign, Task } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Target, CheckSquare, Calendar } from '@phosphor-icons/react'
-import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
+import { Target, CheckSquare, Calendar, Plus } from '@phosphor-icons/react'
+import { getCampaignsForProject, getCampaignStageLabel, generateId } from '@/lib/helpers'
 import { Badge } from './ui/badge'
 import { format } from 'date-fns'
+import { Button } from './ui/button'
+import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 
 interface ProjectViewProps {
   project: Project
   campaigns: Campaign[]
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   tasks: Task[]
   onNavigateToCampaign: (campaignId: string) => void
 }
@@ -15,11 +29,39 @@ interface ProjectViewProps {
 export default function ProjectView({
   project,
   campaigns,
+  setCampaigns,
   tasks,
   onNavigateToCampaign,
 }: ProjectViewProps) {
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [newCampaignTitle, setNewCampaignTitle] = useState('')
+  
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
+
+  const handleCreateCampaign = () => {
+    if (!newCampaignTitle.trim()) {
+      toast.error('Please enter a campaign title')
+      return
+    }
+
+    const newCampaign: Campaign = {
+      id: generateId(),
+      title: newCampaignTitle.trim(),
+      description: '',
+      order: campaigns.length,
+      createdAt: new Date().toISOString(),
+      projectId: project.id,
+      campaignType: 'other',
+      campaignStage: 'planning',
+    }
+    
+    setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
+    toast.success('Campaign created')
+    setShowCreateDialog(false)
+    setNewCampaignTitle('')
+    onNavigateToCampaign(newCampaign.id)
+  }
 
   const getCampaignStats = (campaignId: string) => {
     const campaignTasks = tasks.filter(task => task.campaignId === campaignId)
@@ -48,11 +90,17 @@ export default function ProjectView({
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">{project.title}</h2>
-          {project.description && (
-            <p className="text-muted-foreground">{project.description}</p>
-          )}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground mb-2">{project.title}</h2>
+            {project.description && (
+              <p className="text-muted-foreground">{project.description}</p>
+            )}
+          </div>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus size={16} weight="bold" />
+            New Campaign
+          </Button>
         </div>
 
         {sortedCampaigns.length === 0 ? (
@@ -60,9 +108,13 @@ export default function ProjectView({
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Target size={64} className="text-muted-foreground mb-4" weight="duotone" />
               <h3 className="text-xl font-semibold text-foreground mb-2">No campaigns yet</h3>
-              <p className="text-muted-foreground text-center">
-                Create your first campaign from the sidebar to get started
+              <p className="text-muted-foreground text-center mb-4">
+                Create your first campaign for this project
               </p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus size={16} weight="bold" />
+                Create Campaign
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -111,6 +163,39 @@ export default function ProjectView({
           </div>
         )}
       </div>
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Campaign</DialogTitle>
+            <DialogDescription>
+              Create a new campaign for {project.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="campaign-title">Campaign Title</Label>
+              <Input
+                id="campaign-title"
+                value={newCampaignTitle}
+                onChange={(e) => setNewCampaignTitle(e.target.value)}
+                placeholder="Enter campaign name..."
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateCampaign()}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateCampaign}>
+              Create Campaign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

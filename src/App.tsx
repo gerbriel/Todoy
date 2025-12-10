@@ -102,6 +102,7 @@ function App() {
             <ProjectView
               project={activeProject!}
               campaigns={campaigns || []}
+              setCampaigns={setCampaigns}
               tasks={tasks || []}
               onNavigateToCampaign={handleNavigateToCampaign}
             />

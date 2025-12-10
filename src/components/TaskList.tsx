@@ -1,4 +1,19 @@
+import { useState, DragEvent } from 'react'
+import { Plus, DotsThreeVertical, PencilSimple, DotsSixVertical } from '@phosphor-icons/react'
 import { Task, Campaign, List, Label } from '@/lib/types'
+import { generateId } from '@/lib/helpers'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import TaskCard from './TaskCard'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 interface TaskListProps {
   list: List
@@ -13,20 +28,218 @@ interface TaskListProps {
 
 export default function TaskList({
   list,
+  lists,
+  setLists,
   tasks,
+  setTasks,
+  labels,
+  setLabels,
+  campaigns,
 }: TaskListProps) {
-  const listTasks = tasks.filter(t => t.listId === list.id)
-  
+  const [isAddingTask, setIsAddingTask] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(list.title)
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const listTasks = tasks
+    .filter(t => t.listId === list.id)
+    .sort((a, b) => a.order - b.order)
+
+  const handleCreateTask = () => {
+    if (!newTaskTitle.trim()) {
+      toast.error('Please enter a task title')
+      return
+    }
+
+    const newTask: Task = {
+      id: generateId(),
+      title: newTaskTitle.trim(),
+      description: '',
+      listId: list.id,
+      campaignId: list.campaignId,
+      labelIds: [],
+      order: listTasks.length,
+      createdAt: new Date().toISOString(),
+    }
+
+    setTasks(currentTasks => [...currentTasks, newTask])
+    setNewTaskTitle('')
+    setIsAddingTask(false)
+    toast.success('Task created')
+  }
+
+  const handleSaveTitle = () => {
+    if (!editedTitle.trim()) {
+      toast.error('Title cannot be empty')
+      return
+    }
+
+    setLists(currentLists =>
+      currentLists.map(l =>
+        l.id === list.id ? { ...l, title: editedTitle.trim() } : l
+      )
+    )
+    setIsEditingTitle(false)
+    toast.success('List renamed')
+  }
+
+  const handleDeleteList = () => {
+    if (listTasks.length > 0) {
+      if (!confirm(`Delete "${list.title}" and its ${listTasks.length} task(s)?`)) {
+        return
+      }
+      setTasks(currentTasks => currentTasks.filter(t => t.listId !== list.id))
+    }
+    setLists(currentLists => currentLists.filter(l => l.id !== list.id))
+    toast.success('List deleted')
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const taskId = e.dataTransfer.getData('taskId')
+    const sourceListId = e.dataTransfer.getData('sourceListId')
+
+    if (!taskId || sourceListId === list.id) return
+
+    setTasks(currentTasks => {
+      const task = currentTasks.find(t => t.id === taskId)
+      if (!task) return currentTasks
+
+      return currentTasks.map(t =>
+        t.id === taskId
+          ? { ...t, listId: list.id, order: listTasks.length }
+          : t
+      )
+    })
+
+    toast.success('Task moved')
+  }
+
   return (
-    <div className="flex-shrink-0 w-80 bg-card border border-border rounded-lg p-4">
-      <h3 className="font-semibold text-foreground mb-4">{list.title}</h3>
-      <div className="space-y-2">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={cn(
+        'flex-shrink-0 w-80 bg-muted/30 border border-border rounded-lg p-4 transition-colors',
+        isDragOver && 'border-accent bg-accent/10'
+      )}
+    >
+      <div className="flex items-center justify-between mb-4 group">
+        {isEditingTitle ? (
+          <Input
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSaveTitle()
+              if (e.key === 'Escape') {
+                setIsEditingTitle(false)
+                setEditedTitle(list.title)
+              }
+            }}
+            onBlur={handleSaveTitle}
+            className="h-8 text-sm font-semibold"
+            autoFocus
+          />
+        ) : (
+          <>
+            <h3 className="font-semibold text-foreground flex-1 truncate">
+              {list.title} <span className="text-muted-foreground text-sm font-normal">({listTasks.length})</span>
+            </h3>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-all">
+                  <DotsThreeVertical size={16} weight="bold" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
+                  <PencilSimple size={14} className="mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={handleDeleteList}>
+                  Delete List
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        )}
+      </div>
+
+      <div className="space-y-2 mb-3">
         {listTasks.map(task => (
-          <div key={task.id} className="p-3 bg-background border border-border rounded">
-            {task.title}
-          </div>
+          <TaskCard
+            key={task.id}
+            task={task}
+            tasks={tasks}
+            setTasks={setTasks}
+            labels={labels}
+            setLabels={setLabels}
+            lists={lists}
+            campaigns={campaigns}
+          />
         ))}
       </div>
+
+      {isAddingTask ? (
+        <div className="space-y-2">
+          <Input
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="Task title..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreateTask()
+              if (e.key === 'Escape') {
+                setIsAddingTask(false)
+                setNewTaskTitle('')
+              }
+            }}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleCreateTask}>
+              Add Task
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setIsAddingTask(false)
+                setNewTaskTitle('')
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+          onClick={() => setIsAddingTask(true)}
+        >
+          <Plus size={16} weight="bold" />
+          Add Task
+        </Button>
+      )}
     </div>
   )
 }

@@ -64,6 +64,7 @@ export default function Sidebar({
   const [editingTitle, setEditingTitle] = useState('')
   const [draggingCampaignId, setDraggingCampaignId] = useState<string | null>(null)
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null)
+  const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const sortedProjects = getProjects(projects)
@@ -323,6 +324,50 @@ export default function Sidebar({
                 Rename
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {projects.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Move to Project
+                  </div>
+                  {projects.map(project => (
+                    <DropdownMenuItem
+                      key={project.id}
+                      onClick={() => {
+                        setCampaigns(currentCampaigns =>
+                          currentCampaigns.map(c =>
+                            c.id === campaign.id ? { ...c, projectId: project.id } : c
+                          )
+                        )
+                        setExpandedProjects(prev => new Set(prev).add(project.id))
+                        toast.success(`Moved to "${project.title}"`)
+                      }}
+                      disabled={campaign.projectId === project.id}
+                    >
+                      <Folder size={14} className="mr-2" weight="duotone" />
+                      {project.title}
+                      {campaign.projectId === project.id && (
+                        <span className="ml-auto text-xs text-muted-foreground">Current</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                  {campaign.projectId && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setCampaigns(currentCampaigns =>
+                          currentCampaigns.map(c =>
+                            c.id === campaign.id ? { ...c, projectId: undefined } : c
+                          )
+                        )
+                        toast.success('Moved to standalone campaigns')
+                      }}
+                    >
+                      <Target size={14} className="mr-2" weight="duotone" />
+                      Remove from project
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => {
@@ -350,10 +395,58 @@ export default function Sidebar({
     const isExpanded = expandedProjects.has(project.id)
     const isEditing = editingProjectId === project.id
     const isActive = activeProjectId === project.id && navigationView === 'project'
+    const isDragOver = dragOverProjectId === project.id
+
+    const handleProjectDragOver = (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const campaignId = e.dataTransfer.getData('campaignId')
+      if (campaignId) {
+        setDragOverProjectId(project.id)
+        e.dataTransfer.dropEffect = 'move'
+      }
+    }
+
+    const handleProjectDragLeave = (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOverProjectId(null)
+    }
+
+    const handleProjectDrop = (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOverProjectId(null)
+
+      const campaignId = e.dataTransfer.getData('campaignId')
+      if (!campaignId) return
+
+      const campaign = campaigns.find(c => c.id === campaignId)
+      if (!campaign) return
+
+      if (campaign.projectId === project.id) return
+
+      setCampaigns(currentCampaigns =>
+        currentCampaigns.map(c =>
+          c.id === campaignId ? { ...c, projectId: project.id } : c
+        )
+      )
+
+      setExpandedProjects(prev => new Set(prev).add(project.id))
+      toast.success(`Moved "${campaign.title}" to "${project.title}"`)
+    }
 
     return (
       <div key={project.id}>
-        <div className="flex items-center gap-1 group">
+        <div 
+          className={cn(
+            "flex items-center gap-1 group transition-colors rounded",
+            isDragOver && "bg-accent/20"
+          )}
+          onDragOver={handleProjectDragOver}
+          onDragLeave={handleProjectDragLeave}
+          onDrop={handleProjectDrop}
+        >
           {hasChildren ? (
             <button
               onClick={(e) => {

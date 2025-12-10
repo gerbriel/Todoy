@@ -21,7 +21,7 @@ export default defineConfig({
     }
   },
   // GitHub Pages deployment configuration
-  base: process.env.GITHUB_ACTIONS ? '/Todoy/' : '/',
+  base: '/Todoy/',
   build: {
     outDir: 'dist',
     sourcemap: false,

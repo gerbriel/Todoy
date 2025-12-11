@@ -658,26 +658,6 @@ export default function Sidebar({
         "border-r border-border bg-card flex flex-col transition-all duration-300 relative",
         isCollapsed ? "w-16" : "w-72"
       )}>
-        {/* Collapse/Expand Button - Circular button on sidebar edge */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(
-            "absolute -right-3 top-4 z-50",
-            "w-6 h-6 rounded-full",
-            "bg-card border border-border shadow-md",
-            "flex items-center justify-center",
-            "hover:bg-accent hover:text-accent-foreground",
-            "transition-all duration-200"
-          )}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <CaretRight size={14} weight="bold" />
-          ) : (
-            <CaretLeft size={14} weight="bold" />
-          )}
-        </button>
-
         <div className="p-4 border-b border-border">
           {!isCollapsed && (
             <>
@@ -860,6 +840,25 @@ export default function Sidebar({
             )}
           </div>
         </ScrollArea>
+
+        {/* Collapse/Expand Button - At bottom of sidebar */}
+        <div className="border-t border-border p-2">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={cn(
+              "w-full flex items-center justify-center p-2 rounded",
+              "hover:bg-muted transition-colors",
+              isCollapsed && "px-0"
+            )}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <CaretRight size={20} weight="bold" />
+            ) : (
+              <CaretLeft size={20} weight="bold" />
+            )}
+          </button>
+        </div>
       </aside>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

@@ -3,7 +3,7 @@ import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/type
 import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, CaretLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'

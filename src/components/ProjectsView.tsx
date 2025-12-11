@@ -25,13 +25,13 @@ export default function ProjectsView({
 }: ProjectsViewProps) {
   const sortedProjects = [...projects].sort((a, b) => a.order - b.order)
 
-  const handleToggleComplete = async (projectId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleToggleComplete = async (projectId: string) => {
     const project = projects.find(p => p.id === projectId)
     if (!project) return
     
     try {
       await projectsService.update(projectId, { completed: !project.completed })
+      toast.success(project.completed ? 'Project marked as active' : 'Project completed!')
     } catch (error) {
       console.error('Error toggling project completion:', error)
       toast.error('Failed to update project')
@@ -102,46 +102,46 @@ export default function ProjectsView({
                   onClick={() => onNavigateToProject(project.id)}
                 >
                   <CardHeader className="pb-3 md:pb-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 md:gap-3 flex-1">
+                    <div className="flex items-start justify-between gap-2 md:gap-3">
+                      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                         <Checkbox
                           checked={project.completed || false}
-                          onCheckedChange={(e) => handleToggleComplete(project.id, e as any)}
+                          onCheckedChange={() => handleToggleComplete(project.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="mt-1"
+                          className="mt-1 flex-shrink-0"
                         />
-                        <Folder size={28} className="text-primary md:w-8 md:h-8" weight="duotone" />
+                        <Folder size={24} className="text-primary flex-shrink-0 md:w-7 md:h-7" weight="duotone" />
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={(e) => handleArchive(project.id, e)}
-                        className="h-7 w-7 md:h-8 md:w-8 p-0 touch-manipulation"
+                        className="h-8 w-8 md:h-9 md:w-9 p-0 flex-shrink-0 touch-manipulation"
                       >
-                        <Archive size={14} className="md:w-4 md:h-4" weight="bold" />
+                        <Archive size={16} className="md:w-[18px] md:h-[18px]" weight="bold" />
                       </Button>
                     </div>
                     <CardTitle className={cn(
-                      "text-lg md:text-xl",
+                      "text-base md:text-xl mt-2 break-words",
                       project.completed && "line-through text-muted-foreground"
                     )}>
                       {project.title}
                     </CardTitle>
                     {project.description && (
-                      <CardDescription className="line-clamp-2 text-xs md:text-sm">
+                      <CardDescription className="line-clamp-2 text-xs md:text-sm mt-1">
                         {project.description}
                       </CardDescription>
                     )}
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
+                    <div className="flex items-center gap-3 md:gap-6 text-xs md:text-sm flex-wrap">
                       <div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground">
-                        <Target size={14} className="md:w-4 md:h-4" weight="duotone" />
-                        <span>{stats.campaignCount} campaign{stats.campaignCount !== 1 ? 's' : ''}</span>
+                        <Target size={16} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
+                        <span className="whitespace-nowrap">{stats.campaignCount} campaign{stats.campaignCount !== 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground">
-                        <CheckSquare size={14} className="md:w-4 md:h-4" weight="duotone" />
-                        <span>{stats.taskCount} task{stats.taskCount !== 1 ? 's' : ''}</span>
+                        <CheckSquare size={16} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
+                        <span className="whitespace-nowrap">{stats.taskCount} task{stats.taskCount !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </CardContent>

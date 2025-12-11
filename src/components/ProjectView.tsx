@@ -169,20 +169,20 @@ export default function ProjectView({
   }
 
   return (
-    <div className="h-full overflow-auto p-8">
+    <div className="h-full overflow-auto p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {project.archived && (
-          <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
-            <Archive className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="flex items-center justify-between">
-              <span className="text-orange-900 dark:text-orange-100">
+          <Alert className="mb-4 md:mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <Archive className="h-4 w-4 text-orange-600 flex-shrink-0" />
+            <AlertDescription className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
+              <span className="text-orange-900 dark:text-orange-100 text-sm md:text-base">
                 This project is archived. Restore it to make it active again.
               </span>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={handleRestoreProject}
-                className="ml-4 border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+                className="border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900 w-full md:w-auto md:ml-4"
               >
                 <ArrowCounterClockwise size={16} className="mr-2" weight="bold" />
                 Restore Project
@@ -191,30 +191,30 @@ export default function ProjectView({
           </Alert>
         )}
         
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 md:mb-8 space-y-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">{project.title}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 break-words">{project.title}</h2>
             {project.description && (
-              <p className="text-muted-foreground">{project.description}</p>
+              <p className="text-sm md:text-base text-muted-foreground break-words">{project.description}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {!project.archived && (
               <>
-                <Button variant="outline" onClick={() => setShowEditDialog(true)}>
-                  <PencilSimple size={16} weight="bold" />
+                <Button variant="outline" onClick={() => setShowEditDialog(true)} className="w-full sm:w-auto text-sm md:text-base">
+                  <PencilSimple size={16} weight="bold" className="mr-2" />
                   Edit Project
                 </Button>
-                <Button variant="outline" onClick={handleArchiveProject} className="text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
-                  <Archive size={16} weight="bold" />
+                <Button variant="outline" onClick={handleArchiveProject} className="w-full sm:w-auto text-sm md:text-base text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+                  <Archive size={16} weight="bold" className="mr-2" />
                   Archive
                 </Button>
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:bg-destructive/10">
-                  <Trash size={16} weight="bold" />
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="w-full sm:w-auto text-sm md:text-base text-destructive hover:bg-destructive/10">
+                  <Trash size={16} weight="bold" className="mr-2" />
                   Delete
                 </Button>
-                <Button onClick={() => setShowCreateDialog(true)}>
-                  <Plus size={16} weight="bold" />
+                <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto text-sm md:text-base">
+                  <Plus size={16} weight="bold" className="mr-2" />
                   New Campaign
                 </Button>
               </>
@@ -237,20 +237,20 @@ export default function ProjectView({
 
         {sortedCampaigns.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
-            <CardContent className="flex flex-col items-center justify-center py-16">
-              <Target size={64} className="text-muted-foreground mb-4" weight="duotone" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No campaigns yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
+            <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
+              <Target size={48} className="md:w-16 md:h-16 text-muted-foreground mb-4" weight="duotone" />
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">No campaigns yet</h3>
+              <p className="text-sm md:text-base text-muted-foreground text-center mb-4">
                 Create your first campaign for this project
               </p>
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus size={16} weight="bold" />
+              <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto">
+                <Plus size={16} weight="bold" className="mr-2" />
                 Create Campaign
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {sortedCampaigns.map(campaign => {
               const stats = getCampaignStats(campaign.id)
               return (
@@ -259,32 +259,32 @@ export default function ProjectView({
                   className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
                   onClick={() => onNavigateToCampaign(campaign.id)}
                 >
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-2">
-                      <Target size={32} className="text-accent" weight="duotone" />
+                  <CardHeader className="pb-3 md:pb-4">
+                    <div className="flex items-start justify-between mb-2 gap-2">
+                      <Target size={28} className="md:w-8 md:h-8 text-accent flex-shrink-0" weight="duotone" />
                       {campaign.campaignStage && (
-                        <Badge className={getStageColor(campaign.campaignStage)}>
+                        <Badge className={`${getStageColor(campaign.campaignStage)} text-xs md:text-sm flex-shrink-0`}>
                           {getCampaignStageLabel(campaign.campaignStage)}
                         </Badge>
                       )}
                     </div>
-                    <CardTitle className="text-xl">{campaign.title}</CardTitle>
+                    <CardTitle className="text-base md:text-xl break-words">{campaign.title}</CardTitle>
                     {campaign.description && (
-                      <CardDescription className="line-clamp-2">
+                      <CardDescription className="line-clamp-2 text-xs md:text-sm">
                         {campaign.description}
                       </CardDescription>
                     )}
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-2 md:space-y-3">
                       {campaign.launchDate && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar size={16} weight="duotone" />
-                          <span>Launch: {format(new Date(campaign.launchDate), 'MMM d, yyyy')}</span>
+                        <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+                          <Calendar size={14} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
+                          <span className="truncate">Launch: {format(new Date(campaign.launchDate), 'MMM d, yyyy')}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckSquare size={16} weight="duotone" />
+                      <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+                        <CheckSquare size={14} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
                         <span>{stats.taskCount} task{stats.taskCount !== 1 ? 's' : ''}</span>
                       </div>
                     </div>

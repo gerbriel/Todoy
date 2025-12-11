@@ -7,6 +7,7 @@ import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignO
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
+import ConfirmDialog from './ConfirmDialog'
 import { campaignsService } from '@/services/campaigns.service'
 import { toast } from 'sonner'
 import NotificationsPanel from './NotificationsPanel'
@@ -54,6 +55,7 @@ export default function Header({
 }: HeaderProps & { onNavigateToCampaign: (campaignId: string) => void }) {
   const [showSearch, setShowSearch] = useState(false)
   const [showEditCampaign, setShowEditCampaign] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { user, logout } = useAuth()
 
   const handleNavigateFromNotification = (type: 'project' | 'campaign' | 'task', id: string) => {
@@ -67,15 +69,6 @@ export default function Header({
 
   const handleDeleteCampaign = async () => {
     if (!activeCampaign) return
-    
-    const taskCount = tasks.filter(t => t.campaignId === activeCampaign.id).length
-    const confirmMessage = taskCount > 0
-      ? `Delete "${activeCampaign.title}" and its ${taskCount} task(s)? This cannot be undone.`
-      : `Delete "${activeCampaign.title}"? This cannot be undone.`
-    
-    if (!confirm(confirmMessage)) {
-      return
-    }
 
     try {
       await campaignsService.delete(activeCampaign.id)
@@ -156,7 +149,7 @@ export default function Header({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleDeleteCampaign}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="text-destructive hover:bg-destructive/10"
                 >
                   <Trash size={16} weight="bold" />
@@ -230,6 +223,21 @@ export default function Header({
           projects={projects}
           open={showEditCampaign}
           onOpenChange={setShowEditCampaign}
+        />
+      )}
+
+      {activeCampaign && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          onConfirm={handleDeleteCampaign}
+          title="Delete Campaign?"
+          description={
+            tasks.filter(t => t.campaignId === activeCampaign.id).length > 0
+              ? `Are you sure you want to delete "${activeCampaign.title}" and its ${tasks.filter(t => t.campaignId === activeCampaign.id).length} task${tasks.filter(t => t.campaignId === activeCampaign.id).length === 1 ? '' : 's'}? This action cannot be undone.`
+              : `Are you sure you want to delete "${activeCampaign.title}"? This action cannot be undone.`
+          }
+          confirmText="Delete Campaign"
         />
       )}
     </>

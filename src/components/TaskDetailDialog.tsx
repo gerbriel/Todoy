@@ -15,6 +15,7 @@ import { ScrollArea } from './ui/scroll-area'
 import { generateId, formatDate } from '@/lib/helpers'
 import { tasksService } from '@/services/tasks.service'
 import { attachmentsService } from '@/services/attachments.service'
+import ConfirmDialog from './ConfirmDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +71,7 @@ export default function TaskDetailDialog({
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
   const availableLists = lists.filter(l => l.campaignId === selectedCampaignId)
@@ -226,17 +228,15 @@ export default function TaskDetailDialog({
   }
 
   const handleDelete = async () => {
-    if (confirm('Delete this task?')) {
-      try {
-        await tasksService.delete(task.id)
-        // Optimistically update local state
-        setTasks(prev => prev.filter(t => t.id !== task.id))
-        toast.success('Task deleted')
-        onOpenChange(false)
-      } catch (error) {
-        console.error('Error deleting task:', error)
-        toast.error('Failed to delete task')
-      }
+    try {
+      await tasksService.delete(task.id)
+      // Optimistically update local state
+      setTasks(prev => prev.filter(t => t.id !== task.id))
+      toast.success('Task deleted')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      toast.error('Failed to delete task')
     }
   }
 
@@ -309,7 +309,7 @@ export default function TaskDetailDialog({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="text-destructive hover:bg-destructive/10"
               >
                 <Trash size={16} weight="bold" />
@@ -680,7 +680,7 @@ export default function TaskDetailDialog({
                     Archive Task
                   </DropdownMenuItem>
                   
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-destructive">
                     <Trash size={16} className="mr-2" />
                     Delete Task
                   </DropdownMenuItem>
@@ -698,6 +698,15 @@ export default function TaskDetailDialog({
           </div>
         </Tabs>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        title="Delete Task?"
+        description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+        confirmText="Delete Task"
+      />
     </Dialog>
   )
 }

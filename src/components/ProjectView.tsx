@@ -10,6 +10,7 @@ import { format } from 'date-fns'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
 import ProjectEditDialog from './ProjectEditDialog'
+import ConfirmDialog from './ConfirmDialog'
 import {
   Dialog,
   DialogContent,
@@ -47,22 +48,12 @@ export default function ProjectView({
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newCampaignTitle, setNewCampaignTitle] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
 
   const handleDeleteProject = async () => {
-    const campaignCount = projectCampaigns.length
-    const taskCount = tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length
-    
-    const confirmMessage = campaignCount > 0
-      ? `Delete "${project.title}" and its ${campaignCount} campaign(s) and ${taskCount} task(s)? This cannot be undone.`
-      : `Delete "${project.title}"? This cannot be undone.`
-    
-    if (!confirm(confirmMessage)) {
-      return
-    }
-
     try {
       await projectsService.delete(project.id)
       // Optimistically update local state
@@ -143,7 +134,7 @@ export default function ProjectView({
               <PencilSimple size={16} weight="bold" />
               Edit Project
             </Button>
-            <Button variant="outline" onClick={handleDeleteProject} className="text-destructive hover:bg-destructive/10">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:bg-destructive/10">
               <Trash size={16} weight="bold" />
               Delete
             </Button>
@@ -153,6 +144,19 @@ export default function ProjectView({
             </Button>
           </div>
         </div>
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          onConfirm={handleDeleteProject}
+          title="Delete Project?"
+          description={
+            projectCampaigns.length > 0
+              ? `Are you sure you want to delete "${project.title}" and its ${projectCampaigns.length} campaign${projectCampaigns.length === 1 ? '' : 's'} with ${tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length} task${tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length === 1 ? '' : 's'}? This action cannot be undone.`
+              : `Are you sure you want to delete "${project.title}"? This action cannot be undone.`
+          }
+          confirmText="Delete Project"
+        />
 
         {sortedCampaigns.length === 0 ? (
           <Card className="max-w-2xl mx-auto">

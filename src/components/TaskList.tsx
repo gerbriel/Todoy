@@ -8,6 +8,7 @@ import { Input } from './ui/input'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import TaskCard from './TaskCard'
+import ConfirmDialog from './ConfirmDialog'
 
 interface TaskListProps {
   list: List
@@ -39,6 +40,7 @@ export default function TaskList({
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState(list.title)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const listTasks = tasks
     .filter(t => t.listId === list.id)
@@ -91,12 +93,6 @@ export default function TaskList({
   }
 
   const handleDeleteList = async () => {
-    if (listTasks.length > 0) {
-      if (!confirm(`Delete "${list.title}" and its ${listTasks.length} task(s)?`)) {
-        return
-      }
-    }
-    
     try {
       await listsService.delete(list.id)
       // Optimistically update local state
@@ -190,7 +186,7 @@ export default function TaskList({
             )}
             <button 
               className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-destructive rounded transition-all"
-              onClick={handleDeleteList}
+              onClick={() => setShowDeleteConfirm(true)}
               title="Delete list"
             >
               <Trash size={16} weight="bold" />
@@ -198,6 +194,19 @@ export default function TaskList({
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteList}
+        title="Delete List?"
+        description={
+          listTasks.length > 0
+            ? `Are you sure you want to delete "${list.title}" and its ${listTasks.length} task${listTasks.length === 1 ? '' : 's'}? This action cannot be undone.`
+            : `Are you sure you want to delete "${list.title}"? This action cannot be undone.`
+        }
+        confirmText="Delete List"
+      />
 
       <div className="space-y-2 mb-3">
         {listTasks.map(task => (

@@ -24,6 +24,7 @@ interface CalendarViewProps {
   viewLevel?: 'campaign' | 'project' | 'all'
   onCampaignClick?: (campaignId: string) => void
   onProjectClick?: (projectId: string) => void
+  orgId: string
 }
 
 export default function CalendarView({
@@ -40,6 +41,7 @@ export default function CalendarView({
   viewLevel = 'campaign',
   onCampaignClick,
   onProjectClick,
+  orgId,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -804,6 +806,7 @@ export default function CalendarView({
           lists={lists}
           open={!!selectedTaskId}
           onOpenChange={(open) => !open && setSelectedTaskId(null)}
+          orgId={orgId}
         />
       )}
     </div>

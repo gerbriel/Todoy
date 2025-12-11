@@ -24,6 +24,7 @@ interface MasterViewProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   onNavigateToProject?: (projectId: string) => void
   onNavigateToCampaign?: (campaignId: string) => void
+  orgId: string
 }
 
 export default function MasterView({
@@ -38,6 +39,7 @@ export default function MasterView({
   setLabels,
   onNavigateToProject,
   onNavigateToCampaign,
+  orgId,
 }: MasterViewProps) {
   const [searchText, setSearchText] = useState('')
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -430,6 +432,7 @@ export default function MasterView({
           onOpenChange={(open) => {
             if (!open) setSelectedTaskId(null)
           }}
+          orgId={orgId}
         />
       )}
 

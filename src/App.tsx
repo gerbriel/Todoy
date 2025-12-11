@@ -268,6 +268,7 @@ function MainApp() {
               setTasks={setTasks}
               setLabels={setLabels}
               onNavigateToCampaign={handleNavigateToCampaign}
+              orgId={organization?.id || ''}
             />
           )}
 
@@ -284,6 +285,7 @@ function MainApp() {
               setLabels={setLabels}
               onNavigateToProject={handleNavigateToProject}
               onNavigateToCampaign={handleNavigateToCampaign}
+              orgId={organization?.id || ''}
             />
           )}
 
@@ -349,6 +351,7 @@ function MainApp() {
                   setLabels={setLabels}
                   activeCampaignId={activeCampaignId}
                   filters={filters}
+                  orgId={organization?.id || ''}
                 />
               ) : (
                 <CalendarView
@@ -365,6 +368,7 @@ function MainApp() {
                   viewLevel="campaign"
                   onCampaignClick={handleNavigateToCampaign}
                   onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
                 />
               )}
             </>

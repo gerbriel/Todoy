@@ -19,6 +19,7 @@ interface KanbanViewProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   activeCampaignId: string | null
   filters: FilterState
+  orgId: string
 }
 
 export default function KanbanView({
@@ -31,6 +32,7 @@ export default function KanbanView({
   setLabels,
   activeCampaignId,
   filters,
+  orgId,
 }: KanbanViewProps) {
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
 
@@ -74,6 +76,7 @@ export default function KanbanView({
           setLabels={setLabels}
           campaigns={campaigns}
           onBack={() => setSelectedListId(null)}
+          orgId={orgId}
         />
       )
     }
@@ -145,6 +148,7 @@ export default function KanbanView({
                       setLabels={setLabels}
                       campaigns={campaigns}
                       onOpenStageView={() => setSelectedListId(list.id)}
+                      orgId={orgId}
                     />
                   ))}
               </div>
@@ -173,6 +177,7 @@ export default function KanbanView({
                 setLabels={setLabels}
                 campaigns={campaigns}
                 onOpenStageView={() => setSelectedListId(list.id)}
+                orgId={orgId}
               />
             ))}
           

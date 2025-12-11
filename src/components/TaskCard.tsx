@@ -16,6 +16,7 @@ interface TaskCardProps {
   lists: List[]
   campaigns: Campaign[]
   onDragOver?: () => void
+  orgId: string
 }
 
 export default function TaskCard({
@@ -27,6 +28,7 @@ export default function TaskCard({
   lists,
   campaigns,
   onDragOver,
+  orgId,
 }: TaskCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -145,6 +147,7 @@ export default function TaskCard({
           campaigns={campaigns}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          orgId={orgId}
         />
       )}
     </>

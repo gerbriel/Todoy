@@ -25,6 +25,7 @@ interface TaskListProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   campaigns: Campaign[]
   onOpenStageView?: () => void
+  orgId: string
 }
 
 export default function TaskList({
@@ -37,6 +38,7 @@ export default function TaskList({
   setLabels,
   campaigns,
   onOpenStageView,
+  orgId,
 }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -206,6 +208,7 @@ export default function TaskList({
             setLabels={setLabels}
             lists={lists}
             campaigns={campaigns}
+            orgId={orgId}
           />
         ))}
       </div>

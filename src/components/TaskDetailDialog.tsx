@@ -7,12 +7,13 @@ import { Label as UILabel } from './ui/label'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
-import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight } from '@phosphor-icons/react'
+import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight, UploadSimple } from '@phosphor-icons/react'
 import { Separator } from './ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { generateId, formatDate } from '@/lib/helpers'
+import { attachmentsService } from '@/services/attachments.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ interface TaskDetailDialogProps {
   campaigns: Campaign[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  orgId: string
 }
 
 export default function TaskDetailDialog({
@@ -48,6 +50,7 @@ export default function TaskDetailDialog({
   setLabels,
   open,
   onOpenChange,
+  orgId,
 }: TaskDetailDialogProps) {
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description)
@@ -63,6 +66,9 @@ export default function TaskDetailDialog({
   const [newAttachmentName, setNewAttachmentName] = useState('')
   const [newAttachmentUrl, setNewAttachmentUrl] = useState('')
   const [attachmentType, setAttachmentType] = useState<'file' | 'link'>('link')
+  const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
   const availableLists = lists.filter(l => l.campaignId === selectedCampaignId)
@@ -139,6 +145,80 @@ export default function TaskDetailDialog({
   const handleDeleteAttachment = (attachmentId: string) => {
     setAttachments(attachments.filter(a => a.id !== attachmentId))
     toast.success('Attachment removed')
+  }
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return
+    
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 10MB')
+      return
+    }
+    
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    try {
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90))
+      }, 100)
+      
+      const uploadedAttachment = await attachmentsService.upload(file, orgId, task.id)
+      
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+      
+      const attachment: Attachment = {
+        id: uploadedAttachment.id,
+        name: uploadedAttachment.name,
+        url: uploadedAttachment.url,
+        type: 'file',
+        size: uploadedAttachment.size,
+        createdAt: new Date().toISOString(),
+      }
+      
+      setAttachments([...attachments, attachment])
+      toast.success('File uploaded successfully')
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast.error('Failed to upload file')
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+    
+    // Upload first file only
+    await handleFileUpload(files[0])
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    handleFileUpload(files[0])
   }
 
   const toggleLabel = (labelId: string) => {
@@ -363,39 +443,75 @@ export default function TaskDetailDialog({
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4 m-0 p-1">
-              <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={attachmentType === 'link' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setAttachmentType('link')}
-                  >
-                    <Link size={16} weight="bold" />
-                    Link
-                  </Button>
-                  <Button
-                    variant={attachmentType === 'file' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setAttachmentType('file')}
-                  >
-                    <File size={16} weight="bold" />
-                    File
-                  </Button>
+              {/* Drag and Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
+                  border-2 border-dashed rounded-lg p-8 text-center transition-all
+                  ${isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-muted-foreground/25'}
+                  ${isUploading ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:border-primary/50 hover:bg-muted/30'}
+                `}
+              >
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                  disabled={isUploading}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <div className="flex flex-col items-center gap-2">
+                    <UploadSimple size={32} weight="duotone" className="text-muted-foreground" />
+                    {isUploading ? (
+                      <>
+                        <p className="text-sm font-medium">Uploading... {uploadProgress}%</p>
+                        <div className="w-full max-w-xs h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium">
+                          Drag & drop files here, or click to browse
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Maximum file size: 10MB
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </label>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or add a link</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
                 <div className="space-y-2">
                   <Input
                     value={newAttachmentName}
                     onChange={(e) => setNewAttachmentName(e.target.value)}
-                    placeholder={attachmentType === 'link' ? 'Link title...' : 'File name...'}
+                    placeholder="Link title..."
                   />
                   <Input
                     value={newAttachmentUrl}
                     onChange={(e) => setNewAttachmentUrl(e.target.value)}
-                    placeholder={attachmentType === 'link' ? 'https://...' : 'File URL...'}
+                    placeholder="https://..."
                   />
                   <Button onClick={handleAddAttachment} size="sm" className="w-full">
                     <Plus size={16} weight="bold" />
-                    Add {attachmentType === 'link' ? 'Link' : 'File'}
+                    Add Link
                   </Button>
                 </div>
               </div>
@@ -405,7 +521,7 @@ export default function TaskDetailDialog({
               <div className="space-y-2">
                 {attachments.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    No attachments yet. Add links or files to this task.
+                    No attachments yet. Drag & drop files or add links.
                   </p>
                 ) : (
                   attachments.map(attachment => (
@@ -428,9 +544,14 @@ export default function TaskDetailDialog({
                           >
                             {attachment.name}
                           </a>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {attachment.url}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {attachment.size && (
+                              <span>{attachmentsService.formatFileSize(attachment.size)}</span>
+                            )}
+                            {attachment.createdAt && (
+                              <span>• {formatDate(attachment.createdAt)}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <Button

@@ -20,6 +20,7 @@ interface StageViewProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   campaigns: Campaign[]
   onBack: () => void
+  orgId: string
 }
 
 export default function StageView({
@@ -32,6 +33,7 @@ export default function StageView({
   setLabels,
   campaigns,
   onBack,
+  orgId,
 }: StageViewProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [searchText, setSearchText] = useState('')
@@ -174,6 +176,7 @@ export default function StageView({
                       setLabels={setLabels}
                       lists={lists}
                       campaigns={campaigns}
+                      orgId={orgId}
                     />
                   </div>
                 ))}
@@ -196,6 +199,7 @@ export default function StageView({
           onOpenChange={(open) => {
             if (!open) setSelectedTaskId(null)
           }}
+          orgId={orgId}
         />
       )}
     </>

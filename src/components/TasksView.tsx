@@ -13,6 +13,7 @@ interface TasksViewProps {
   setTasks: (updater: (tasks: Task[]) => Task[]) => void
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   onNavigateToCampaign: (campaignId: string) => void
+  orgId: string
 }
 
 export default function TasksView({
@@ -24,6 +25,7 @@ export default function TasksView({
   setTasks,
   setLabels,
   onNavigateToCampaign,
+  orgId,
 }: TasksViewProps) {
   const getProjectForTask = (task: Task) => {
     const campaign = campaigns.find(c => c.id === task.campaignId)
@@ -81,6 +83,7 @@ export default function TasksView({
                     lists={lists}
                     setTasks={setTasks}
                     setLabels={setLabels}
+                    orgId={orgId}
                   />
                   <div className="px-2 text-xs text-muted-foreground truncate">
                     {project && <span>{project.title} → </span>}

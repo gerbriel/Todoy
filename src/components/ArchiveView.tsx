@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Folder, Target, CheckSquare, ArrowCounterClockwise, Trash } from '@phosphor-icons/react'
 import { Button } from './ui/button'
 import { getCampaignsForProject } from '@/lib/helpers'
+import { projectsService } from '@/services/projects.service'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 interface ArchiveViewProps {
@@ -24,21 +26,27 @@ export default function ArchiveView({
     .filter(p => p.archived)
     .sort((a, b) => a.order - b.order)
 
-  const handleRestore = (projectId: string, e: React.MouseEvent) => {
+  const handleRestore = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setProjects((currentProjects) =>
-      currentProjects.map((p) =>
-        p.id === projectId ? { ...p, archived: false } : p
-      )
-    )
+    try {
+      await projectsService.update(projectId, { archived: false })
+      toast.success('Project restored')
+    } catch (error) {
+      console.error('Error restoring project:', error)
+      toast.error('Failed to restore project')
+    }
   }
 
-  const handleDelete = (projectId: string, e: React.MouseEvent) => {
+  const handleDelete = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
-      setProjects((currentProjects) =>
-        currentProjects.filter((p) => p.id !== projectId)
-      )
+      try {
+        await projectsService.delete(projectId)
+        toast.success('Project deleted permanently')
+      } catch (error) {
+        console.error('Error deleting project:', error)
+        toast.error('Failed to delete project')
+      }
     }
   }
 

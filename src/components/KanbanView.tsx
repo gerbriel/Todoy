@@ -1,6 +1,7 @@
 import { Plus, SquaresFour } from '@phosphor-icons/react'
 import { Campaign, List, Task, Label, FilterState } from '@/lib/types'
-import { generateId, filterTasks } from '@/lib/helpers'
+import { filterTasks } from '@/lib/helpers'
+import { listsService } from '@/services/lists.service'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { toast } from 'sonner'
@@ -36,19 +37,20 @@ export default function KanbanView({
 }: KanbanViewProps) {
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
 
-  const handleCreateList = () => {
+  const handleCreateList = async () => {
     if (!activeCampaignId) return
     
-    const newList: List = {
-      id: generateId(),
-      title: 'New List',
-      campaignId: activeCampaignId,
-      order: lists.filter(l => l.campaignId === activeCampaignId).length,
-      taskIds: [],
+    try {
+      await listsService.create({
+        title: 'New List',
+        campaignId: activeCampaignId,
+        order: lists.filter(l => l.campaignId === activeCampaignId).length,
+      })
+      toast.success('List created')
+    } catch (error) {
+      console.error('Error creating list:', error)
+      toast.error('Failed to create list')
     }
-    
-    setLists(currentLists => [...currentLists, newList])
-    toast.success('List created')
   }
 
   const displayCampaigns = filters.showAllCampaigns 

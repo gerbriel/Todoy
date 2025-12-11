@@ -2,10 +2,12 @@ import { useState, DragEvent } from 'react'
 import { Clock, Tag, CheckSquare } from '@phosphor-icons/react'
 import { Task, Label, List, Campaign } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue } from '@/lib/helpers'
+import { tasksService } from '@/services/tasks.service'
 import { Badge } from './ui/badge'
 import { Checkbox } from './ui/checkbox'
 import TaskDetailDialog from './TaskDetailDialog'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface TaskCardProps {
   task: Task
@@ -53,12 +55,13 @@ export default function TaskCard({
     setIsDragging(false)
   }
 
-  const handleToggleComplete = () => {
-    setTasks((currentTasks) =>
-      currentTasks.map((t) =>
-        t.id === task.id ? { ...t, completed: !t.completed } : t
-      )
-    )
+  const handleToggleComplete = async () => {
+    try {
+      await tasksService.update(task.id, { completed: !task.completed })
+    } catch (error) {
+      console.error('Error toggling task completion:', error)
+      toast.error('Failed to update task')
+    }
   }
 
   return (

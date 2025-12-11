@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Project, Campaign, Task, Organization } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Target, CheckSquare, Calendar, Plus, PencilSimple } from '@phosphor-icons/react'
-import { getCampaignsForProject, getCampaignStageLabel, generateId } from '@/lib/helpers'
+import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
+import { campaignsService } from '@/services/campaigns.service'
 import { Badge } from './ui/badge'
 import { format } from 'date-fns'
 import { Button } from './ui/button'
@@ -47,29 +48,30 @@ export default function ProjectView({
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
     if (!newCampaignTitle.trim()) {
       toast.error('Please enter a campaign title')
       return
     }
 
-    const newCampaign: Campaign = {
-      id: generateId(),
-      title: newCampaignTitle.trim(),
-      description: '',
-      order: campaigns.length,
-      createdAt: new Date().toISOString(),
-      projectId: project.id,
-      campaignType: 'other',
-      campaignStage: 'planning',
-      orgId: organization?.id,
+    try {
+      const newCampaign = await campaignsService.create({
+        title: newCampaignTitle.trim(),
+        description: '',
+        order: campaigns.length,
+        projectId: project.id,
+        campaignType: 'other',
+        campaignStage: 'planning',
+        orgId: organization?.id || '',
+      })
+      toast.success('Campaign created')
+      setShowCreateDialog(false)
+      setNewCampaignTitle('')
+      onNavigateToCampaign(newCampaign.id)
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+      toast.error('Failed to create campaign')
     }
-    
-    setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
-    toast.success('Campaign created')
-    setShowCreateDialog(false)
-    setNewCampaignTitle('')
-    onNavigateToCampaign(newCampaign.id)
   }
 
   const getCampaignStats = (campaignId: string) => {

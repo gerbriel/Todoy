@@ -4,7 +4,8 @@ import { ScrollArea } from './ui/scroll-area'
 import { Button } from './ui/button'
 import { ArrowLeft, Plus } from '@phosphor-icons/react'
 import { Badge } from './ui/badge'
-import { generateId, getLabelColor } from '@/lib/helpers'
+import { getLabelColor } from '@/lib/helpers'
+import { tasksService } from '@/services/tasks.service'
 import { toast } from 'sonner'
 import TaskCard from './TaskCard'
 import TaskDetailDialog from './TaskDetailDialog'
@@ -50,24 +51,22 @@ export default function StageView({
       )
     : stageTasks
 
-  const handleCreateTask = () => {
-    const newTask: Task = {
-      id: generateId(),
-      title: 'New Task',
-      description: '',
-      listId: list.id,
-      campaignId: list.campaignId,
-      labelIds: [],
-      order: stageTasks.length,
-      createdAt: new Date().toISOString(),
-      subtasks: [],
-      comments: [],
-      attachments: [],
+  const handleCreateTask = async () => {
+    try {
+      const newTask = await tasksService.create({
+        title: 'New Task',
+        description: '',
+        listId: list.id,
+        campaignId: list.campaignId,
+        labelIds: [],
+        order: stageTasks.length,
+      })
+      setSelectedTaskId(newTask.id)
+      toast.success('Task created')
+    } catch (error) {
+      console.error('Error creating task:', error)
+      toast.error('Failed to create task')
     }
-
-    setTasks(currentTasks => [...currentTasks, newTask])
-    setSelectedTaskId(newTask.id)
-    toast.success('Task created')
   }
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId)

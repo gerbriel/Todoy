@@ -170,34 +170,36 @@ export default function Sidebar({
     setEditingTitle(project.title)
   }
 
-  const handleSaveEditCampaign = (campaignId: string) => {
+  const handleSaveEditCampaign = async (campaignId: string) => {
     if (!editingTitle.trim()) {
       toast.error('Title cannot be empty')
       return
     }
     
-    setCampaigns(currentCampaigns =>
-      currentCampaigns.map(c =>
-        c.id === campaignId ? { ...c, title: editingTitle.trim() } : c
-      )
-    )
-    setEditingCampaignId(null)
-    toast.success('Renamed')
+    try {
+      await campaignsService.update(campaignId, { title: editingTitle.trim() })
+      setEditingCampaignId(null)
+      toast.success('Renamed')
+    } catch (error) {
+      console.error('Error renaming campaign:', error)
+      toast.error('Failed to rename campaign')
+    }
   }
 
-  const handleSaveEditProject = (projectId: string) => {
+  const handleSaveEditProject = async (projectId: string) => {
     if (!editingTitle.trim()) {
       toast.error('Title cannot be empty')
       return
     }
     
-    setProjects(currentProjects =>
-      currentProjects.map(p =>
-        p.id === projectId ? { ...p, title: editingTitle.trim() } : p
-      )
-    )
-    setEditingProjectId(null)
-    toast.success('Renamed')
+    try {
+      await projectsService.update(projectId, { title: editingTitle.trim() })
+      setEditingProjectId(null)
+      toast.success('Renamed')
+    } catch (error) {
+      console.error('Error renaming project:', error)
+      toast.error('Failed to rename project')
+    }
   }
 
   const handleCancelEdit = () => {
@@ -260,6 +262,15 @@ export default function Sidebar({
         ...c,
         order: index,
       }))
+
+      // Persist the new order to database
+      updatedCampaigns.forEach(async (c) => {
+        try {
+          await campaignsService.update(c.id, { order: c.order })
+        } catch (error) {
+          console.error('Error updating campaign order:', error)
+        }
+      })
 
       return currentCampaigns.map(c => {
         const updated = updatedCampaigns.find(uc => uc.id === c.id)
@@ -442,7 +453,7 @@ export default function Sidebar({
       setDragOverProjectId(null)
     }
 
-    const handleProjectDrop = (e: DragEvent<HTMLDivElement>) => {
+    const handleProjectDrop = async (e: DragEvent<HTMLDivElement>) => {
       e.preventDefault()
       e.stopPropagation()
       setDragOverProjectId(null)
@@ -455,14 +466,14 @@ export default function Sidebar({
 
       if (campaign.projectId === project.id) return
 
-      setCampaigns(currentCampaigns =>
-        currentCampaigns.map(c =>
-          c.id === campaignId ? { ...c, projectId: project.id } : c
-        )
-      )
-
-      setExpandedProjects(prev => new Set(prev).add(project.id))
-      toast.success(`Moved "${campaign.title}" to "${project.title}"`)
+      try {
+        await campaignsService.update(campaignId, { projectId: project.id })
+        setExpandedProjects(prev => new Set(prev).add(project.id))
+        toast.success(`Moved "${campaign.title}" to "${project.title}"`)
+      } catch (error) {
+        console.error('Error moving campaign to project:', error)
+        toast.error('Failed to move campaign')
+      }
     }
 
     return (

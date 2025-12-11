@@ -4,6 +4,8 @@ import { Folder, Target, CheckSquare, Archive } from '@phosphor-icons/react'
 import { Checkbox } from './ui/checkbox'
 import { Button } from './ui/button'
 import { getCampaignsForProject } from '@/lib/helpers'
+import { projectsService } from '@/services/projects.service'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 interface ProjectsViewProps {
@@ -23,22 +25,28 @@ export default function ProjectsView({
 }: ProjectsViewProps) {
   const sortedProjects = [...projects].sort((a, b) => a.order - b.order)
 
-  const handleToggleComplete = (projectId: string, e: React.MouseEvent) => {
+  const handleToggleComplete = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setProjects((currentProjects) =>
-      currentProjects.map((p) =>
-        p.id === projectId ? { ...p, completed: !p.completed } : p
-      )
-    )
+    const project = projects.find(p => p.id === projectId)
+    if (!project) return
+    
+    try {
+      await projectsService.update(projectId, { completed: !project.completed })
+    } catch (error) {
+      console.error('Error toggling project completion:', error)
+      toast.error('Failed to update project')
+    }
   }
 
-  const handleArchive = (projectId: string, e: React.MouseEvent) => {
+  const handleArchive = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setProjects((currentProjects) =>
-      currentProjects.map((p) =>
-        p.id === projectId ? { ...p, archived: true } : p
-      )
-    )
+    try {
+      await projectsService.update(projectId, { archived: true })
+      toast.success('Project archived')
+    } catch (error) {
+      console.error('Error archiving project:', error)
+      toast.error('Failed to archive project')
+    }
   }
 
   const getProjectStats = (projectId: string) => {

@@ -225,50 +225,57 @@ export default function TaskDetailDialog({
     )
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm('Delete this task?')) {
-      setTasks(currentTasks => currentTasks.filter(t => t.id !== task.id))
-      toast.success('Task deleted')
-      onOpenChange(false)
+      try {
+        await tasksService.delete(task.id)
+        toast.success('Task deleted')
+        onOpenChange(false)
+      } catch (error) {
+        console.error('Error deleting task:', error)
+        toast.error('Failed to delete task')
+      }
     }
   }
 
-  const handleArchive = () => {
-    setTasks(currentTasks =>
-      currentTasks.map(t =>
-        t.id === task.id ? { ...t, completed: true } : t
-      )
-    )
-    toast.success('Task archived')
-    onOpenChange(false)
+  const handleArchive = async () => {
+    try {
+      await tasksService.update(task.id, { completed: true })
+      toast.success('Task archived')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error archiving task:', error)
+      toast.error('Failed to archive task')
+    }
   }
 
-  const handleMoveToCampaign = (newCampaignId: string) => {
+  const handleMoveToCampaign = async (newCampaignId: string) => {
     const newCampaignLists = lists.filter(l => l.campaignId === newCampaignId)
     const targetListId = newCampaignLists.length > 0 ? newCampaignLists[0].id : ''
     
-    setTasks(currentTasks =>
-      currentTasks.map(t =>
-        t.id === task.id 
-          ? { ...t, campaignId: newCampaignId, listId: targetListId } 
-          : t
-      )
-    )
-    
-    const campaignName = campaigns.find(c => c.id === newCampaignId)?.title || 'campaign'
-    toast.success(`Moved to ${campaignName}`)
-    onOpenChange(false)
+    try {
+      await tasksService.update(task.id, { 
+        campaignId: newCampaignId, 
+        listId: targetListId 
+      })
+      const campaignName = campaigns.find(c => c.id === newCampaignId)?.title || 'campaign'
+      toast.success(`Moved to ${campaignName}`)
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error moving task:', error)
+      toast.error('Failed to move task')
+    }
   }
 
-  const handleMoveToList = (newListId: string) => {
-    setTasks(currentTasks =>
-      currentTasks.map(t =>
-        t.id === task.id ? { ...t, listId: newListId } : t
-      )
-    )
-    
-    const listName = lists.find(l => l.id === newListId)?.title || 'list'
-    toast.success(`Moved to ${listName}`)
+  const handleMoveToList = async (newListId: string) => {
+    try {
+      await tasksService.update(task.id, { listId: newListId })
+      const listName = lists.find(l => l.id === newListId)?.title || 'list'
+      toast.success(`Moved to ${listName}`)
+    } catch (error) {
+      console.error('Error moving task:', error)
+      toast.error('Failed to move task')
+    }
   }
 
   const handleCampaignChange = (newCampaignId: string) => {

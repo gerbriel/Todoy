@@ -42,6 +42,8 @@ export default function ProjectsView({
     e.stopPropagation()
     try {
       await projectsService.update(projectId, { archived: true })
+      // Optimistically update local state
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, archived: true } : p))
       toast.success('Project archived')
     } catch (error) {
       console.error('Error archiving project:', error)

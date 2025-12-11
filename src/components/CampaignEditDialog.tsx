@@ -123,6 +123,8 @@ export default function CampaignEditDialog({
   const handleArchive = async () => {
     try {
       await campaignsService.update(campaign.id, { archived: true })
+      // Optimistically update local state
+      setCampaigns(prev => prev.map(c => c.id === campaign.id ? { ...c, archived: true } : c))
       toast.success('Campaign archived')
       onOpenChange(false)
     } catch (error) {

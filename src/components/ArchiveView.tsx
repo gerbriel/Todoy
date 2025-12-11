@@ -30,6 +30,8 @@ export default function ArchiveView({
     e.stopPropagation()
     try {
       await projectsService.update(projectId, { archived: false })
+      // Optimistically update local state
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, archived: false } : p))
       toast.success('Project restored')
     } catch (error) {
       console.error('Error restoring project:', error)
@@ -42,6 +44,8 @@ export default function ArchiveView({
     if (window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
       try {
         await projectsService.delete(projectId)
+        // Optimistically update local state
+        setProjects(prev => prev.filter(p => p.id !== projectId))
         toast.success('Project deleted permanently')
       } catch (error) {
         console.error('Error deleting project:', error)

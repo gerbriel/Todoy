@@ -69,6 +69,8 @@ export default function ProjectEditDialog({
   const handleArchive = async () => {
     try {
       await projectsService.update(project.id, { archived: true })
+      // Optimistically update local state
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, archived: true } : p))
       toast.success('Project archived')
       onOpenChange(false)
     } catch (error) {

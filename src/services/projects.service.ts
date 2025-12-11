@@ -95,6 +95,8 @@ export const projectsService = {
       if (error) throw error
       if (!data) return null
 
+      console.log('[projects.service.getById] Raw data from DB:', { id: data.id, archived: data.archived, title: data.title })
+
       return {
         ...data,
         createdAt: data.created_at,
@@ -171,6 +173,8 @@ export const projectsService = {
       if (updates.archived !== undefined) updateData.archived = updates.archived
       if (updates.visibility !== undefined) updateData.visibility = updates.visibility
 
+      console.log('[projects.service] Updating project:', id, 'with data:', updateData)
+
       // Only update main fields if there are any changes
       if (Object.keys(updateData).length > 0) {
         const { error } = await supabase
@@ -178,7 +182,11 @@ export const projectsService = {
           .update(updateData)
           .eq('id', id)
 
-        if (error) throw error
+        if (error) {
+          console.error('[projects.service] Database update error:', error)
+          throw error
+        }
+        console.log('[projects.service] Database update successful')
       }
 
       // Handle assigned users if provided
@@ -192,7 +200,9 @@ export const projectsService = {
       }
 
       // Fetch updated project with relations
-      return await this.getById(id) as Project
+      const updatedProject = await this.getById(id) as Project
+      console.log('[projects.service] Fetched updated project, archived:', updatedProject.archived)
+      return updatedProject
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to update project'))
     }

@@ -43,7 +43,8 @@ export default function ProjectsView({
     try {
       console.log('Archiving project:', projectId)
       const result = await projectsService.update(projectId, { archived: true })
-      console.log('Archive result:', result, 'archived flag:', result.archived)
+      console.log('Archive result:', JSON.stringify(result, null, 2))
+      console.log('Archived flag value:', result.archived)
       
       // Optimistically remove from view immediately for better UX
       setProjects(prev => prev.filter(p => p.id !== projectId))

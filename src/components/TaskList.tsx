@@ -40,6 +40,7 @@ export default function TaskList({
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState(list.title)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const listTasks = tasks
@@ -122,21 +123,84 @@ export default function TaskList({
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
+    setDragOverIndex(null)
 
     const taskId = e.dataTransfer.getData('taskId')
     const sourceListId = e.dataTransfer.getData('sourceListId')
 
-    if (!taskId || sourceListId === list.id) return
+    if (!taskId) return
 
+    // Moving between lists
+    if (sourceListId !== list.id) {
+      try {
+        await tasksService.update(taskId, { 
+          listId: list.id, 
+          order: listTasks.length 
+        })
+        toast.success('Task moved')
+      } catch (error) {
+        console.error('Error moving task:', error)
+        toast.error('Failed to move task')
+      }
+    }
+  }
+
+  const handleTaskDragOver = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverIndex(index)
+  }
+
+  const handleTaskDrop = async (e: DragEvent<HTMLDivElement>, targetIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverIndex(null)
+
+    const taskId = e.dataTransfer.getData('taskId')
+    const sourceListId = e.dataTransfer.getData('sourceListId')
+
+    if (!taskId || sourceListId !== list.id) return
+
+    const draggedTask = listTasks.find(t => t.id === taskId)
+    if (!draggedTask) return
+
+    const currentIndex = listTasks.findIndex(t => t.id === taskId)
+    if (currentIndex === targetIndex) return
+
+    // Optimistically reorder tasks locally
+    const reorderedTasks = [...listTasks]
+    const [removed] = reorderedTasks.splice(currentIndex, 1)
+    reorderedTasks.splice(targetIndex, 0, removed)
+
+    // Update orders
+    const updatedTasks = reorderedTasks.map((task, idx) => ({
+      ...task,
+      order: idx
+    }))
+
+    // Update local state immediately for smooth UX
+    setTasks(prev => {
+      const otherTasks = prev.filter(t => t.listId !== list.id)
+      return [...otherTasks, ...updatedTasks]
+    })
+
+    // Update in database
     try {
-      await tasksService.update(taskId, { 
-        listId: list.id, 
-        order: listTasks.length 
-      })
-      toast.success('Task moved')
+      await tasksService.update(taskId, { order: targetIndex })
+      // Optionally update other affected tasks' orders
+      for (let i = 0; i < updatedTasks.length; i++) {
+        if (updatedTasks[i].id !== taskId && updatedTasks[i].order !== listTasks[i]?.order) {
+          await tasksService.update(updatedTasks[i].id, { order: i })
+        }
+      }
     } catch (error) {
-      console.error('Error moving task:', error)
-      toast.error('Failed to move task')
+      console.error('Error reordering task:', error)
+      toast.error('Failed to reorder task')
+      // Revert on error
+      setTasks(prev => {
+        const otherTasks = prev.filter(t => t.listId !== list.id)
+        return [...otherTasks, ...listTasks]
+      })
     }
   }
 
@@ -209,19 +273,39 @@ export default function TaskList({
       />
 
       <div className="space-y-2 mb-3">
-        {listTasks.map(task => (
-          <TaskCard
+        {listTasks.map((task, index) => (
+          <div
             key={task.id}
-            task={task}
-            tasks={tasks}
-            setTasks={setTasks}
-            labels={labels}
-            setLabels={setLabels}
-            lists={lists}
-            campaigns={campaigns}
-            orgId={orgId}
-          />
+            onDragOver={(e) => handleTaskDragOver(e, index)}
+            onDrop={(e) => handleTaskDrop(e, index)}
+            className={cn(
+              'transition-all',
+              dragOverIndex === index && 'border-t-2 border-accent pt-2'
+            )}
+          >
+            <TaskCard
+              task={task}
+              tasks={tasks}
+              setTasks={setTasks}
+              labels={labels}
+              setLabels={setLabels}
+              lists={lists}
+              campaigns={campaigns}
+              orgId={orgId}
+            />
+          </div>
         ))}
+        {/* Drop zone at the end */}
+        {listTasks.length > 0 && (
+          <div
+            onDragOver={(e) => handleTaskDragOver(e, listTasks.length)}
+            onDrop={(e) => handleTaskDrop(e, listTasks.length)}
+            className={cn(
+              'h-2 transition-all rounded',
+              dragOverIndex === listTasks.length && 'h-8 border-2 border-dashed border-accent bg-accent/5'
+            )}
+          />
+        )}
       </div>
 
       {isAddingTask ? (

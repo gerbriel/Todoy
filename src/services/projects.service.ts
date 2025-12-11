@@ -98,6 +98,7 @@ export const projectsService = {
       return {
         ...data,
         createdAt: data.created_at,
+        archived: data.archived || false,
         stageDates: (data.stage_dates || []).map((sd: any) => ({
           id: sd.id,
           stageName: sd.stage_name,

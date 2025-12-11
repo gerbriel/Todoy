@@ -41,7 +41,9 @@ export default function ProjectsView({
   const handleArchive = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await projectsService.update(projectId, { archived: true })
+      console.log('Archiving project:', projectId)
+      const result = await projectsService.update(projectId, { archived: true })
+      console.log('Archive result:', result)
       toast.success('Project archived')
       // Real-time subscription will update the state automatically
     } catch (error) {

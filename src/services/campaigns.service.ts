@@ -122,6 +122,47 @@ export const campaignsService = {
   },
 
   /**
+   * Get a single campaign by ID
+   */
+  async getById(id: string): Promise<Campaign | null> {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select(`
+          *,
+          stage_dates (*)
+        `)
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      if (!data) return null
+
+      return {
+        ...data,
+        createdAt: data.created_at,
+        projectId: data.project_id,
+        campaignType: data.campaign_type,
+        planningStartDate: data.planning_start_date,
+        launchDate: data.launch_date,
+        endDate: data.end_date,
+        followUpDate: data.follow_up_date,
+        archived: data.archived || false,
+        stageDates: (data.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to fetch campaign'))
+    }
+  },
+
+  /**
    * Create a new campaign
    */
   async create(campaign: Omit<Campaign, 'id' | 'createdAt'>): Promise<Campaign> {

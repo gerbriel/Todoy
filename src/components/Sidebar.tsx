@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, CaretLeft, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, SidebarSimple } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, CaretLeft, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, SidebarSimple, CheckCircle } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
@@ -45,6 +45,7 @@ interface SidebarProps {
   onNavigateToAllTasks: () => void
   onNavigateToMaster?: () => void
   onNavigateToArchive?: () => void
+  onNavigateToRecentlyCompleted?: () => void
   onNavigateToOrganization?: () => void
   onNavigateToLabels?: () => void
   onNavigateToProject: (projectId: string) => void
@@ -70,6 +71,7 @@ export default function Sidebar({
   onNavigateToAllTasks,
   onNavigateToMaster,
   onNavigateToArchive,
+  onNavigateToRecentlyCompleted,
   onNavigateToOrganization,
   onNavigateToLabels,
   onNavigateToProject,
@@ -92,7 +94,7 @@ export default function Sidebar({
   const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const sortedProjects = getProjects(projects).filter(p => !p.archived)
+  const sortedProjects = getProjects(projects).filter(p => !p.archived && !p.completed)
   const standaloneCampaigns = getStandaloneCampaigns(campaigns).filter(c => !c.archived)
 
   useEffect(() => {
@@ -656,9 +658,10 @@ export default function Sidebar({
     <>
       <aside className={cn(
         "border-r border-border bg-card flex flex-col transition-all duration-300 relative",
-        isCollapsed ? "w-16" : "w-72"
+        isCollapsed ? "w-16" : "w-72",
+        "md:block" // Always show on desktop
       )}>
-        <div className="p-4 border-b border-border">
+        <div className="p-2 md:p-4 border-b border-border">
           {!isCollapsed && (
             <>
               <div className="flex items-center gap-2 mb-4">
@@ -751,6 +754,23 @@ export default function Sidebar({
                 <CheckSquare size={16} weight="duotone" />
                 {!isCollapsed && "All Tasks"}
               </button>
+
+              {onNavigateToRecentlyCompleted && (
+                <button
+                  onClick={onNavigateToRecentlyCompleted}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'recently-completed'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
+                  )}
+                  title={isCollapsed ? "Recently Completed" : ""}
+                >
+                  <CheckCircle size={16} weight="duotone" className="text-green-600" />
+                  {!isCollapsed && "Recently Completed"}
+                </button>
+              )}
             </div>
 
             {/* Stage Filters - Filter by task current stage */}

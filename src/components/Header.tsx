@@ -143,6 +143,9 @@ export default function Header({
             {navigationView === 'all-tasks' && (
               <h2 className="text-xl font-semibold text-foreground">All Tasks</h2>
             )}
+            {navigationView === 'recently-completed' && (
+              <h2 className="text-xl font-semibold text-foreground">Recently Completed Projects</h2>
+            )}
             {navigationView === 'project' && activeProject && (
               <h2 className="text-xl font-semibold text-foreground">{activeProject.title}</h2>
             )}

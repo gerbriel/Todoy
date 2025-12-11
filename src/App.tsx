@@ -11,6 +11,7 @@ import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import ProjectsView from './components/ProjectsView'
 import ArchiveView from './components/ArchiveView'
+import RecentlyCompletedView from './components/RecentlyCompletedView'
 import ProjectView from './components/ProjectView'
 import CampaignsView from './components/CampaignsView'
 import TasksView from './components/TasksView'
@@ -26,7 +27,7 @@ import { orgMembersService } from './services/orgMembers.service'
 import { orgInvitesService } from './services/orgInvites.service'
 import { stageTemplatesService } from './services/stageTemplates.service'
 
-export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization' | 'labels'
+export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization' | 'labels' | 'recently-completed'
 
 function App() {
   const { isAuthenticated } = useAuth()
@@ -256,6 +257,12 @@ function MainApp() {
     setNavigationView('archive')
   }
 
+  const handleNavigateToRecentlyCompleted = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('recently-completed')
+  }
+
   const handleNavigateToOrganization = () => {
     setActiveProjectId(null)
     setActiveCampaignId(null)
@@ -287,6 +294,7 @@ function MainApp() {
         onNavigateToAllTasks={handleNavigateToAllTasks}
         onNavigateToMaster={handleNavigateToMaster}
         onNavigateToArchive={handleNavigateToArchive}
+        onNavigateToRecentlyCompleted={handleNavigateToRecentlyCompleted}
         onNavigateToOrganization={handleNavigateToOrganization}
         onNavigateToLabels={handleNavigateToLabels}
         onNavigateToProject={handleNavigateToProject}
@@ -380,6 +388,16 @@ function MainApp() {
               onNavigateToProject={handleNavigateToProject}
               onNavigateToCampaign={handleNavigateToCampaign}
               orgId={organization?.id || ''}
+            />
+          )}
+
+          {navigationView === 'recently-completed' && (
+            <RecentlyCompletedView
+              projects={projects || []}
+              setProjects={setProjects}
+              campaigns={campaigns || []}
+              tasks={tasks || []}
+              onNavigateToProject={handleNavigateToProject}
             />
           )}
           

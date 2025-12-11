@@ -239,6 +239,9 @@ function MainApp() {
           onNavigateToAllProjects={handleNavigateToAllProjects}
           onNavigateToProject={handleNavigateToProject}
           onNavigateToCampaign={handleNavigateToCampaign}
+          onNavigateToArchive={handleNavigateToArchive}
+          onNavigateToLabels={handleNavigateToLabels}
+          onNavigateToOrganization={handleNavigateToOrganization}
           projects={projects || []}
           setProjects={setProjects}
           tasks={tasks || []}

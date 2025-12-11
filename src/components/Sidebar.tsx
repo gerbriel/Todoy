@@ -703,9 +703,26 @@ export default function Sidebar({
           </button>
         </div>
         
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 h-full">
           <div className="p-2">
             <div className="space-y-1 mb-3">
+              {onNavigateToMaster && (
+                <button
+                  onClick={onNavigateToMaster}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'master'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
+                  )}
+                  title={isCollapsed ? "Master View" : ""}
+                >
+                  <ChartBar size={16} weight="duotone" />
+                  {!isCollapsed && "Master View"}
+                </button>
+              )}
+              
               <button
                 onClick={onNavigateToAllProjects}
                 className={cn(
@@ -750,74 +767,6 @@ export default function Sidebar({
                 <CheckSquare size={16} weight="duotone" />
                 {!isCollapsed && "All Tasks"}
               </button>
-              
-              {onNavigateToMaster && (
-                <button
-                  onClick={onNavigateToMaster}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
-                    navigationView === 'master'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
-                  )}
-                  title={isCollapsed ? "Master View" : ""}
-                >
-                  <ChartBar size={16} weight="duotone" />
-                  {!isCollapsed && "Master View"}
-                </button>
-              )}
-              
-              {onNavigateToArchive && (
-                <button
-                  onClick={onNavigateToArchive}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
-                    navigationView === 'archive'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
-                  )}
-                  title={isCollapsed ? "Archive" : ""}
-                >
-                  <Archive size={16} weight="duotone" />
-                  {!isCollapsed && "Archive"}
-                </button>
-              )}
-              
-              {onNavigateToLabels && (
-                <button
-                  onClick={onNavigateToLabels}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
-                    navigationView === 'labels'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
-                  )}
-                  title={isCollapsed ? "Labels" : ""}
-                >
-                  <Tag size={16} weight="duotone" />
-                  {!isCollapsed && "Labels"}
-                </button>
-              )}
-              
-              {onNavigateToOrganization && (
-                <button
-                  onClick={onNavigateToOrganization}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
-                    navigationView === 'organization'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
-                  )}
-                  title={isCollapsed ? "Organization" : ""}
-                >
-                  <Briefcase size={16} weight="duotone" />
-                  {!isCollapsed && "Organization"}
-                </button>
-              )}
             </div>
 
             {/* Stage Filters - Filter by task current stage */}

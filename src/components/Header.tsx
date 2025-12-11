@@ -3,7 +3,7 @@ import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/type
 import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User, Trash } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
@@ -33,6 +33,9 @@ interface HeaderProps {
   setFilters: (filters: FilterState) => void
   onNavigateToAllProjects: () => void
   onNavigateToProject: (projectId: string) => void
+  onNavigateToArchive?: () => void
+  onNavigateToLabels?: () => void
+  onNavigateToOrganization?: () => void
   projects: Project[]
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   tasks: Task[]
@@ -47,6 +50,9 @@ export default function Header({
   onNavigateToProject,
   onNavigateToCampaign,
   onNavigateToAllProjects,
+  onNavigateToArchive,
+  onNavigateToLabels,
+  onNavigateToOrganization,
   projects,
   setProjects,
   campaigns,
@@ -187,6 +193,25 @@ export default function Header({
                     <p className="text-sm font-medium">{user.name}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
+                  <DropdownMenuSeparator />
+                  {onNavigateToLabels && (
+                    <DropdownMenuItem onClick={onNavigateToLabels}>
+                      <Tag size={16} className="mr-2" />
+                      Labels
+                    </DropdownMenuItem>
+                  )}
+                  {onNavigateToArchive && (
+                    <DropdownMenuItem onClick={onNavigateToArchive}>
+                      <Archive size={16} className="mr-2" />
+                      Archive
+                    </DropdownMenuItem>
+                  )}
+                  {onNavigateToOrganization && (
+                    <DropdownMenuItem onClick={onNavigateToOrganization}>
+                      <Briefcase size={16} className="mr-2" />
+                      Organization
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <SignOut size={16} className="mr-2" />

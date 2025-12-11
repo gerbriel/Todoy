@@ -15,6 +15,7 @@ export const projectsService = {
           project_assignees (user_id)
         `)
         .eq('org_id', orgId)
+        .eq('archived', false)
         .order('order', { ascending: true })
 
       if (error) throw error
@@ -35,6 +36,44 @@ export const projectsService = {
       }))
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to fetch projects'))
+    }
+  },
+
+  /**
+   * Get all archived projects for an organization
+   */
+  async getAllArchived(orgId: string): Promise<Project[]> {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          stage_dates (*),
+          project_assignees (user_id)
+        `)
+        .eq('org_id', orgId)
+        .eq('archived', true)
+        .order('order', { ascending: true })
+
+      if (error) throw error
+
+      // Transform the data to match our existing Project type
+      return (data || []).map(project => ({
+        ...project,
+        createdAt: project.created_at,
+        stageDates: (project.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false
+        })),
+        archived: project.archived || false,
+        assignedTo: project.project_assignees?.map((a: any) => a.user_id) || [],
+      }))
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to fetch archived projects'))
     }
   },
 

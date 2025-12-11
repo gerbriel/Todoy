@@ -14,6 +14,7 @@ export const campaignsService = {
           stage_dates (*)
         `)
         .eq('org_id', orgId)
+        .eq('archived', false)
         .order('order', { ascending: true })
 
       if (error) throw error
@@ -38,6 +39,46 @@ export const campaignsService = {
       }))
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to fetch campaigns'))
+    }
+  },
+
+  /**
+   * Get all archived campaigns for an organization
+   */
+  async getAllArchived(orgId: string): Promise<Campaign[]> {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select(`
+          *,
+          stage_dates (*)
+        `)
+        .eq('org_id', orgId)
+        .eq('archived', true)
+        .order('order', { ascending: true })
+
+      if (error) throw error
+
+      return (data || []).map(campaign => ({
+        ...campaign,
+        createdAt: campaign.created_at,
+        projectId: campaign.project_id,
+        campaignType: campaign.campaign_type,
+        planningStartDate: campaign.planning_start_date,
+        launchDate: campaign.launch_date,
+        endDate: campaign.end_date,
+        followUpDate: campaign.follow_up_date,
+        stageDates: (campaign.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
+      }))
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to fetch archived campaigns'))
     }
   },
 

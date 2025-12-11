@@ -4,8 +4,10 @@ import { Folder, Target, CheckSquare, ArrowCounterClockwise, Trash } from '@phos
 import { Button } from './ui/button'
 import { getCampaignsForProject } from '@/lib/helpers'
 import { projectsService } from '@/services/projects.service'
+import { campaignsService } from '@/services/campaigns.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
 
 interface ArchiveViewProps {
   projects: Project[]
@@ -22,16 +24,45 @@ export default function ArchiveView({
   tasks,
   onNavigateToProject,
 }: ArchiveViewProps) {
-  const archivedProjects = [...projects]
-    .filter(p => p.archived)
-    .sort((a, b) => a.order - b.order)
+  const [archivedProjects, setArchivedProjects] = useState<Project[]>([])
+  const [archivedCampaigns, setArchivedCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load archived items when the view mounts
+  useEffect(() => {
+    const loadArchivedItems = async () => {
+      try {
+        setLoading(true)
+        // Get organization ID from the first project or campaign in the global state
+        const orgId = projects[0]?.orgId || campaigns[0]?.orgId
+        if (!orgId) return
+
+        const [archivedProjs, archivedCamps] = await Promise.all([
+          projectsService.getAllArchived(orgId),
+          campaignsService.getAllArchived(orgId),
+        ])
+        
+        setArchivedProjects(archivedProjs)
+        setArchivedCampaigns(archivedCamps)
+      } catch (error) {
+        console.error('Error loading archived items:', error)
+        toast.error('Failed to load archived items')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadArchivedItems()
+  }, [projects, campaigns])
+
+  const sortedProjects = [...archivedProjects].sort((a, b) => a.order - b.order)
 
   const handleRestore = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
       await projectsService.update(projectId, { archived: false })
-      // Optimistically update local state
-      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, archived: false } : p))
+      // Remove from archived list and update global state
+      setArchivedProjects(prev => prev.filter(p => p.id !== projectId))
       toast.success('Project restored')
     } catch (error) {
       console.error('Error restoring project:', error)
@@ -44,8 +75,8 @@ export default function ArchiveView({
     if (window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
       try {
         await projectsService.delete(projectId)
-        // Optimistically update local state
-        setProjects(prev => prev.filter(p => p.id !== projectId))
+        // Remove from archived list
+        setArchivedProjects(prev => prev.filter(p => p.id !== projectId))
         toast.success('Project deleted permanently')
       } catch (error) {
         console.error('Error deleting project:', error)
@@ -55,7 +86,7 @@ export default function ArchiveView({
   }
 
   const getProjectStats = (projectId: string) => {
-    const projectCampaigns = getCampaignsForProject(campaigns, projectId)
+    const projectCampaigns = getCampaignsForProject(archivedCampaigns, projectId)
     const projectTasks = tasks.filter(task => 
       projectCampaigns.some(campaign => campaign.id === task.campaignId)
     )
@@ -63,6 +94,19 @@ export default function ArchiveView({
       campaignCount: projectCampaigns.length,
       taskCount: projectTasks.length,
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="h-full overflow-auto p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-foreground mb-2">Archived Projects</h2>
+            <p className="text-muted-foreground">Loading archived items...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -75,7 +119,7 @@ export default function ArchiveView({
           </p>
         </div>
 
-        {archivedProjects.length === 0 ? (
+        {sortedProjects.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Folder size={64} className="text-muted-foreground mb-4" weight="duotone" />
@@ -87,7 +131,7 @@ export default function ArchiveView({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {archivedProjects.map(project => {
+            {sortedProjects.map(project => {
               const stats = getProjectStats(project.id)
               return (
                 <Card

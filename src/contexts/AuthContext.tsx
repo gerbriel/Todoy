@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
       
+      console.log('[Auth] Initial session check:', session?.user?.id || 'No session')
+      
       if (session?.user) {
         loadUserData(session.user.id).catch(() => {
           if (mounted) setLoading(false)
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       }
     }).catch(() => {
+      console.log('[Auth] Failed to get session')
       if (mounted) setLoading(false)
     })
 
@@ -63,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
+      
+      console.log('[Auth] State change:', event, session?.user?.id || 'No session')
       
       // Only handle actual auth changes, not initial session
       if (event === 'INITIAL_SESSION') return
@@ -89,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user profile and organization data
   const loadUserData = async (userId: string) => {
+    console.log('[Auth] Loading user data for:', userId)
     try {
       // Load user profile
       const { data: profile, error: profileError } = await supabase
@@ -98,13 +104,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (profileError) {
-        // If profile doesn't exist, clear the session and show login
-        await supabase.auth.signOut()
+        console.log('[Auth] Profile error:', profileError.code, profileError.message)
+        // If profile doesn't exist (404), we have a problem
+        // But for other errors (network, timeout), just fail silently
+        if (profileError.code === 'PGRST116') {
+          // Profile doesn't exist - this shouldn't happen but sign out if it does
+          await supabase.auth.signOut()
+        }
         setUser(null)
         setOrganization(null)
         setLoading(false)
         return
       }
+
+      console.log('[Auth] Profile loaded successfully')
 
       if (profile) {
         const userData: User = {

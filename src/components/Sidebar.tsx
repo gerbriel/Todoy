@@ -124,12 +124,14 @@ export default function Sidebar({
 
     try {
       if (createType === 'project') {
-        await projectsService.create({
+        const newProject = await projectsService.create({
           title: newTitle.trim(),
           description: '',
           order: projects.length,
           orgId: organization?.id || '',
         })
+        // Optimistically update local state
+        setProjects(prev => [...prev, newProject])
         toast.success('Project created')
       } else {
         const newCampaign = await campaignsService.create({
@@ -141,6 +143,8 @@ export default function Sidebar({
           campaignStage: 'planning',
           orgId: organization?.id || '',
         })
+        // Optimistically update local state
+        setCampaigns(prev => [...prev, newCampaign])
         onNavigateToCampaign(newCampaign.id)
         
         if (createProjectId) {
@@ -411,6 +415,8 @@ export default function Sidebar({
                   if (confirm(`Delete ${campaign.title}?`)) {
                     try {
                       await campaignsService.delete(campaign.id)
+                      // Optimistically update local state
+                      setCampaigns(prev => prev.filter(c => c.id !== campaign.id))
                       if (activeCampaignId === campaign.id) {
                         onNavigateToAllProjects()
                       }
@@ -567,6 +573,12 @@ export default function Sidebar({
                   if (confirm(`Delete ${project.title} and all its campaigns?`)) {
                     try {
                       await projectsService.delete(project.id)
+                      // Optimistically update local state
+                      setProjects(prev => prev.filter(p => p.id !== project.id))
+                      setCampaigns(prev => prev.filter(c => c.projectId !== project.id))
+                      if (activeProjectId === project.id) {
+                        onNavigateToAllProjects()
+                      }
                       toast.success('Project deleted')
                     } catch (error) {
                       console.error('Error deleting project:', error)

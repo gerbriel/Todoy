@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
@@ -63,6 +64,7 @@ export default function Header({
   const [showEditCampaign, setShowEditCampaign] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { user, logout } = useAuth()
+  const { theme, setTheme } = useTheme()
 
   const handleNavigateFromNotification = (type: 'project' | 'campaign' | 'task', id: string) => {
     if (type === 'project') {
@@ -264,6 +266,28 @@ export default function Header({
                       Organization
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  
+                  {/* Theme Switcher */}
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Theme</p>
+                  </div>
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun size={16} className="mr-2" />
+                    Light
+                    {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon size={16} className="mr-2" />
+                    Dark
+                    {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Monitor size={16} className="mr-2" />
+                    System
+                    {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <SignOut size={16} className="mr-2" />

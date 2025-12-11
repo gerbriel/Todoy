@@ -13,8 +13,10 @@ interface ArchiveViewProps {
   projects: Project[]
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   tasks: Task[]
   onNavigateToProject: (projectId: string) => void
+  onNavigateToCampaign: (campaignId: string) => void
   orgId: string
 }
 
@@ -22,8 +24,10 @@ export default function ArchiveView({
   projects,
   setProjects,
   campaigns,
+  setCampaigns,
   tasks,
   onNavigateToProject,
+  onNavigateToCampaign,
   orgId,
 }: ArchiveViewProps) {
   const [archivedProjects, setArchivedProjects] = useState<Project[]>([])
@@ -69,13 +73,40 @@ export default function ArchiveView({
   const handleRestore = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await projectsService.update(projectId, { archived: false })
-      // Remove from archived list and update global state
+      const restoredProject = await projectsService.update(projectId, { archived: false })
+      
+      // Remove from archived list
       setArchivedProjects(prev => prev.filter(p => p.id !== projectId))
+      
+      // Add to main projects state immediately
+      if (restoredProject) {
+        setProjects(prev => [...prev, restoredProject])
+      }
+      
       toast.success('Project restored')
     } catch (error) {
       console.error('Error restoring project:', error)
       toast.error('Failed to restore project')
+    }
+  }
+
+  const handleRestoreCampaign = async (campaignId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const restoredCampaign = await campaignsService.update(campaignId, { archived: false })
+      
+      // Remove from archived list
+      setArchivedCampaigns(prev => prev.filter(c => c.id !== campaignId))
+      
+      // Add to main campaigns state immediately
+      if (restoredCampaign) {
+        setCampaigns(prev => [...prev, restoredCampaign])
+      }
+      
+      toast.success('Campaign restored')
+    } catch (error) {
+      console.error('Error restoring campaign:', error)
+      toast.error('Failed to restore campaign')
     }
   }
 

@@ -50,6 +50,7 @@ function MainApp() {
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([])
   const [orgInvites, setOrgInvites] = useState<OrgInvite[]>([])
   const [archivedProject, setArchivedProject] = useState<Project | null>(null)
+  const [archivedCampaign, setArchivedCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   
   // Load data from Supabase when organization changes
@@ -147,7 +148,7 @@ function MainApp() {
   })
 
   const activeProject = projects?.find(p => p.id === activeProjectId) || archivedProject
-  const activeCampaign = campaigns?.find(c => c.id === activeCampaignId)
+  const activeCampaign = campaigns?.find(c => c.id === activeCampaignId) || archivedCampaign
   const campaignProject = activeCampaign?.projectId 
     ? projects?.find(p => p.id === activeCampaign.projectId)
     : undefined
@@ -186,9 +187,43 @@ function MainApp() {
     }
   }
 
-  const handleNavigateToCampaign = (campaignId: string) => {
+  const handleNavigateToCampaign = async (campaignId: string) => {
     setActiveCampaignId(campaignId)
-    setNavigationView('campaign')
+    
+    // If campaign is not in the main campaigns state, it might be archived - fetch it and its lists/tasks
+    if (!campaigns?.find(c => c.id === campaignId)) {
+      try {
+        const [campaign, campaignLists, campaignTasks] = await Promise.all([
+          campaignsService.getById(campaignId),
+          listsService.getByCampaign(campaignId),
+          tasksService.getByCampaign(campaignId),
+        ])
+        if (campaign) {
+          setArchivedCampaign(campaign)
+        }
+        // Temporarily add archived campaign's lists and tasks to state
+        if (campaignLists.length > 0) {
+          setLists(prev => {
+            const filtered = prev.filter(l => l.campaignId !== campaignId)
+            return [...filtered, ...campaignLists]
+          })
+        }
+        if (campaignTasks.length > 0) {
+          setTasks(prev => {
+            const filtered = prev.filter(t => t.campaignId !== campaignId)
+            return [...filtered, ...campaignTasks]
+          })
+        }
+        // Only set navigation view after data is loaded
+        setNavigationView('campaign')
+      } catch (error) {
+        console.error('Error fetching archived campaign:', error)
+        toast.error('Failed to load campaign')
+      }
+    } else {
+      setArchivedCampaign(null)
+      setNavigationView('campaign')
+    }
   }
 
   const handleNavigateToAllProjects = () => {
@@ -264,7 +299,7 @@ function MainApp() {
         <Header
           navigationView={navigationView}
           activeProject={navigationView === 'campaign' ? campaignProject : (activeProject || undefined)}
-          activeCampaign={activeCampaign}
+          activeCampaign={activeCampaign || undefined}
           campaigns={campaigns || []}
           setCampaigns={setCampaigns}
           viewMode={viewMode}
@@ -340,8 +375,10 @@ function MainApp() {
               projects={projects || []}
               setProjects={setProjects}
               campaigns={campaigns || []}
+              setCampaigns={setCampaigns}
               tasks={tasks || []}
               onNavigateToProject={handleNavigateToProject}
+              onNavigateToCampaign={handleNavigateToCampaign}
               orgId={organization?.id || ''}
             />
           )}
@@ -386,7 +423,7 @@ function MainApp() {
             />
           )}
           
-          {navigationView === 'campaign' && activeCampaignId && (
+          {navigationView === 'campaign' && activeCampaignId && activeCampaign && (
             <>
               {viewMode === 'kanban' ? (
                 <KanbanView

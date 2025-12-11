@@ -8,6 +8,9 @@
   
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   .font-mono {
@@ -52,6 +55,44 @@
   --label-teal: oklch(0.65 0.12 200);
   
   --radius: 0.5rem;
+}
+
+/* GitHub-style Dark Mode */
+.dark {
+  --background: oklch(0.17 0.005 250);
+  --foreground: oklch(0.88 0.005 250);
+  
+  --card: oklch(0.20 0.005 250);
+  --card-foreground: oklch(0.88 0.005 250);
+  
+  --popover: oklch(0.20 0.005 250);
+  --popover-foreground: oklch(0.88 0.005 250);
+  
+  --primary: oklch(0.88 0.005 250);
+  --primary-foreground: oklch(0.17 0.005 250);
+  
+  --secondary: oklch(0.25 0.005 250);
+  --secondary-foreground: oklch(0.88 0.005 250);
+  
+  --muted: oklch(0.25 0.005 250);
+  --muted-foreground: oklch(0.60 0.005 250);
+  
+  --accent: oklch(0.60 0.18 250);
+  --accent-foreground: oklch(1 0 0);
+  
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(1 0 0);
+  
+  --border: oklch(0.30 0.005 250);
+  --input: oklch(0.30 0.005 250);
+  --ring: oklch(0.60 0.18 250);
+  
+  --label-red: oklch(0.65 0.18 25);
+  --label-orange: oklch(0.72 0.14 60);
+  --label-green: oklch(0.68 0.14 150);
+  --label-purple: oklch(0.65 0.14 290);
+  --label-blue: oklch(0.65 0.14 250);
+  --label-teal: oklch(0.68 0.12 200);
 }
 
 @theme {

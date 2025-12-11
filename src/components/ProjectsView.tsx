@@ -43,9 +43,13 @@ export default function ProjectsView({
     try {
       console.log('Archiving project:', projectId)
       const result = await projectsService.update(projectId, { archived: true })
-      console.log('Archive result:', result)
+      console.log('Archive result:', result, 'archived flag:', result.archived)
+      
+      // Optimistically remove from view immediately for better UX
+      setProjects(prev => prev.filter(p => p.id !== projectId))
+      
       toast.success('Project archived')
-      // Real-time subscription will update the state automatically
+      // Real-time subscription will sync the state
     } catch (error) {
       console.error('Error archiving project:', error)
       toast.error('Failed to archive project')

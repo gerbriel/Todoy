@@ -122,10 +122,15 @@ export default function CampaignEditDialog({
 
   const handleArchive = async () => {
     try {
-      await campaignsService.update(campaign.id, { archived: true })
+      const result = await campaignsService.update(campaign.id, { archived: true })
+      console.log('Archived campaign:', result, 'archived flag:', result.archived)
+      
+      // Optimistically remove from parent view
+      setCampaigns(prev => prev.filter(c => c.id !== campaign.id))
+      
       toast.success('Campaign archived')
       onOpenChange(false)
-      // Real-time subscription will update the state automatically
+      // Real-time subscription will sync the state
     } catch (error) {
       console.error('Error archiving campaign:', error)
       toast.error('Failed to archive campaign')

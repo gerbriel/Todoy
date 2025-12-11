@@ -337,9 +337,6 @@ export default function OrganizationView({
 
               <div className="space-y-2">
                 {members.map(member => {
-                  const user = users.find(u => u.id === member.userId)
-                  if (!user) return null
-
                   return (
                     <div
                       key={member.id}
@@ -351,12 +348,12 @@ export default function OrganizationView({
                         </div>
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            {user.name}
+                            {member.userName || 'Unknown User'}
                             {member.userId === currentUserId && (
                               <Badge variant="outline" className="text-xs">You</Badge>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                          <div className="text-sm text-muted-foreground">{member.userEmail}</div>
                         </div>
                       </div>
 

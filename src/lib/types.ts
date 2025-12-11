@@ -26,6 +26,9 @@ export interface OrgMember {
   orgId: string
   role: UserRole
   joinedAt: string
+  // User info joined from profiles
+  userName?: string
+  userEmail?: string
 }
 
 export interface OrgInvite {

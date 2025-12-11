@@ -5,7 +5,14 @@ export const orgMembersService = {
   async getByOrg(orgId: string): Promise<OrgMember[]> {
     const { data, error } = await supabase
       .from('org_members')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          id,
+          name,
+          email
+        )
+      `)
       .eq('org_id', orgId)
 
     if (error) throw error
@@ -16,6 +23,9 @@ export const orgMembersService = {
       orgId: m.org_id,
       role: m.role as 'owner' | 'admin' | 'member',
       joinedAt: m.joined_at,
+      // Add user info directly to member object
+      userName: m.profiles?.name || 'Unknown User',
+      userEmail: m.profiles?.email || '',
     }))
   },
 

@@ -367,14 +367,15 @@ export default function Sidebar({
                   {projects.map(project => (
                     <DropdownMenuItem
                       key={project.id}
-                      onClick={() => {
-                        setCampaigns(currentCampaigns =>
-                          currentCampaigns.map(c =>
-                            c.id === campaign.id ? { ...c, projectId: project.id } : c
-                          )
-                        )
-                        setExpandedProjects(prev => new Set(prev).add(project.id))
-                        toast.success(`Moved to "${project.title}"`)
+                      onClick={async () => {
+                        try {
+                          await campaignsService.update(campaign.id, { projectId: project.id })
+                          setExpandedProjects(prev => new Set(prev).add(project.id))
+                          toast.success(`Moved to "${project.title}"`)
+                        } catch (error) {
+                          console.error('Error moving campaign:', error)
+                          toast.error('Failed to move campaign')
+                        }
                       }}
                       disabled={campaign.projectId === project.id}
                     >
@@ -387,13 +388,14 @@ export default function Sidebar({
                   ))}
                   {campaign.projectId && (
                     <DropdownMenuItem
-                      onClick={() => {
-                        setCampaigns(currentCampaigns =>
-                          currentCampaigns.map(c =>
-                            c.id === campaign.id ? { ...c, projectId: undefined } : c
-                          )
-                        )
-                        toast.success('Moved to standalone campaigns')
+                      onClick={async () => {
+                        try {
+                          await campaignsService.update(campaign.id, { projectId: undefined })
+                          toast.success('Moved to standalone campaigns')
+                        } catch (error) {
+                          console.error('Error moving campaign:', error)
+                          toast.error('Failed to move campaign')
+                        }
                       }}
                     >
                       <Target size={14} className="mr-2" weight="duotone" />

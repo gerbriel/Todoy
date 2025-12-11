@@ -120,7 +120,7 @@ export default function TaskList({
     setIsDragOver(false)
   }
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
@@ -130,18 +130,16 @@ export default function TaskList({
 
     if (!taskId || sourceListId === list.id) return
 
-    setTasks(currentTasks => {
-      const task = currentTasks.find(t => t.id === taskId)
-      if (!task) return currentTasks
-
-      return currentTasks.map(t =>
-        t.id === taskId
-          ? { ...t, listId: list.id, order: listTasks.length }
-          : t
-      )
-    })
-
-    toast.success('Task moved')
+    try {
+      await tasksService.update(taskId, { 
+        listId: list.id, 
+        order: listTasks.length 
+      })
+      toast.success('Task moved')
+    } catch (error) {
+      console.error('Error moving task:', error)
+      toast.error('Failed to move task')
+    }
   }
 
   return (

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Campaign, Task, Label, List, FilterState, Project, StageDate, User } from '@/lib/types'
 import { Button } from './ui/button'
-import { CaretLeft, CaretRight, Calendar as CalendarIcon } from '@phosphor-icons/react'
+import { Alert, AlertDescription } from './ui/alert'
+import { CaretLeft, CaretRight, Calendar as CalendarIcon, Archive, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns'
 import { ScrollArea } from './ui/scroll-area'
 import { Badge } from './ui/badge'
@@ -9,6 +10,8 @@ import { getLabelColor } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
 import TaskDetailDialog from './TaskDetailDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { campaignsService } from '@/services/campaigns.service'
+import { toast } from 'sonner'
 
 interface CalendarViewProps {
   campaigns: Campaign[]
@@ -25,6 +28,8 @@ interface CalendarViewProps {
   onCampaignClick?: (campaignId: string) => void
   onProjectClick?: (projectId: string) => void
   orgId: string
+  setCampaigns?: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  onNavigateBack?: () => void
 }
 
 export default function CalendarView({
@@ -42,10 +47,29 @@ export default function CalendarView({
   onCampaignClick,
   onProjectClick,
   orgId,
+  setCampaigns,
+  onNavigateBack,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [calendarMode, setCalendarMode] = useState<'tasks' | 'stages' | 'both' | string>('both')
+
+  const activeCampaign = campaigns.find(c => c.id === activeCampaignId)
+
+  const handleRestoreCampaign = async () => {
+    if (!activeCampaign || !setCampaigns) return
+
+    try {
+      await campaignsService.update(activeCampaign.id, { archived: false })
+      toast.success('Campaign restored')
+      if (onNavigateBack) {
+        onNavigateBack()
+      }
+    } catch (error) {
+      console.error('Error restoring campaign:', error)
+      toast.error('Failed to restore campaign')
+    }
+  }
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -389,6 +413,25 @@ export default function CalendarView({
 
   return (
     <div className="h-full flex flex-col bg-background">
+      {activeCampaign?.archived && (
+        <Alert className="m-4 mb-0 border-orange-500 bg-orange-50 dark:bg-orange-950">
+          <Archive className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-orange-900 dark:text-orange-100">
+              This campaign is archived. Restore it to make it active again.
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRestoreCampaign}
+              className="ml-4 border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+            >
+              <ArrowCounterClockwise size={16} className="mr-2" weight="bold" />
+              Restore Campaign
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="p-4 border-b border-border bg-card">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

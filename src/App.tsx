@@ -417,6 +417,9 @@ function MainApp() {
               campaigns={campaigns || []}
               setCampaigns={setCampaigns}
               tasks={tasks || []}
+              setTasks={setTasks}
+              lists={lists || []}
+              setLists={setLists}
               organization={organization}
               onNavigateToCampaign={handleNavigateToCampaign}
               onNavigateBack={handleNavigateToAllProjects}
@@ -437,6 +440,8 @@ function MainApp() {
                   activeCampaignId={activeCampaignId}
                   filters={filters}
                   orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                  onNavigateBack={activeProject ? () => handleNavigateToProject(activeProject.id) : handleNavigateToAllProjects}
                 />
               ) : (
                 <CalendarView
@@ -454,6 +459,8 @@ function MainApp() {
                   onCampaignClick={handleNavigateToCampaign}
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                  onNavigateBack={activeProject ? () => handleNavigateToProject(activeProject.id) : handleNavigateToAllProjects}
                 />
               )}
             </>

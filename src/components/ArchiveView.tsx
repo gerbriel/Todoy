@@ -73,7 +73,30 @@ export default function ArchiveView({
   const handleRestore = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
+      // Restore the project
       const restoredProject = await projectsService.update(projectId, { archived: false })
+      
+      // Get all archived campaigns for this project
+      const projectArchivedCampaigns = archivedCampaigns.filter(c => c.projectId === projectId)
+      
+      // Restore all campaigns in this project
+      const campaignRestorePromises = projectArchivedCampaigns.map(campaign => 
+        campaignsService.update(campaign.id, { archived: false })
+      )
+      
+      if (campaignRestorePromises.length > 0) {
+        const restoredCampaignsData = await Promise.all(campaignRestorePromises)
+        
+        // Remove from archived campaigns list
+        setArchivedCampaigns(prev => prev.filter(c => c.projectId !== projectId))
+        
+        // Add restored campaigns to main state
+        setCampaigns(prev => [...prev, ...restoredCampaignsData])
+        
+        toast.success(`Project and ${projectArchivedCampaigns.length} campaign(s) restored`)
+      } else {
+        toast.success('Project restored')
+      }
       
       // Remove from archived list
       setArchivedProjects(prev => prev.filter(p => p.id !== projectId))
@@ -82,8 +105,6 @@ export default function ArchiveView({
       if (restoredProject) {
         setProjects(prev => [...prev, restoredProject])
       }
-      
-      toast.success('Project restored')
     } catch (error) {
       console.error('Error restoring project:', error)
       toast.error('Failed to restore project')

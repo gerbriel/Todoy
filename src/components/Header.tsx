@@ -3,7 +3,7 @@ import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/type
 import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
@@ -98,6 +98,24 @@ export default function Header({
       <header className="border-b border-border bg-card px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {/* Back button for project and campaign views */}
+            {(navigationView === 'project' || navigationView === 'campaign') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (navigationView === 'campaign' && activeProject) {
+                    onNavigateToProject(activeProject.id)
+                  } else {
+                    onNavigateToAllProjects()
+                  }
+                }}
+                className="mr-2"
+              >
+                <CaretLeft size={20} weight="bold" />
+              </Button>
+            )}
+            
             {navigationView === 'all-projects' && (
               <h2 className="text-xl font-semibold text-foreground">All Projects</h2>
             )}

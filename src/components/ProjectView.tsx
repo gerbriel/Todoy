@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Project, Campaign, Task, Organization } from '@/lib/types'
+import { Project, Campaign, Task, Organization, List } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash, ArrowCounterClockwise, Archive } from '@phosphor-icons/react'
 import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
 import { campaignsService } from '@/services/campaigns.service'
 import { projectsService } from '@/services/projects.service'
+import { listsService } from '@/services/lists.service'
+import { tasksService } from '@/services/tasks.service'
 import { Badge } from './ui/badge'
 import { format } from 'date-fns'
 import { Button } from './ui/button'
@@ -30,6 +32,9 @@ interface ProjectViewProps {
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   tasks: Task[]
+  setTasks: (updater: (tasks: Task[]) => Task[]) => void
+  lists: List[]
+  setLists: (updater: (lists: List[]) => List[]) => void
   organization: Organization | null
   onNavigateToCampaign: (campaignId: string) => void
   onNavigateBack: () => void
@@ -42,6 +47,9 @@ export default function ProjectView({
   campaigns,
   setCampaigns,
   tasks,
+  setTasks,
+  lists,
+  setLists,
   organization,
   onNavigateToCampaign,
   onNavigateBack,
@@ -56,9 +64,27 @@ export default function ProjectView({
 
   const handleRestoreProject = async () => {
     try {
+      // Restore the project
       await projectsService.update(project.id, { archived: false })
-      toast.success('Project restored')
-      // Navigate back - the real-time subscription will update the projects list
+      
+      // Get all archived campaigns for this project
+      const archivedCampaigns = projectCampaigns.filter(c => c.archived)
+      
+      // Restore all campaigns in this project (which will make their lists and tasks accessible again)
+      const campaignRestorePromises = archivedCampaigns.map(campaign => 
+        campaignsService.update(campaign.id, { archived: false })
+      )
+      
+      if (campaignRestorePromises.length > 0) {
+        await Promise.all(campaignRestorePromises)
+        toast.success(
+          `Project restored with ${archivedCampaigns.length} campaign(s)`
+        )
+      } else {
+        toast.success('Project restored')
+      }
+      
+      // Navigate back - the real-time subscription will update the lists
       onNavigateBack()
     } catch (error) {
       console.error('Error restoring project:', error)

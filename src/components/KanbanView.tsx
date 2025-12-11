@@ -1,9 +1,11 @@
-import { Plus, SquaresFour } from '@phosphor-icons/react'
+import { Plus, SquaresFour, Archive, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { Campaign, List, Task, Label, FilterState } from '@/lib/types'
 import { filterTasks } from '@/lib/helpers'
 import { listsService } from '@/services/lists.service'
+import { campaignsService } from '@/services/campaigns.service'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
+import { Alert, AlertDescription } from './ui/alert'
 import { toast } from 'sonner'
 import TaskList from './TaskList'
 import EmptyState from './EmptyState'
@@ -21,6 +23,8 @@ interface KanbanViewProps {
   activeCampaignId: string | null
   filters: FilterState
   orgId: string
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  onNavigateBack?: () => void
 }
 
 export default function KanbanView({
@@ -34,8 +38,27 @@ export default function KanbanView({
   activeCampaignId,
   filters,
   orgId,
+  setCampaigns,
+  onNavigateBack,
 }: KanbanViewProps) {
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
+
+  const activeCampaign = campaigns.find(c => c.id === activeCampaignId)
+
+  const handleRestoreCampaign = async () => {
+    if (!activeCampaign) return
+
+    try {
+      await campaignsService.update(activeCampaign.id, { archived: false })
+      toast.success('Campaign restored')
+      if (onNavigateBack) {
+        onNavigateBack()
+      }
+    } catch (error) {
+      console.error('Error restoring campaign:', error)
+      toast.error('Failed to restore campaign')
+    }
+  }
 
   const handleCreateList = async () => {
     if (!activeCampaignId) return
@@ -106,18 +129,41 @@ export default function KanbanView({
 
   if (!filters.showAllCampaigns && displayLists.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center p-6">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            No lists yet
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            Create your first list to organize tasks
-          </p>
-          <Button onClick={handleCreateList}>
-            <Plus size={16} weight="bold" />
-            Add List
-          </Button>
+      <div className="h-full overflow-auto p-6">
+        {activeCampaign?.archived && (
+          <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <Archive className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-orange-900 dark:text-orange-100">
+                This campaign is archived. Restore it to make it active again.
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRestoreCampaign}
+                className="ml-4 border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+              >
+                <ArrowCounterClockwise size={16} className="mr-2" weight="bold" />
+                Restore Campaign
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No lists yet
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Create your first list to organize tasks
+            </p>
+            {!activeCampaign?.archived && (
+              <Button onClick={handleCreateList}>
+                <Plus size={16} weight="bold" />
+                Add List
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -166,6 +212,25 @@ export default function KanbanView({
   return (
     <ScrollArea className="h-full">
       <div className="h-full p-6">
+        {activeCampaign?.archived && (
+          <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <Archive className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-orange-900 dark:text-orange-100">
+                This campaign is archived. Restore it to make it active again.
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRestoreCampaign}
+                className="ml-4 border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+              >
+                <ArrowCounterClockwise size={16} className="mr-2" weight="bold" />
+                Restore Campaign
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="flex gap-4 h-full overflow-x-auto pb-4">
           {displayLists
             .sort((a, b) => a.order - b.order)

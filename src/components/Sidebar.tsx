@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, SidebarSimple } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, CaretLeft, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, SidebarSimple } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
@@ -655,9 +655,29 @@ export default function Sidebar({
   return (
     <>
       <aside className={cn(
-        "border-r border-border bg-card flex flex-col transition-all duration-300",
+        "border-r border-border bg-card flex flex-col transition-all duration-300 relative",
         isCollapsed ? "w-16" : "w-72"
       )}>
+        {/* Collapse/Expand Button - Circular button on sidebar edge */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={cn(
+            "absolute -right-3 top-4 z-50",
+            "w-6 h-6 rounded-full",
+            "bg-card border border-border shadow-md",
+            "flex items-center justify-center",
+            "hover:bg-accent hover:text-accent-foreground",
+            "transition-all duration-200"
+          )}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <CaretRight size={14} weight="bold" />
+          ) : (
+            <CaretLeft size={14} weight="bold" />
+          )}
+        </button>
+
         <div className="p-4 border-b border-border">
           {!isCollapsed && (
             <>
@@ -685,18 +705,6 @@ export default function Sidebar({
               </div>
             </>
           )}
-          
-          {/* Collapse/Expand Button */}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn(
-              "w-full flex items-center justify-center p-2 hover:bg-muted rounded transition-colors",
-              !isCollapsed && "mt-4"
-            )}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <SidebarSimple size={20} weight="bold" />
-          </button>
         </div>
         
         <ScrollArea className="flex-1 h-full">

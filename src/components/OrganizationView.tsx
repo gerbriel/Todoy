@@ -234,19 +234,19 @@ export default function OrganizationView({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b bg-background p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
+      <div className="border-b bg-background p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div className="space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-3">
-              <Users size={32} weight="duotone" className="text-primary" />
-              <h1 className="text-3xl font-bold">{organization.name}</h1>
+              <Users size={32} weight="duotone" className="text-primary flex-shrink-0" />
+              <h1 className="text-2xl sm:text-3xl font-bold truncate">{organization.name}</h1>
             </div>
             {organization.description && (
-              <p className="text-muted-foreground ml-11">{organization.description}</p>
+              <p className="text-muted-foreground ml-0 sm:ml-11 text-sm">{organization.description}</p>
             )}
           </div>
           {isAdmin && (
-            <Button variant="outline" size="sm" onClick={handleEditOrg}>
+            <Button variant="outline" size="sm" onClick={handleEditOrg} className="w-full sm:w-auto">
               <PencilSimple size={16} className="mr-2" />
               Edit
             </Button>
@@ -254,29 +254,29 @@ export default function OrganizationView({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="text-2xl font-bold">{members.length}</div>
-            <div className="text-sm text-muted-foreground">Members</div>
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{members.length}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Members</div>
           </div>
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="text-2xl font-bold">{orgProjects.length}</div>
-            <div className="text-sm text-muted-foreground">Projects</div>
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{orgProjects.length}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Projects</div>
           </div>
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="text-2xl font-bold">{orgCampaigns.length}</div>
-            <div className="text-sm text-muted-foreground">Campaigns</div>
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{orgCampaigns.length}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Campaigns</div>
           </div>
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="text-2xl font-bold">{orgTasks.length}</div>
-            <div className="text-sm text-muted-foreground">Tasks</div>
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{orgTasks.length}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Tasks</div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <div className="border-b px-6">
+        <div className="border-b px-4 sm:px-6">
           <TabsList className="h-12">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="members">
@@ -292,19 +292,19 @@ export default function OrganizationView({
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <TabsContent value="overview" className="mt-0 space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Organization Details</h3>
-                <div className="space-y-3 bg-muted/30 rounded-lg p-4">
+                <div className="space-y-3 bg-muted/30 rounded-lg p-3 sm:p-4">
                   <div>
                     <div className="text-sm text-muted-foreground">Name</div>
-                    <div className="font-medium">{organization.name}</div>
+                    <div className="font-medium break-words">{organization.name}</div>
                   </div>
                   <Separator />
                   <div>
                     <div className="text-sm text-muted-foreground">Description</div>
-                    <div className="font-medium">{organization.description || 'No description'}</div>
+                    <div className="font-medium break-words">{organization.description || 'No description'}</div>
                   </div>
                   <Separator />
                   <div>
@@ -325,10 +325,10 @@ export default function OrganizationView({
             </TabsContent>
 
             <TabsContent value="members" className="mt-0 space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Team Members</h3>
                 {isAdmin && (
-                  <Button onClick={() => setInviteDialogOpen(true)}>
+                  <Button onClick={() => setInviteDialogOpen(true)} className="w-full sm:w-auto" size="sm">
                     <UserPlus size={16} className="mr-2" />
                     Invite Member
                   </Button>
@@ -340,30 +340,30 @@ export default function OrganizationView({
                   return (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <UserIcon size={20} weight="duotone" className="text-primary" />
                         </div>
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {member.userName || 'Unknown User'}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium flex items-center gap-2 flex-wrap">
+                            <span className="truncate">{member.userName || 'Unknown User'}</span>
                             {member.userId === currentUserId && (
                               <Badge variant="outline" className="text-xs">You</Badge>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">{member.userEmail}</div>
+                          <div className="text-sm text-muted-foreground truncate">{member.userEmail}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
                         {isAdmin && member.userId !== currentUserId ? (
                           <Select
                             value={member.role}
                             onValueChange={(value: any) => handleUpdateMemberRole(member.id, value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full sm:w-32">
                               <div className="flex items-center gap-2">
                                 {getRoleIcon(member.role)}
                                 <SelectValue />
@@ -416,10 +416,10 @@ export default function OrganizationView({
             </TabsContent>
 
             <TabsContent value="invites" className="mt-0 space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Pending Invitations</h3>
                 {isAdmin && (
-                  <Button onClick={() => setInviteDialogOpen(true)}>
+                  <Button onClick={() => setInviteDialogOpen(true)} className="w-full sm:w-auto" size="sm">
                     <EnvelopeSimple size={16} className="mr-2" />
                     Send Invite
                   </Button>
@@ -441,19 +441,19 @@ export default function OrganizationView({
                       return (
                         <div
                           key={invite.id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
+                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3"
                         >
-                          <div className="flex items-center gap-3">
-                            <EnvelopeSimple size={24} className="text-muted-foreground" />
-                            <div>
-                              <div className="font-medium">{invite.email}</div>
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <EnvelopeSimple size={24} className="text-muted-foreground flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{invite.email}</div>
                               <div className="text-sm text-muted-foreground">
                                 Invited by {inviter?.name || 'Unknown'} • {new Date(invite.invitedAt).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                             <Badge className={getRoleBadgeColor(invite.role)}>
                               {invite.role}
                             </Badge>
@@ -487,12 +487,12 @@ export default function OrganizationView({
                       .map(invite => (
                         <div
                           key={invite.id}
-                          className="flex items-center justify-between p-4 border rounded-lg opacity-60"
+                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg opacity-60 gap-3"
                         >
-                          <div className="flex items-center gap-3">
-                            <EnvelopeSimple size={24} className="text-muted-foreground" />
-                            <div>
-                              <div className="font-medium">{invite.email}</div>
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <EnvelopeSimple size={24} className="text-muted-foreground flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{invite.email}</div>
                               <div className="text-sm text-muted-foreground">
                                 {new Date(invite.invitedAt).toLocaleDateString()}
                               </div>
@@ -521,11 +521,11 @@ export default function OrganizationView({
               )}
             </TabsContent>
 
-            <TabsContent value="content" className="mt-0 space-y-4">
-              <div className="flex items-center gap-4">
+            <TabsContent value="content" className="mt-0 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Organization Content</h3>
                 <Select value={selectedMember} onValueChange={setSelectedMember}>
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className="w-full sm:w-64">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -549,17 +549,17 @@ export default function OrganizationView({
                 {filteredProjects.length === 0 ? (
                   <div className="text-sm text-muted-foreground py-4">No projects found</div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {filteredProjects.map(project => (
                       <div 
                         key={project.id} 
                         className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => onNavigateToProject(project.id)}
                       >
-                        <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-muted-foreground">{project.description}</div>
+                        <div className="font-medium truncate">{project.title}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-2">{project.description}</div>
                         {project.assignedTo && project.assignedTo.length > 0 && (
-                          <div className="flex gap-1 mt-2">
+                          <div className="flex gap-1 mt-2 flex-wrap">
                             {project.assignedTo.map(userId => {
                               const user = users.find(u => u.id === userId)
                               return user ? (
@@ -587,17 +587,17 @@ export default function OrganizationView({
                 {filteredCampaigns.length === 0 ? (
                   <div className="text-sm text-muted-foreground py-4">No campaigns found</div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {filteredCampaigns.map(campaign => (
                       <div 
                         key={campaign.id} 
                         className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => onNavigateToCampaign(campaign.id)}
                       >
-                        <div className="font-medium">{campaign.title}</div>
-                        <div className="text-sm text-muted-foreground">{campaign.description}</div>
+                        <div className="font-medium truncate">{campaign.title}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-2">{campaign.description}</div>
                         {campaign.assignedTo && campaign.assignedTo.length > 0 && (
-                          <div className="flex gap-1 mt-2">
+                          <div className="flex gap-1 mt-2 flex-wrap">
                             {campaign.assignedTo.map(userId => {
                               const user = users.find(u => u.id === userId)
                               return user ? (

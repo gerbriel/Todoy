@@ -1,6 +1,6 @@
 import { useState, DragEvent } from 'react'
 import { Clock, Tag, CheckSquare } from '@phosphor-icons/react'
-import { Task, Label, List, Campaign } from '@/lib/types'
+import { Task, Label, List, Campaign, Project } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue } from '@/lib/helpers'
 import { tasksService } from '@/services/tasks.service'
 import { Badge } from './ui/badge'
@@ -17,6 +17,7 @@ interface TaskCardProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   lists: List[]
   campaigns: Campaign[]
+  projects: Project[]
   onDragOver?: () => void
   orgId: string
 }
@@ -29,6 +30,7 @@ export default function TaskCard({
   setLabels,
   lists,
   campaigns,
+  projects,
   onDragOver,
   orgId,
 }: TaskCardProps) {
@@ -153,6 +155,7 @@ export default function TaskCard({
           setLabels={setLabels}
           lists={lists}
           campaigns={campaigns}
+          projects={projects}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           orgId={orgId}

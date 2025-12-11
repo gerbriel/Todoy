@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { List, Task, Label, Campaign } from '@/lib/types'
+import { List, Task, Label, Campaign, Project } from '@/lib/types'
 import { ScrollArea } from './ui/scroll-area'
 import { Button } from './ui/button'
 import { ArrowLeft, Plus } from '@phosphor-icons/react'
@@ -20,6 +20,7 @@ interface StageViewProps {
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   campaigns: Campaign[]
+  projects: Project[]
   onBack: () => void
   orgId: string
 }
@@ -33,6 +34,7 @@ export default function StageView({
   labels,
   setLabels,
   campaigns,
+  projects,
   onBack,
   orgId,
 }: StageViewProps) {
@@ -177,6 +179,7 @@ export default function StageView({
                       setLabels={setLabels}
                       lists={lists}
                       campaigns={campaigns}
+                      projects={projects}
                       orgId={orgId}
                     />
                   </div>
@@ -196,6 +199,7 @@ export default function StageView({
           setLabels={setLabels}
           lists={lists}
           campaigns={campaigns}
+          projects={projects}
           open={!!selectedTaskId}
           onOpenChange={(open) => {
             if (!open) setSelectedTaskId(null)

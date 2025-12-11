@@ -1,5 +1,5 @@
 import { Plus, SquaresFour, Archive, ArrowCounterClockwise } from '@phosphor-icons/react'
-import { Campaign, List, Task, Label, FilterState } from '@/lib/types'
+import { Campaign, List, Task, Label, FilterState, Project } from '@/lib/types'
 import { filterTasks } from '@/lib/helpers'
 import { listsService } from '@/services/lists.service'
 import { campaignsService } from '@/services/campaigns.service'
@@ -20,6 +20,7 @@ interface KanbanViewProps {
   setTasks: (updater: (tasks: Task[]) => Task[]) => void
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
+  projects: Project[]
   activeCampaignId: string | null
   filters: FilterState
   orgId: string
@@ -35,6 +36,7 @@ export default function KanbanView({
   setTasks,
   labels,
   setLabels,
+  projects,
   activeCampaignId,
   filters,
   orgId,
@@ -102,6 +104,7 @@ export default function KanbanView({
           labels={labels}
           setLabels={setLabels}
           campaigns={campaigns}
+          projects={projects}
           onBack={() => setSelectedListId(null)}
           orgId={orgId}
         />
@@ -197,6 +200,7 @@ export default function KanbanView({
                       labels={labels}
                       setLabels={setLabels}
                       campaigns={campaigns}
+                      projects={projects}
                       onOpenStageView={() => setSelectedListId(list.id)}
                       orgId={orgId}
                     />
@@ -245,6 +249,7 @@ export default function KanbanView({
                 labels={labels}
                 setLabels={setLabels}
                 campaigns={campaigns}
+                projects={projects}
                 onOpenStageView={() => setSelectedListId(list.id)}
                 orgId={orgId}
               />

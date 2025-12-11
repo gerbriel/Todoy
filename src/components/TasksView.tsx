@@ -81,6 +81,7 @@ export default function TasksView({
                     labels={labels}
                     campaigns={campaigns}
                     lists={lists}
+                    projects={projects}
                     setTasks={setTasks}
                     setLabels={setLabels}
                     orgId={orgId}

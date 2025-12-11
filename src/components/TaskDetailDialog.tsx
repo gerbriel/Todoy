@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Task, Campaign, List, Label, Comment, Attachment } from '@/lib/types'
+import { Task, Campaign, List, Label, Comment, Attachment, Project } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -7,7 +7,7 @@ import { Label as UILabel } from './ui/label'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
-import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight, UploadSimple } from '@phosphor-icons/react'
+import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight, UploadSimple, Copy } from '@phosphor-icons/react'
 import { Separator } from './ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
@@ -16,6 +16,7 @@ import { generateId, formatDate } from '@/lib/helpers'
 import { tasksService } from '@/services/tasks.service'
 import { attachmentsService } from '@/services/attachments.service'
 import ConfirmDialog from './ConfirmDialog'
+import DuplicateDialog from './DuplicateDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ interface TaskDetailDialogProps {
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   lists: List[]
   campaigns: Campaign[]
+  projects: Project[]
   open: boolean
   onOpenChange: (open: boolean) => void
   orgId: string
@@ -48,6 +50,7 @@ export default function TaskDetailDialog({
   setTasks,
   campaigns,
   lists,
+  projects,
   labels,
   setLabels,
   open,
@@ -72,6 +75,7 @@ export default function TaskDetailDialog({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
   const availableLists = lists.filter(l => l.campaignId === selectedCampaignId)
@@ -253,6 +257,26 @@ export default function TaskDetailDialog({
     }
   }
 
+  const handleDuplicate = async (targetProjectId: string, targetCampaignId?: string, targetListId?: string, newName?: string) => {
+    try {
+      const taskName = newName || `${task.title} (Copy)`
+      const duplicatedTask = await tasksService.duplicate(
+        task.id,
+        taskName,
+        targetListId,
+        targetCampaignId
+      )
+      // Optimistically add to local state
+      setTasks(prev => [...prev, duplicatedTask])
+      toast.success('Task duplicated successfully')
+      setShowDuplicateDialog(false)
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error duplicating task:', error)
+      toast.error('Failed to duplicate task')
+    }
+  }
+
   const handleMoveToCampaign = async (newCampaignId: string) => {
     const newCampaignLists = lists.filter(l => l.campaignId === newCampaignId)
     const targetListId = newCampaignLists.length > 0 ? newCampaignLists[0].id : ''
@@ -308,6 +332,15 @@ export default function TaskDetailDialog({
               >
                 <Archive size={16} weight="bold" />
                 Archive
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDuplicateDialog(true)}
+                className="text-blue-600 hover:bg-blue-50"
+              >
+                <Copy size={16} weight="bold" />
+                Duplicate
               </Button>
               <Button
                 variant="outline"
@@ -709,6 +742,18 @@ export default function TaskDetailDialog({
         title="Delete Task?"
         description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
         confirmText="Delete Task"
+      />
+
+      <DuplicateDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        type="task"
+        itemName={task.title}
+        onDuplicate={handleDuplicate}
+        projects={projects}
+        campaigns={campaigns}
+        lists={lists}
+        currentCampaignId={task.campaignId}
       />
     </Dialog>
   )

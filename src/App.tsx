@@ -455,6 +455,7 @@ function MainApp() {
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
+                  projects={projects || []}
                   activeCampaignId={activeCampaignId}
                   filters={filters}
                   orgId={organization?.id || ''}

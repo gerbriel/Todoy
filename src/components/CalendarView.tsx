@@ -847,6 +847,7 @@ export default function CalendarView({
           setLabels={setLabels}
           campaigns={campaigns}
           lists={lists}
+          projects={projects}
           open={!!selectedTaskId}
           onOpenChange={(open) => !open && setSelectedTaskId(null)}
           orgId={orgId}

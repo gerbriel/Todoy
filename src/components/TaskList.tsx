@@ -1,6 +1,6 @@
 import { useState, DragEvent } from 'react'
 import { Plus, Trash, ArrowsOutSimple } from '@phosphor-icons/react'
-import { Task, Campaign, List, Label } from '@/lib/types'
+import { Task, Campaign, List, Label, Project } from '@/lib/types'
 import { tasksService } from '@/services/tasks.service'
 import { listsService } from '@/services/lists.service'
 import { Button } from './ui/button'
@@ -19,6 +19,7 @@ interface TaskListProps {
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   campaigns: Campaign[]
+  projects: Project[]
   onOpenStageView?: () => void
   orgId: string
 }
@@ -32,6 +33,7 @@ export default function TaskList({
   labels,
   setLabels,
   campaigns,
+  projects,
   onOpenStageView,
   orgId,
 }: TaskListProps) {
@@ -291,6 +293,7 @@ export default function TaskList({
               setLabels={setLabels}
               lists={lists}
               campaigns={campaigns}
+              projects={projects}
               orgId={orgId}
             />
           </div>

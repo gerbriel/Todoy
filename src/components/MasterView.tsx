@@ -428,6 +428,7 @@ export default function MasterView({
           setLabels={setLabels}
           lists={lists}
           campaigns={campaigns}
+          projects={projects}
           open={!!selectedTaskId}
           onOpenChange={(open) => {
             if (!open) setSelectedTaskId(null)

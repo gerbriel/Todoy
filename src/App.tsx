@@ -67,7 +67,7 @@ function MainApp() {
         
         // Load all data in parallel
         const [projectsData, labelsData, tasksData, orgMembersData, orgInvitesData, stageTemplatesData] = await Promise.all([
-          projectsService.getAll(organization.id),
+          projectsService.getAllIncludingCompleted(organization.id),
           labelsService.getByOrg(organization.id),
           tasksService.getByOrg(organization.id),
           orgMembersService.getByOrg(organization.id),

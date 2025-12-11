@@ -40,6 +40,43 @@ export const projectsService = {
   },
 
   /**
+   * Get all projects including completed (but not archived) for an organization
+   */
+  async getAllIncludingCompleted(orgId: string): Promise<Project[]> {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          stage_dates (*),
+          project_assignees (user_id)
+        `)
+        .eq('org_id', orgId)
+        .eq('archived', false)
+        .order('order', { ascending: true })
+
+      if (error) throw error
+
+      // Transform the data to match our existing Project type
+      return (data || []).map(project => ({
+        ...project,
+        createdAt: project.created_at,
+        stageDates: (project.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
+        assignedTo: project.project_assignees?.map((a: any) => a.user_id) || [],
+      }))
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to fetch projects'))
+    }
+  },
+
+  /**
    * Get all archived projects for an organization
    */
   async getAllArchived(orgId: string): Promise<Project[]> {
@@ -94,13 +131,6 @@ export const projectsService = {
 
       if (error) throw error
       if (!data) return null
-
-      console.log('[projects.service.getById] Raw data from DB:', JSON.stringify({ 
-        id: data.id, 
-        archived: data.archived, 
-        title: data.title,
-        allFields: Object.keys(data)
-      }, null, 2))
 
       return {
         ...data,
@@ -178,8 +208,6 @@ export const projectsService = {
       if (updates.archived !== undefined) updateData.archived = updates.archived
       if (updates.visibility !== undefined) updateData.visibility = updates.visibility
 
-      console.log('[projects.service] Updating project:', id, 'with data:', JSON.stringify(updateData, null, 2))
-
       // Only update main fields if there are any changes
       if (Object.keys(updateData).length > 0) {
         const { data, error } = await supabase
@@ -188,11 +216,7 @@ export const projectsService = {
           .eq('id', id)
           .select()
 
-        if (error) {
-          console.error('[projects.service] Database update error:', error)
-          throw error
-        }
-        console.log('[projects.service] Database update successful, returned:', data)
+        if (error) throw error
       }
 
       // Handle assigned users if provided
@@ -207,7 +231,6 @@ export const projectsService = {
 
       // Fetch updated project with relations
       const updatedProject = await this.getById(id) as Project
-      console.log('[projects.service] Fetched updated project, archived:', updatedProject.archived)
       return updatedProject
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to update project'))
@@ -307,8 +330,8 @@ export const projectsService = {
           filter: `org_id=eq.${orgId}`,
         },
         async () => {
-          // Refetch all projects when any change occurs
-          const projects = await this.getAll(orgId)
+          // Refetch all projects (including completed) when any change occurs
+          const projects = await this.getAllIncludingCompleted(orgId)
           callback(projects)
         }
       )

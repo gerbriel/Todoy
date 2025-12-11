@@ -61,6 +61,8 @@ export default function StageView({
         labelIds: [],
         order: stageTasks.length,
       })
+      // Optimistically update local state
+      setTasks(prev => [...prev, newTask])
       setSelectedTaskId(newTask.id)
       toast.success('Task created')
     } catch (error) {

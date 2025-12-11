@@ -58,7 +58,7 @@ export default function TaskList({
     }
 
     try {
-      await tasksService.create({
+      const newTask = await tasksService.create({
         title: newTaskTitle.trim(),
         description: '',
         listId: list.id,
@@ -66,6 +66,8 @@ export default function TaskList({
         labelIds: [],
         order: listTasks.length,
       })
+      // Optimistically update local state
+      setTasks(prev => [...prev, newTask])
       setNewTaskTitle('')
       setIsAddingTask(false)
       toast.success('Task created')

@@ -64,6 +64,8 @@ export default function ProjectView({
         campaignStage: 'planning',
         orgId: organization?.id || '',
       })
+      // Optimistically update local state
+      setCampaigns(prev => [...prev, newCampaign])
       toast.success('Campaign created')
       setShowCreateDialog(false)
       setNewCampaignTitle('')

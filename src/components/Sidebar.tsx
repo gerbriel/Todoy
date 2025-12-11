@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, CaretLeft } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { projectsService } from '@/services/projects.service'
 import { campaignsService } from '@/services/campaigns.service'
+import { tasksService } from '@/services/tasks.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,7 +77,9 @@ export default function Sidebar({
   filters,
   setFilters,
 }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createType, setCreateType] = useState<'project' | 'campaign'>('project')
   const [createProjectId, setCreateProjectId] = useState<string | undefined>()
@@ -289,6 +292,9 @@ export default function Sidebar({
     const isActive = activeCampaignId === campaign.id && navigationView === 'campaign'
     const isEditing = editingCampaignId === campaign.id
     const isDragging = draggingCampaignId === campaign.id
+    const campaignTasks = tasks.filter(t => t.campaignId === campaign.id && !t.completed)
+    const hasChildren = campaignTasks.length > 0
+    const isExpanded = expandedCampaigns.has(campaign.id)
 
     return (
       <div key={campaign.id}>
@@ -303,7 +309,27 @@ export default function Sidebar({
             isDragging && "opacity-40"
           )}
         >
-          <div className="w-6" />
+          {hasChildren ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setExpandedCampaigns(prev => {
+                  const newExpanded = new Set(prev)
+                  if (newExpanded.has(campaign.id)) {
+                    newExpanded.delete(campaign.id)
+                  } else {
+                    newExpanded.add(campaign.id)
+                  }
+                  return newExpanded
+                })
+              }}
+              className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isExpanded ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+            </button>
+          ) : (
+            <div className="w-6" />
+          )}
           
           {!isEditing && (
             <DotsSixVertical size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" weight="bold" />
@@ -433,6 +459,30 @@ export default function Sidebar({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        
+        {/* Nested Tasks */}
+        {isExpanded && hasChildren && (
+          <div className="ml-6">
+            {campaignTasks.slice(0, 5).map(task => (
+              <button
+                key={task.id}
+                onClick={() => onNavigateToCampaign(campaign.id)}
+                className={cn(
+                  'w-full text-left px-2 py-1 rounded text-xs transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+                title={task.title}
+              >
+                <CheckSquare size={12} weight="duotone" />
+                <span className="flex-1 truncate">{task.title}</span>
+              </button>
+            ))}
+            {campaignTasks.length > 5 && (
+              <div className="px-2 py-1 text-[10px] text-muted-foreground">
+                +{campaignTasks.length - 5} more tasks
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -604,30 +654,53 @@ export default function Sidebar({
 
   return (
     <>
-      <aside className="w-64 border-r border-border bg-card flex flex-col">
+      <aside className={cn(
+        "border-r border-border bg-card flex flex-col transition-all duration-300",
+        isCollapsed ? "w-16" : "w-72"
+      )}>
         <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Kanban className="text-primary" size={24} weight="duotone" />
-            <h1 className="text-lg font-semibold text-foreground">Marketing</h1>
-          </div>
+          {!isCollapsed && (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <Kanban className="text-primary" size={24} weight="duotone" />
+                <h1 className="text-lg font-semibold text-foreground truncate">Marketing</h1>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleCreateNew('project')}
+                  className="flex-1"
+                  size="sm"
+                >
+                  <Plus size={14} weight="bold" />
+                  Project
+                </Button>
+                <Button
+                  onClick={() => handleCreateNew('campaign')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Plus size={14} weight="bold" />
+                </Button>
+              </div>
+            </>
+          )}
           
-          <div className="flex gap-2">
-            <Button
-              onClick={() => handleCreateNew('project')}
-              className="flex-1"
-              size="sm"
-            >
-              <Plus size={14} weight="bold" />
-              Project
-            </Button>
-            <Button
-              onClick={() => handleCreateNew('campaign')}
-              variant="outline"
-              size="sm"
-            >
-              <Plus size={14} weight="bold" />
-            </Button>
-          </div>
+          {/* Collapse/Expand Button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={cn(
+              "w-full flex items-center justify-center p-2 hover:bg-muted rounded transition-colors",
+              !isCollapsed && "mt-4"
+            )}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <CaretRight size={20} weight="bold" />
+            ) : (
+              <CaretLeft size={20} weight="bold" />
+            )}
+          </button>
         </div>
         
         <ScrollArea className="flex-1">
@@ -639,11 +712,13 @@ export default function Sidebar({
                   'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                   navigationView === 'all-projects'
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground hover:bg-muted'
+                    : 'text-foreground hover:bg-muted',
+                  isCollapsed && 'justify-center px-0'
                 )}
+                title={isCollapsed ? "All Projects" : ""}
               >
                 <Stack size={16} weight="duotone" />
-                All Projects
+                {!isCollapsed && "All Projects"}
               </button>
               
               <button
@@ -652,11 +727,13 @@ export default function Sidebar({
                   'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                   navigationView === 'all-campaigns'
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground hover:bg-muted'
+                    : 'text-foreground hover:bg-muted',
+                  isCollapsed && 'justify-center px-0'
                 )}
+                title={isCollapsed ? "All Campaigns" : ""}
               >
                 <Briefcase size={16} weight="duotone" />
-                All Campaigns
+                {!isCollapsed && "All Campaigns"}
               </button>
               
               <button
@@ -665,11 +742,13 @@ export default function Sidebar({
                   'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                   navigationView === 'all-tasks'
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground hover:bg-muted'
+                    : 'text-foreground hover:bg-muted',
+                  isCollapsed && 'justify-center px-0'
                 )}
+                title={isCollapsed ? "All Tasks" : ""}
               >
                 <CheckSquare size={16} weight="duotone" />
-                All Tasks
+                {!isCollapsed && "All Tasks"}
               </button>
               
               {onNavigateToMaster && (
@@ -679,11 +758,13 @@ export default function Sidebar({
                     'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                     navigationView === 'master'
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
                   )}
+                  title={isCollapsed ? "Master View" : ""}
                 >
                   <ChartBar size={16} weight="duotone" />
-                  Master View
+                  {!isCollapsed && "Master View"}
                 </button>
               )}
               
@@ -694,11 +775,13 @@ export default function Sidebar({
                     'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                     navigationView === 'archive'
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
                   )}
+                  title={isCollapsed ? "Archive" : ""}
                 >
                   <Archive size={16} weight="duotone" />
-                  Archive
+                  {!isCollapsed && "Archive"}
                 </button>
               )}
               
@@ -709,11 +792,13 @@ export default function Sidebar({
                     'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                     navigationView === 'labels'
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
                   )}
+                  title={isCollapsed ? "Labels" : ""}
                 >
                   <Tag size={16} weight="duotone" />
-                  Labels
+                  {!isCollapsed && "Labels"}
                 </button>
               )}
               
@@ -724,11 +809,13 @@ export default function Sidebar({
                     'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
                     navigationView === 'organization'
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted'
+                      : 'text-foreground hover:bg-muted',
+                    isCollapsed && 'justify-center px-0'
                   )}
+                  title={isCollapsed ? "Organization" : ""}
                 >
                   <Briefcase size={16} weight="duotone" />
-                  Organization
+                  {!isCollapsed && "Organization"}
                 </button>
               )}
             </div>
@@ -797,7 +884,7 @@ export default function Sidebar({
               )
             })()}
             
-            {sortedProjects.length > 0 && (
+            {!isCollapsed && sortedProjects.length > 0 && (
               <div className="mb-4">
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Projects
@@ -808,7 +895,7 @@ export default function Sidebar({
               </div>
             )}
 
-            {standaloneCampaigns.length > 0 && (
+            {!isCollapsed && standaloneCampaigns.length > 0 && (
               <div>
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Campaigns

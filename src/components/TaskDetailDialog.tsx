@@ -229,6 +229,8 @@ export default function TaskDetailDialog({
     if (confirm('Delete this task?')) {
       try {
         await tasksService.delete(task.id)
+        // Optimistically update local state
+        setTasks(prev => prev.filter(t => t.id !== task.id))
         toast.success('Task deleted')
         onOpenChange(false)
       } catch (error) {
@@ -241,6 +243,8 @@ export default function TaskDetailDialog({
   const handleArchive = async () => {
     try {
       await tasksService.update(task.id, { completed: true })
+      // Optimistically update local state
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true } : t))
       toast.success('Task archived')
       onOpenChange(false)
     } catch (error) {

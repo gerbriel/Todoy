@@ -57,9 +57,14 @@ export default function TaskCard({
 
   const handleToggleComplete = async () => {
     try {
-      await tasksService.update(task.id, { completed: !task.completed })
+      const newCompleted = !task.completed
+      // Optimistically update local state
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: newCompleted } : t))
+      await tasksService.update(task.id, { completed: newCompleted })
     } catch (error) {
       console.error('Error toggling task completion:', error)
+      // Revert on error
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: task.completed } : t))
       toast.error('Failed to update task')
     }
   }

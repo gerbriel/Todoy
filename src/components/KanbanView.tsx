@@ -41,11 +41,13 @@ export default function KanbanView({
     if (!activeCampaignId) return
     
     try {
-      await listsService.create({
+      const newList = await listsService.create({
         title: 'New List',
         campaignId: activeCampaignId,
         order: lists.filter(l => l.campaignId === activeCampaignId).length,
       })
+      // Optimistically update local state
+      setLists(prev => [...prev, newList])
       toast.success('List created')
     } catch (error) {
       console.error('Error creating list:', error)

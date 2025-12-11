@@ -96,21 +96,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUserData = async (userId: string) => {
     console.log('[Auth] Loading user data for:', userId)
     try {
-      // Load user profile
-      const { data: profile, error: profileError } = await supabase
+      // Create a timeout promise
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
+      )
+
+      // Load user profile with timeout
+      const profileQuery = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
+      const { data: profile, error: profileError } = await Promise.race([
+        profileQuery,
+        timeout
+      ]) as any
+
       if (profileError) {
         console.log('[Auth] Profile error:', profileError.code, profileError.message)
-        // If profile doesn't exist (404), we have a problem
-        // But for other errors (network, timeout), just fail silently
-        if (profileError.code === 'PGRST116') {
-          // Profile doesn't exist - this shouldn't happen but sign out if it does
-          await supabase.auth.signOut()
-        }
+        // Don't sign out on errors - just show login screen
         setUser(null)
         setOrganization(null)
         setLoading(false)
@@ -176,7 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      // Silently handle errors - user will see login screen
+      console.log('[Auth] Error in loadUserData:', error)
+      setUser(null)
+      setOrganization(null)
     } finally {
       setLoading(false)
     }

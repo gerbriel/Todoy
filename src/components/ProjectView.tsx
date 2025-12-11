@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Project, Campaign, Task, Organization, List } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash, ArrowCounterClockwise, Archive } from '@phosphor-icons/react'
+import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash, ArrowCounterClockwise, Archive, Copy } from '@phosphor-icons/react'
 import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
 import { campaignsService } from '@/services/campaigns.service'
 import { projectsService } from '@/services/projects.service'
@@ -13,6 +13,7 @@ import { Button } from './ui/button'
 import { toast } from 'sonner'
 import ProjectEditDialog from './ProjectEditDialog'
 import ConfirmDialog from './ConfirmDialog'
+import DuplicateDialog from './DuplicateDialog'
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ export default function ProjectView({
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newCampaignTitle, setNewCampaignTitle] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
@@ -113,6 +115,20 @@ export default function ProjectView({
     } catch (error) {
       console.error('Error archiving project:', error)
       toast.error('Failed to archive project')
+    }
+  }
+
+  const handleDuplicate = async (targetProjectId: string, targetCampaignId?: string, targetListId?: string, newName?: string) => {
+    try {
+      const projectName = newName || `${project.title} (Copy)`
+      const duplicatedProject = await projectsService.duplicate(project.id, projectName)
+      // Optimistically add to local state
+      setProjects(prev => [...prev, duplicatedProject])
+      toast.success('Project duplicated successfully')
+      setShowDuplicateDialog(false)
+    } catch (error) {
+      console.error('Error duplicating project:', error)
+      toast.error('Failed to duplicate project')
     }
   }
 
@@ -208,6 +224,10 @@ export default function ProjectView({
                 <Button variant="outline" onClick={handleArchiveProject} className="w-full sm:w-auto text-sm md:text-base text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
                   <Archive size={16} weight="bold" className="mr-2" />
                   Archive
+                </Button>
+                <Button variant="outline" onClick={() => setShowDuplicateDialog(true)} className="w-full sm:w-auto text-sm md:text-base text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950">
+                  <Copy size={16} weight="bold" className="mr-2" />
+                  Duplicate
                 </Button>
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="w-full sm:w-auto text-sm md:text-base text-destructive hover:bg-destructive/10">
                   <Trash size={16} weight="bold" className="mr-2" />
@@ -335,6 +355,17 @@ export default function ProjectView({
         setProjects={setProjects}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
+      />
+
+      <DuplicateDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        type="project"
+        itemName={project.title}
+        onDuplicate={handleDuplicate}
+        projects={projects}
+        campaigns={campaigns}
+        lists={lists}
       />
     </div>
   )

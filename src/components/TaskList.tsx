@@ -311,7 +311,7 @@ export default function TaskList({
         confirmText="Delete List"
       />
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-2 mb-3 max-h-[600px] overflow-y-auto">
         {listTasks.map((task, index) => (
           <div
             key={task.id}

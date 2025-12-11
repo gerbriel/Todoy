@@ -4,11 +4,12 @@ import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor, Sparkle } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor, Sparkle, Copy } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
 import ConfirmDialog from './ConfirmDialog'
+import DuplicateDialog from './DuplicateDialog'
 import { campaignsService } from '@/services/campaigns.service'
 import { toast } from 'sonner'
 import NotificationsPanel from './NotificationsPanel'
@@ -65,6 +66,7 @@ export default function Header({
   const [showSearch, setShowSearch] = useState(false)
   const [showEditCampaign, setShowEditCampaign] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDuplicateCampaign, setShowDuplicateCampaign] = useState(false)
   const { user, logout } = useAuth()
   const { theme, setTheme } = useTheme()
 
@@ -112,6 +114,20 @@ export default function Header({
     } catch (error) {
       console.error('Error archiving campaign:', error)
       toast.error('Failed to archive campaign')
+    }
+  }
+
+  const handleDuplicateCampaign = async (newName: string, targetProjectId?: string) => {
+    if (!activeCampaign) return
+
+    try {
+      const duplicated = await campaignsService.duplicate(activeCampaign.id, newName, targetProjectId)
+      setCampaigns(prev => [...prev, duplicated])
+      toast.success('Campaign duplicated')
+      setShowDuplicateCampaign(false)
+    } catch (error) {
+      console.error('Error duplicating campaign:', error)
+      toast.error('Failed to duplicate campaign')
     }
   }
 
@@ -196,6 +212,15 @@ export default function Header({
                     >
                       <PencilSimple size={16} weight="bold" />
                       Edit Campaign
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDuplicateCampaign(true)}
+                      className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                    >
+                      <Copy size={16} weight="bold" />
+                      Duplicate
                     </Button>
                     <Button
                       variant="outline"
@@ -368,6 +393,19 @@ export default function Header({
               : `Are you sure you want to delete "${activeCampaign.title}"? This action cannot be undone.`
           }
           confirmText="Delete Campaign"
+        />
+      )}
+
+      {activeCampaign && (
+        <DuplicateDialog
+          open={showDuplicateCampaign}
+          onOpenChange={setShowDuplicateCampaign}
+          type="campaign"
+          itemName={activeCampaign.title}
+          projects={projects}
+          campaigns={campaigns}
+          lists={lists}
+          onDuplicate={handleDuplicateCampaign}
         />
       )}
     </>

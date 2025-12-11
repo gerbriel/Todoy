@@ -134,10 +134,21 @@ function MainApp() {
     }
   }, [organization?.id])
   
-  const [navigationView, setNavigationView] = useState<NavigationView>('all-projects')
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban')
+  // Load cached navigation state from localStorage
+  const [navigationView, setNavigationView] = useState<NavigationView>(() => {
+    const cached = localStorage.getItem('navigationView')
+    return (cached as NavigationView) || 'all-projects'
+  })
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
+    return localStorage.getItem('activeProjectId') || null
+  })
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(() => {
+    return localStorage.getItem('activeCampaignId') || null
+  })
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const cached = localStorage.getItem('viewMode')
+    return (cached as ViewMode) || 'kanban'
+  })
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     campaignIds: [],
@@ -147,6 +158,31 @@ function MainApp() {
     searchText: '',
     showAllCampaigns: false,
   })
+
+  // Persist navigation state to localStorage
+  useEffect(() => {
+    localStorage.setItem('navigationView', navigationView)
+  }, [navigationView])
+
+  useEffect(() => {
+    if (activeProjectId) {
+      localStorage.setItem('activeProjectId', activeProjectId)
+    } else {
+      localStorage.removeItem('activeProjectId')
+    }
+  }, [activeProjectId])
+
+  useEffect(() => {
+    if (activeCampaignId) {
+      localStorage.setItem('activeCampaignId', activeCampaignId)
+    } else {
+      localStorage.removeItem('activeCampaignId')
+    }
+  }, [activeCampaignId])
+
+  useEffect(() => {
+    localStorage.setItem('viewMode', viewMode)
+  }, [viewMode])
 
   const activeProject = projects?.find(p => p.id === activeProjectId) || archivedProject
   const activeCampaign = campaigns?.find(c => c.id === activeCampaignId) || archivedCampaign

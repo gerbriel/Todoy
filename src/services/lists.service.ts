@@ -96,11 +96,11 @@ export const listsService = {
   },
 
   /**
-   * Subscribe to real-time changes
+   * Subscribe to real-time changes for a specific campaign
    */
   subscribe(campaignId: string, callback: (lists: List[]) => void) {
     const channel = supabase
-      .channel('lists-changes')
+      .channel(`lists-changes-${campaignId}`)
       .on(
         'postgres_changes',
         {
@@ -112,6 +112,41 @@ export const listsService = {
         async () => {
           const lists = await this.getByCampaign(campaignId)
           callback(lists)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  },
+
+  /**
+   * Subscribe to all lists for an organization (across all campaigns)
+   */
+  subscribeAll(orgId: string, callback: (lists: List[]) => void) {
+    const channel = supabase
+      .channel(`lists-org-changes-${orgId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lists',
+        },
+        async () => {
+          // Load lists for all campaigns in this org
+          const { data: campaigns } = await supabase
+            .from('campaigns')
+            .select('id')
+            .eq('org_id', orgId)
+          
+          if (campaigns) {
+            const listPromises = campaigns.map(c => this.getByCampaign(c.id))
+            const listArrays = await Promise.all(listPromises)
+            const allLists = listArrays.flat()
+            callback(allLists)
+          }
         }
       )
       .subscribe()

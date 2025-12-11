@@ -102,6 +102,9 @@ export default function TaskList({
     
     try {
       await listsService.delete(list.id)
+      // Optimistically update local state
+      setLists(prev => prev.filter(l => l.id !== list.id))
+      setTasks(prev => prev.filter(t => t.listId !== list.id))
       toast.success('List deleted')
     } catch (error) {
       console.error('Error deleting list:', error)

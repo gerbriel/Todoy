@@ -57,9 +57,8 @@ export default function ProjectView({
   const handleRestoreProject = async () => {
     try {
       await projectsService.update(project.id, { archived: false })
-      // Optimistically update local state
-      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, archived: false } : p))
       toast.success('Project restored')
+      // Navigate back - the real-time subscription will update the projects list
       onNavigateBack()
     } catch (error) {
       console.error('Error restoring project:', error)
@@ -70,10 +69,8 @@ export default function ProjectView({
   const handleDeleteProject = async () => {
     try {
       await projectsService.delete(project.id)
-      // Optimistically update local state
-      setProjects(prev => prev.filter(p => p.id !== project.id))
-      setCampaigns(prev => prev.filter(c => c.projectId !== project.id))
       toast.success('Project deleted')
+      // Navigate back - the real-time subscription will update the lists
       onNavigateBack()
     } catch (error) {
       console.error('Error deleting project:', error)

@@ -48,6 +48,7 @@ function MainApp() {
   const [stageTemplates, setStageTemplates] = useState<StageTemplate[]>([])
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([])
   const [orgInvites, setOrgInvites] = useState<OrgInvite[]>([])
+  const [archivedProject, setArchivedProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   
   // Load data from Supabase when organization changes
@@ -144,16 +145,41 @@ function MainApp() {
     showAllCampaigns: false,
   })
 
-  const activeProject = projects?.find(p => p.id === activeProjectId)
+  const activeProject = projects?.find(p => p.id === activeProjectId) || archivedProject
   const activeCampaign = campaigns?.find(c => c.id === activeCampaignId)
   const campaignProject = activeCampaign?.projectId 
     ? projects?.find(p => p.id === activeCampaign.projectId)
     : undefined
 
-  const handleNavigateToProject = (projectId: string) => {
+  const handleNavigateToProject = async (projectId: string) => {
     setActiveProjectId(projectId)
     setActiveCampaignId(null)
     setNavigationView('project')
+    
+    // If project is not in the main projects state, it might be archived - fetch it and its campaigns
+    if (!projects?.find(p => p.id === projectId)) {
+      try {
+        const [project, projectCampaigns] = await Promise.all([
+          projectsService.getById(projectId),
+          campaignsService.getByProject(projectId),
+        ])
+        if (project) {
+          setArchivedProject(project)
+        }
+        // Temporarily add archived project's campaigns to the campaigns state
+        if (projectCampaigns.length > 0) {
+          setCampaigns(prev => {
+            // Remove any existing campaigns for this project, then add new ones
+            const filtered = prev.filter(c => c.projectId !== projectId)
+            return [...filtered, ...projectCampaigns]
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching archived project:', error)
+      }
+    } else {
+      setArchivedProject(null)
+    }
   }
 
   const handleNavigateToCampaign = (campaignId: string) => {
@@ -233,7 +259,7 @@ function MainApp() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           navigationView={navigationView}
-          activeProject={navigationView === 'campaign' ? campaignProject : activeProject}
+          activeProject={navigationView === 'campaign' ? campaignProject : (activeProject || undefined)}
           activeCampaign={activeCampaign}
           campaigns={campaigns || []}
           setCampaigns={setCampaigns}

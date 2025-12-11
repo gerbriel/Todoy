@@ -325,6 +325,7 @@ function MainApp() {
           projects={projects || []}
           setProjects={setProjects}
           tasks={tasks || []}
+          lists={lists || []}
         />
         
         <main className="flex-1 overflow-hidden relative">

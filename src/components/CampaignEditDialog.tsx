@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Campaign, CampaignType, CampaignStage, Project } from '@/lib/types'
+import { Campaign, CampaignType, CampaignStage, Project, List } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -8,7 +8,7 @@ import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
 import { Separator } from './ui/separator'
-import { Folder, Archive, DotsThree, ArrowsLeftRight } from '@phosphor-icons/react'
+import { Folder, Archive, DotsThree, ArrowsLeftRight, Copy } from '@phosphor-icons/react'
 import { campaignsService } from '@/services/campaigns.service'
 import {
   DropdownMenu,
@@ -22,12 +22,14 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import StageDateManager from './StageDateManager'
+import DuplicateDialog from './DuplicateDialog'
 
 interface CampaignEditDialogProps {
   campaign: Campaign
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   projects: Project[]
+  lists: List[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -55,6 +57,7 @@ export default function CampaignEditDialog({
   campaigns,
   setCampaigns,
   projects,
+  lists,
   open,
   onOpenChange,
 }: CampaignEditDialogProps) {
@@ -71,6 +74,7 @@ export default function CampaignEditDialog({
   const [endDate, setEndDate] = useState(campaign.endDate || '')
   const [followUpDate, setFollowUpDate] = useState(campaign.followUpDate || '')
   const [stageDates, setStageDates] = useState(campaign.stageDates || [])
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -134,6 +138,21 @@ export default function CampaignEditDialog({
     } catch (error) {
       console.error('Error archiving campaign:', error)
       toast.error('Failed to archive campaign')
+    }
+  }
+
+  const handleDuplicate = async (targetProjectId: string, targetCampaignId?: string, targetListId?: string, newName?: string) => {
+    try {
+      const campaignName = newName || `${campaign.title} (Copy)`
+      const duplicatedCampaign = await campaignsService.duplicate(campaign.id, campaignName, targetProjectId)
+      // Optimistically add to local state
+      setCampaigns(prev => [...prev, duplicatedCampaign])
+      toast.success('Campaign duplicated successfully')
+      setShowDuplicateDialog(false)
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error duplicating campaign:', error)
+      toast.error('Failed to duplicate campaign')
     }
   }
 
@@ -390,6 +409,11 @@ export default function CampaignEditDialog({
               
               <DropdownMenuSeparator />
               
+              <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)} className="text-blue-600">
+                <Copy size={16} className="mr-2" />
+                Duplicate Campaign
+              </DropdownMenuItem>
+              
               <DropdownMenuItem onClick={handleArchive} className="text-orange-600">
                 <Archive size={16} className="mr-2" />
                 Archive Campaign
@@ -407,6 +431,18 @@ export default function CampaignEditDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <DuplicateDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        type="campaign"
+        itemName={campaign.title}
+        onDuplicate={handleDuplicate}
+        projects={projects}
+        campaigns={campaigns}
+        lists={lists}
+        currentProjectId={campaign.projectId}
+      />
     </Dialog>
   )
 }

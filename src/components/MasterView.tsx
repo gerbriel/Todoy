@@ -455,6 +455,7 @@ export default function MasterView({
           campaigns={campaigns}
           setCampaigns={setCampaigns}
           projects={projects}
+          lists={lists}
           open={!!editingCampaignId}
           onOpenChange={(open) => {
             if (!open) setEditingCampaignId(null)

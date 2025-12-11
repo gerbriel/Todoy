@@ -40,6 +40,7 @@ interface HeaderProps {
   projects: Project[]
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   tasks: Task[]
+  lists: List[]
 }
 
 export default function Header({
@@ -59,6 +60,7 @@ export default function Header({
   campaigns,
   setCampaigns,
   tasks,
+  lists,
 }: HeaderProps & { onNavigateToCampaign: (campaignId: string) => void }) {
   const [showSearch, setShowSearch] = useState(false)
   const [showEditCampaign, setShowEditCampaign] = useState(false)
@@ -327,6 +329,7 @@ export default function Header({
           campaigns={campaigns}
           setCampaigns={setCampaigns}
           projects={projects}
+          lists={lists}
           open={showEditCampaign}
           onOpenChange={setShowEditCampaign}
         />

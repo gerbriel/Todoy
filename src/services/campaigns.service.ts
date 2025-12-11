@@ -118,25 +118,43 @@ export const campaignsService = {
    */
   async update(id: string, updates: Partial<Campaign>): Promise<Campaign> {
     try {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .update({
-          ...(updates.title && { title: updates.title }),
-          ...(updates.description !== undefined && { description: updates.description }),
-          ...(updates.order !== undefined && { order: updates.order }),
-          ...(updates.campaignType && { campaign_type: updates.campaignType }),
-          ...(updates.planningStartDate !== undefined && { planning_start_date: updates.planningStartDate }),
-          ...(updates.launchDate !== undefined && { launch_date: updates.launchDate }),
-          ...(updates.endDate !== undefined && { end_date: updates.endDate }),
-          ...(updates.followUpDate !== undefined && { follow_up_date: updates.followUpDate }),
-          ...(updates.completed !== undefined && { completed: updates.completed }),
-          ...(updates.archived !== undefined && { archived: updates.archived }),
-        })
-        .eq('id', id)
-        .select()
-        .single()
+      // Build update object only with provided fields
+      const updateData: any = {}
+      if (updates.title !== undefined) updateData.title = updates.title
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.order !== undefined) updateData.order = updates.order
+      if (updates.campaignType !== undefined) updateData.campaign_type = updates.campaignType
+      if (updates.planningStartDate !== undefined) updateData.planning_start_date = updates.planningStartDate
+      if (updates.launchDate !== undefined) updateData.launch_date = updates.launchDate
+      if (updates.endDate !== undefined) updateData.end_date = updates.endDate
+      if (updates.followUpDate !== undefined) updateData.follow_up_date = updates.followUpDate
+      if (updates.completed !== undefined) updateData.completed = updates.completed
+      if (updates.archived !== undefined) updateData.archived = updates.archived
+      if (updates.projectId !== undefined) updateData.project_id = updates.projectId
 
-      if (error) throw error
+      // Only update main fields if there are any changes
+      let data: any
+      if (Object.keys(updateData).length > 0) {
+        const result = await supabase
+          .from('campaigns')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (result.error) throw result.error
+        data = result.data
+      } else {
+        // If only stageDates are being updated, fetch current campaign data
+        const result = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', id)
+          .single()
+        
+        if (result.error) throw result.error
+        data = result.data
+      }
 
       // Handle stage dates if provided
       if (updates.stageDates !== undefined) {

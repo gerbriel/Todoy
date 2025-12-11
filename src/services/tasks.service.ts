@@ -129,22 +129,39 @@ export const tasksService = {
    */
   async update(id: string, updates: Partial<Task>): Promise<Task> {
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({
-          ...(updates.title && { title: updates.title }),
-          ...(updates.description !== undefined && { description: updates.description }),
-          ...(updates.order !== undefined && { order: updates.order }),
-          ...(updates.listId && { list_id: updates.listId }),
-          ...(updates.dueDate !== undefined && { due_date: updates.dueDate }),
-          ...(updates.currentStage !== undefined && { current_stage: updates.currentStage }),
-          ...(updates.completed !== undefined && { completed: updates.completed }),
-        })
-        .eq('id', id)
-        .select()
-        .single()
+      // Build update object only with provided fields
+      const updateData: any = {}
+      if (updates.title !== undefined) updateData.title = updates.title
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.order !== undefined) updateData.order = updates.order
+      if (updates.listId !== undefined) updateData.list_id = updates.listId
+      if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate
+      if (updates.currentStage !== undefined) updateData.current_stage = updates.currentStage
+      if (updates.completed !== undefined) updateData.completed = updates.completed
 
-      if (error) throw error
+      // Only update main fields if there are any changes
+      let data: any
+      if (Object.keys(updateData).length > 0) {
+        const result = await supabase
+          .from('tasks')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (result.error) throw result.error
+        data = result.data
+      } else {
+        // If only assigned users or labels are being updated, fetch current task data
+        const result = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', id)
+          .single()
+        
+        if (result.error) throw result.error
+        data = result.data
+      }
 
       // Handle assigned users if provided
       if (updates.assignedTo !== undefined) {

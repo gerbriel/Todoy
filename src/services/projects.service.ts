@@ -108,21 +108,26 @@ export const projectsService = {
    */
   async update(id: string, updates: Partial<Project>): Promise<Project> {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .update({
-          ...(updates.title && { title: updates.title }),
-          ...(updates.description !== undefined && { description: updates.description }),
-          ...(updates.order !== undefined && { order: updates.order }),
-          ...(updates.completed !== undefined && { completed: updates.completed }),
-          ...(updates.archived !== undefined && { archived: updates.archived }),
-          ...(updates.visibility && { visibility: updates.visibility }),
-        })
-        .eq('id', id)
-        .select()
-        .single()
+      // Build update object only with provided fields
+      const updateData: any = {}
+      if (updates.title !== undefined) updateData.title = updates.title
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.order !== undefined) updateData.order = updates.order
+      if (updates.completed !== undefined) updateData.completed = updates.completed
+      if (updates.archived !== undefined) updateData.archived = updates.archived
+      if (updates.visibility !== undefined) updateData.visibility = updates.visibility
 
-      if (error) throw error
+      // Only update main fields if there are any changes
+      if (Object.keys(updateData).length > 0) {
+        const { data, error } = await supabase
+          .from('projects')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) throw error
+      }
 
       // Handle assigned users if provided
       if (updates.assignedTo !== undefined) {

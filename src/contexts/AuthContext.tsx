@@ -113,10 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setUser(userData)
 
-        // Load user's organization memberships
+        // Load user's organization memberships (without JOIN to avoid RLS recursion)
         const { data: memberships, error: memberError } = await supabase
           .from('org_members')
-          .select('*, organizations(*)')
+          .select('*')
           .eq('user_id', userId)
 
         if (memberError) {
@@ -127,7 +127,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('Memberships loaded:', memberships.length)
           // Use first org for now (TODO: support multiple orgs)
           const firstMembership = memberships[0]
-          const orgData = firstMembership.organizations
+          
+          // Load organization separately to avoid RLS recursion issues
+          const { data: orgData, error: orgError } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', firstMembership.org_id)
+            .single()
+
+          if (orgError) {
+            console.error('Organization error:', orgError)
+          }
 
           if (orgData) {
             const org: Organization = {

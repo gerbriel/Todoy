@@ -236,6 +236,27 @@ export default function Header({
               </>
             )}
 
+            {navigationView === 'project' && activeProject && (
+              <>
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Kanban size={16} weight="bold" />
+                  Kanban
+                </Button>
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                >
+                  <CalendarBlank size={16} weight="bold" />
+                  Calendar
+                </Button>
+              </>
+            )}
+
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

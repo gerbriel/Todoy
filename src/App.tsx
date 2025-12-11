@@ -429,20 +429,42 @@ function MainApp() {
           )}
           
           {navigationView === 'project' && activeProjectId && activeProject && (
-            <ProjectView
-              project={activeProject}
-              projects={projects || []}
-              setProjects={setProjects}
-              campaigns={campaigns || []}
-              setCampaigns={setCampaigns}
-              tasks={tasks || []}
-              setTasks={setTasks}
-              lists={lists || []}
-              setLists={setLists}
-              organization={organization}
-              onNavigateToCampaign={handleNavigateToCampaign}
-              onNavigateBack={handleNavigateToAllProjects}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <ProjectView
+                  project={activeProject}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  campaigns={campaigns || []}
+                  setCampaigns={setCampaigns}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  lists={lists || []}
+                  setLists={setLists}
+                  organization={organization}
+                  onNavigateToCampaign={handleNavigateToCampaign}
+                  onNavigateBack={handleNavigateToAllProjects}
+                />
+              ) : (
+                <CalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={{...filters, projectId: activeProjectId}}
+                  projects={projects || []}
+                  users={users || []}
+                  viewLevel="project"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
           
           {navigationView === 'campaign' && activeCampaignId && activeCampaign && (

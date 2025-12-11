@@ -15,6 +15,7 @@ interface ArchiveViewProps {
   campaigns: Campaign[]
   tasks: Task[]
   onNavigateToProject: (projectId: string) => void
+  orgId: string
 }
 
 export default function ArchiveView({
@@ -23,19 +24,19 @@ export default function ArchiveView({
   campaigns,
   tasks,
   onNavigateToProject,
+  orgId,
 }: ArchiveViewProps) {
   const [archivedProjects, setArchivedProjects] = useState<Project[]>([])
   const [archivedCampaigns, setArchivedCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Load archived items when the view mounts
+  // Load archived items when the view mounts and set up subscriptions
   useEffect(() => {
+    if (!orgId) return
+
     const loadArchivedItems = async () => {
       try {
         setLoading(true)
-        // Get organization ID from the first project or campaign in the global state
-        const orgId = projects[0]?.orgId || campaigns[0]?.orgId
-        if (!orgId) return
 
         const [archivedProjs, archivedCamps] = await Promise.all([
           projectsService.getAllArchived(orgId),
@@ -53,7 +54,15 @@ export default function ArchiveView({
     }
 
     loadArchivedItems()
-  }, [projects, campaigns])
+
+    // Set up an interval to periodically refresh archived items
+    // This ensures we catch newly archived items
+    const refreshInterval = setInterval(() => {
+      loadArchivedItems()
+    }, 2000) // Refresh every 2 seconds
+
+    return () => clearInterval(refreshInterval)
+  }, [orgId])
 
   const sortedProjects = [...archivedProjects].sort((a, b) => a.order - b.order)
 

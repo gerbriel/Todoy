@@ -338,6 +338,7 @@ function MainApp() {
               campaigns={campaigns || []}
               tasks={tasks || []}
               onNavigateToProject={handleNavigateToProject}
+              orgId={organization?.id || ''}
             />
           )}
           

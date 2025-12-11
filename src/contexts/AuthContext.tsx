@@ -34,38 +34,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state from Supabase session
   useEffect(() => {
-    // Set timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('Auth loading timeout - forcing completion')
-      setLoading(false)
-    }, 5000)
+    let mounted = true
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Session error:', error)
-        setLoading(false)
-        return
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
       
       if (session?.user) {
-        loadUserData(session.user.id).finally(() => {
-          clearTimeout(timeout)
-        })
+        loadUserData(session.user.id)
       } else {
         setLoading(false)
-        clearTimeout(timeout)
       }
-    }).catch((error) => {
-      console.error('Failed to get session:', error)
-      setLoading(false)
-      clearTimeout(timeout)
+    }).catch(() => {
+      if (mounted) setLoading(false)
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
+      
       if (session?.user) {
         await loadUserData(session.user.id)
       } else {
@@ -77,14 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => {
-      clearTimeout(timeout)
+      mounted = false
       subscription.unsubscribe()
     }
   }, [])
 
   // Load user profile and organization data
   const loadUserData = async (userId: string) => {
-    console.log('Loading user data for:', userId)
     try {
       // Load user profile
       const { data: profile, error: profileError } = await supabase
@@ -94,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (profileError) {
-        console.error('Profile error:', profileError)
         // If profile doesn't exist, clear the session and show login
         await supabase.auth.signOut()
         setUser(null)
@@ -104,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (profile) {
-        console.log('Profile loaded:', profile)
         const userData: User = {
           id: profile.id,
           email: profile.email,
@@ -114,30 +100,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData)
 
         // Load user's organization memberships (without JOIN to avoid RLS recursion)
-        const { data: memberships, error: memberError } = await supabase
+        const { data: memberships } = await supabase
           .from('org_members')
           .select('*')
           .eq('user_id', userId)
 
-        if (memberError) {
-          console.error('Membership error:', memberError)
-        }
-
         if (memberships && memberships.length > 0) {
-          console.log('Memberships loaded:', memberships.length)
           // Use first org for now (TODO: support multiple orgs)
           const firstMembership = memberships[0]
           
           // Load organization separately to avoid RLS recursion issues
-          const { data: orgData, error: orgError } = await supabase
+          const { data: orgData } = await supabase
             .from('organizations')
             .select('*')
             .eq('id', firstMembership.org_id)
             .single()
-
-          if (orgError) {
-            console.error('Organization error:', orgError)
-          }
 
           if (orgData) {
             const org: Organization = {
@@ -167,16 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               )
             }
           }
-        } else {
-          console.log('No organization memberships found')
         }
-      } else {
-        console.log('No profile found')
       }
     } catch (error) {
-      console.error('Error loading user data:', error)
+      // Silently handle errors - user will see login screen
     } finally {
-      console.log('Finished loading user data')
       setLoading(false)
     }
   }

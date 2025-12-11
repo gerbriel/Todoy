@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, CaretLeft } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag, SidebarSimple } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
@@ -695,11 +695,7 @@ export default function Sidebar({
             )}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? (
-              <CaretRight size={20} weight="bold" />
-            ) : (
-              <CaretLeft size={20} weight="bold" />
-            )}
+            <SidebarSimple size={20} weight="bold" />
           </button>
         </div>
         

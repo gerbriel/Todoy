@@ -93,6 +93,24 @@ export default function Header({
     }
   }
 
+  const handleArchiveCampaign = async () => {
+    if (!activeCampaign) return
+
+    try {
+      await campaignsService.update(activeCampaign.id, { archived: true })
+      toast.success('Campaign archived')
+      // Navigate to project if it exists, otherwise to all projects
+      if (activeProject) {
+        onNavigateToProject(activeProject.id)
+      } else {
+        onNavigateToAllProjects()
+      }
+    } catch (error) {
+      console.error('Error archiving campaign:', error)
+      toast.error('Failed to archive campaign')
+    }
+  }
+
   return (
     <>
       <header className="border-b border-border bg-card px-6 py-4">
@@ -162,23 +180,36 @@ export default function Header({
 
             {navigationView === 'campaign' && activeCampaign && (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowEditCampaign(true)}
-                >
-                  <PencilSimple size={16} weight="bold" />
-                  Edit Campaign
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="text-destructive hover:bg-destructive/10"
-                >
-                  <Trash size={16} weight="bold" />
-                  Delete
-                </Button>
+                {!activeCampaign.archived && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEditCampaign(true)}
+                    >
+                      <PencilSimple size={16} weight="bold" />
+                      Edit Campaign
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleArchiveCampaign}
+                      className="text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                    >
+                      <Archive size={16} weight="bold" />
+                      Archive
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash size={16} weight="bold" />
+                      Delete
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant={viewMode === 'kanban' ? 'default' : 'outline'}
                   size="sm"

@@ -104,6 +104,18 @@ export default function ProjectView({
     }
   }
 
+  const handleArchiveProject = async () => {
+    try {
+      await projectsService.update(project.id, { archived: true })
+      toast.success('Project archived')
+      // Navigate back - the real-time subscription will update the lists
+      onNavigateBack()
+    } catch (error) {
+      console.error('Error archiving project:', error)
+      toast.error('Failed to archive project')
+    }
+  }
+
   const handleCreateCampaign = async () => {
     if (!newCampaignTitle.trim()) {
       toast.error('Please enter a campaign title')
@@ -187,19 +199,25 @@ export default function ProjectView({
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowEditDialog(true)}>
-              <PencilSimple size={16} weight="bold" />
-              Edit Project
-            </Button>
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:bg-destructive/10">
-              <Trash size={16} weight="bold" />
-              Delete
-            </Button>
             {!project.archived && (
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus size={16} weight="bold" />
-                New Campaign
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+                  <PencilSimple size={16} weight="bold" />
+                  Edit Project
+                </Button>
+                <Button variant="outline" onClick={handleArchiveProject} className="text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+                  <Archive size={16} weight="bold" />
+                  Archive
+                </Button>
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:bg-destructive/10">
+                  <Trash size={16} weight="bold" />
+                  Delete
+                </Button>
+                <Button onClick={() => setShowCreateDialog(true)}>
+                  <Plus size={16} weight="bold" />
+                  New Campaign
+                </Button>
+              </>
             )}
           </div>
         </div>

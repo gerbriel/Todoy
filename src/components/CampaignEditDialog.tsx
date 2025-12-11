@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner'
 import { Separator } from './ui/separator'
 import { Folder, Archive, DotsThree, ArrowsLeftRight } from '@phosphor-icons/react'
+import { campaignsService } from '@/services/campaigns.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,36 +72,34 @@ export default function CampaignEditDialog({
   const [followUpDate, setFollowUpDate] = useState(campaign.followUpDate || '')
   const [stageDates, setStageDates] = useState(campaign.stageDates || [])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast.error('Campaign title cannot be empty')
       return
     }
 
-    setCampaigns(currentCampaigns =>
-      currentCampaigns.map(c =>
-        c.id === campaign.id
-          ? {
-              ...c,
-              title: title.trim(),
-              description: description.trim(),
-              projectId: projectId || undefined,
-              campaignType: campaignType || undefined,
-              campaignStage: campaignStage || undefined,
-              budget: budget ? parseFloat(budget) : undefined,
-              actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
-              goals: goals.trim() || undefined,
-              planningStartDate: planningStartDate || undefined,
-              launchDate: launchDate || undefined,
-              endDate: endDate || undefined,
-              followUpDate: followUpDate || undefined,
-              stageDates,
-            }
-          : c
-      )
-    )
-    toast.success('Campaign updated')
-    onOpenChange(false)
+    try {
+      await campaignsService.update(campaign.id, {
+        title: title.trim(),
+        description: description.trim(),
+        projectId: projectId || undefined,
+        campaignType: campaignType || undefined,
+        campaignStage: campaignStage || undefined,
+        budget: budget ? parseFloat(budget) : undefined,
+        actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
+        goals: goals.trim() || undefined,
+        planningStartDate: planningStartDate || undefined,
+        launchDate: launchDate || undefined,
+        endDate: endDate || undefined,
+        followUpDate: followUpDate || undefined,
+        stageDates,
+      })
+      toast.success('Campaign updated')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error updating campaign:', error)
+      toast.error('Failed to update campaign')
+    }
   }
 
   const handleCancel = () => {
@@ -121,27 +120,29 @@ export default function CampaignEditDialog({
     onOpenChange(false)
   }
 
-  const handleArchive = () => {
-    setCampaigns(currentCampaigns =>
-      currentCampaigns.map(c =>
-        c.id === campaign.id ? { ...c, archived: true } : c
-      )
-    )
-    toast.success('Campaign archived')
-    onOpenChange(false)
+  const handleArchive = async () => {
+    try {
+      await campaignsService.update(campaign.id, { archived: true })
+      toast.success('Campaign archived')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error archiving campaign:', error)
+      toast.error('Failed to archive campaign')
+    }
   }
 
-  const handleMoveToProject = (newProjectId: string | undefined) => {
-    setCampaigns(currentCampaigns =>
-      currentCampaigns.map(c =>
-        c.id === campaign.id ? { ...c, projectId: newProjectId } : c
-      )
-    )
-    setProjectId(newProjectId || '')
-    const projectName = newProjectId 
-      ? projects.find(p => p.id === newProjectId)?.title 
-      : 'standalone'
-    toast.success(`Moved to ${projectName}`)
+  const handleMoveToProject = async (newProjectId: string | undefined) => {
+    try {
+      await campaignsService.update(campaign.id, { projectId: newProjectId })
+      setProjectId(newProjectId || '')
+      const projectName = newProjectId 
+        ? projects.find(p => p.id === newProjectId)?.title 
+        : 'standalone'
+      toast.success(`Moved to ${projectName}`)
+    } catch (error) {
+      console.error('Error moving campaign:', error)
+      toast.error('Failed to move campaign')
+    }
   }
 
   return (

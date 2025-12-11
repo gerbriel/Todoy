@@ -8,6 +8,7 @@ import { Button } from './ui/button'
 import { toast } from 'sonner'
 import { Separator } from './ui/separator'
 import { Archive, DotsThree } from '@phosphor-icons/react'
+import { projectsService } from '@/services/projects.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,26 +38,24 @@ export default function ProjectEditDialog({
   const [description, setDescription] = useState(project.description)
   const [stageDates, setStageDates] = useState(project.stageDates || [])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast.error('Project title cannot be empty')
       return
     }
 
-    setProjects(currentProjects =>
-      currentProjects.map(p =>
-        p.id === project.id
-          ? {
-              ...p,
-              title: title.trim(),
-              description: description.trim(),
-              stageDates,
-            }
-          : p
-      )
-    )
-    toast.success('Project updated')
-    onOpenChange(false)
+    try {
+      await projectsService.update(project.id, {
+        title: title.trim(),
+        description: description.trim(),
+        stageDates,
+      })
+      toast.success('Project updated')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error updating project:', error)
+      toast.error('Failed to update project')
+    }
   }
 
   const handleCancel = () => {
@@ -67,14 +66,15 @@ export default function ProjectEditDialog({
     onOpenChange(false)
   }
 
-  const handleArchive = () => {
-    setProjects(currentProjects =>
-      currentProjects.map(p =>
-        p.id === project.id ? { ...p, archived: true } : p
-      )
-    )
-    toast.success('Project archived')
-    onOpenChange(false)
+  const handleArchive = async () => {
+    try {
+      await projectsService.update(project.id, { archived: true })
+      toast.success('Project archived')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error archiving project:', error)
+      toast.error('Failed to archive project')
+    }
   }
 
   return (

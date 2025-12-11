@@ -1,7 +1,8 @@
 import { useState, DragEvent } from 'react'
 import { Plus, DotsThreeVertical, PencilSimple, DotsSixVertical, ArrowsOutSimple } from '@phosphor-icons/react'
 import { Task, Campaign, List, Label } from '@/lib/types'
-import { generateId } from '@/lib/helpers'
+import { tasksService } from '@/services/tasks.service'
+import { listsService } from '@/services/lists.service'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { toast } from 'sonner'
@@ -50,53 +51,60 @@ export default function TaskList({
     .filter(t => t.listId === list.id)
     .sort((a, b) => a.order - b.order)
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
       toast.error('Please enter a task title')
       return
     }
 
-    const newTask: Task = {
-      id: generateId(),
-      title: newTaskTitle.trim(),
-      description: '',
-      listId: list.id,
-      campaignId: list.campaignId,
-      labelIds: [],
-      order: listTasks.length,
-      createdAt: new Date().toISOString(),
+    try {
+      await tasksService.create({
+        title: newTaskTitle.trim(),
+        description: '',
+        listId: list.id,
+        campaignId: list.campaignId,
+        labelIds: [],
+        order: listTasks.length,
+      })
+      setNewTaskTitle('')
+      setIsAddingTask(false)
+      toast.success('Task created')
+    } catch (error) {
+      console.error('Error creating task:', error)
+      toast.error('Failed to create task')
     }
-
-    setTasks(currentTasks => [...currentTasks, newTask])
-    setNewTaskTitle('')
-    setIsAddingTask(false)
-    toast.success('Task created')
   }
 
-  const handleSaveTitle = () => {
+  const handleSaveTitle = async () => {
     if (!editedTitle.trim()) {
       toast.error('Title cannot be empty')
       return
     }
 
-    setLists(currentLists =>
-      currentLists.map(l =>
-        l.id === list.id ? { ...l, title: editedTitle.trim() } : l
-      )
-    )
-    setIsEditingTitle(false)
-    toast.success('List renamed')
+    try {
+      await listsService.update(list.id, { title: editedTitle.trim() })
+      setIsEditingTitle(false)
+      toast.success('List renamed')
+    } catch (error) {
+      console.error('Error renaming list:', error)
+      toast.error('Failed to rename list')
+    }
   }
 
-  const handleDeleteList = () => {
+  const handleDeleteList = async () => {
     if (listTasks.length > 0) {
       if (!confirm(`Delete "${list.title}" and its ${listTasks.length} task(s)?`)) {
         return
       }
-      setTasks(currentTasks => currentTasks.filter(t => t.listId !== list.id))
     }
-    setLists(currentLists => currentLists.filter(l => l.id !== list.id))
-    toast.success('List deleted')
+    
+    try {
+      await listsService.delete(list.id)
+      toast.success('List deleted')
+    } catch (error) {
+      console.error('Error deleting list:', error)
+      toast.error('Failed to delete list')
+    }
   }
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {

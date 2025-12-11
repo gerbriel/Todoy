@@ -7,6 +7,8 @@ import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { projectsService } from '@/services/projects.service'
+import { campaignsService } from '@/services/campaigns.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,46 +116,46 @@ export default function Sidebar({
     setShowCreateDialog(true)
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newTitle.trim()) {
       toast.error('Please enter a title')
       return
     }
 
-    if (createType === 'project') {
-      const newProject: Project = {
-        id: generateId(),
-        title: newTitle.trim(),
-        description: '',
-        order: projects.length,
-        createdAt: new Date().toISOString(),
-        orgId: organization?.id,
-      }
-      setProjects(currentProjects => [...currentProjects, newProject])
-      toast.success('Project created')
-    } else {
-      const newCampaign: Campaign = {
-        id: generateId(),
-        title: newTitle.trim(),
-        description: '',
-        order: campaigns.length,
-        createdAt: new Date().toISOString(),
-        projectId: createProjectId,
-        campaignType: 'other',
-        campaignStage: 'planning',
-        orgId: organization?.id,
-      }
-      setCampaigns(currentCampaigns => [...currentCampaigns, newCampaign])
-      onNavigateToCampaign(newCampaign.id)
-      
-      if (createProjectId) {
-        setExpandedProjects(prev => new Set(prev).add(createProjectId))
+    try {
+      if (createType === 'project') {
+        await projectsService.create({
+          title: newTitle.trim(),
+          description: '',
+          order: projects.length,
+          orgId: organization?.id || '',
+        })
+        toast.success('Project created')
+      } else {
+        const newCampaign = await campaignsService.create({
+          title: newTitle.trim(),
+          description: '',
+          order: campaigns.length,
+          projectId: createProjectId,
+          campaignType: 'other',
+          campaignStage: 'planning',
+          orgId: organization?.id || '',
+        })
+        onNavigateToCampaign(newCampaign.id)
+        
+        if (createProjectId) {
+          setExpandedProjects(prev => new Set(prev).add(createProjectId))
+        }
+        
+        toast.success('Campaign created')
       }
       
-      toast.success('Campaign created')
+      setShowCreateDialog(false)
+      setNewTitle('')
+    } catch (error) {
+      console.error(`Error creating ${createType}:`, error)
+      toast.error(`Failed to create ${createType}`)
     }
-    
-    setShowCreateDialog(false)
   }
 
 
@@ -392,13 +394,18 @@ export default function Sidebar({
               )}
               <DropdownMenuItem
                 className="text-destructive"
-                onClick={() => {
+                onClick={async () => {
                   if (confirm(`Delete ${campaign.title}?`)) {
-                    setCampaigns(currentCampaigns => currentCampaigns.filter(c => c.id !== campaign.id))
-                    if (activeCampaignId === campaign.id) {
-                      onNavigateToAllProjects()
+                    try {
+                      await campaignsService.delete(campaign.id)
+                      if (activeCampaignId === campaign.id) {
+                        onNavigateToAllProjects()
+                      }
+                      toast.success('Campaign deleted')
+                    } catch (error) {
+                      console.error('Error deleting campaign:', error)
+                      toast.error('Failed to delete campaign')
                     }
-                    toast.success('Deleted')
                   }
                 }}
               >
@@ -543,11 +550,15 @@ export default function Sidebar({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"
-                onClick={() => {
+                onClick={async () => {
                   if (confirm(`Delete ${project.title} and all its campaigns?`)) {
-                    setProjects(currentProjects => currentProjects.filter(p => p.id !== project.id))
-                    setCampaigns(currentCampaigns => currentCampaigns.filter(c => c.projectId !== project.id))
-                    toast.success('Deleted')
+                    try {
+                      await projectsService.delete(project.id)
+                      toast.success('Project deleted')
+                    } catch (error) {
+                      console.error('Error deleting project:', error)
+                      toast.error('Failed to delete project')
+                    }
                   }
                 }}
               >

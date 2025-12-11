@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { generateId, formatDate } from '@/lib/helpers'
+import { tasksService } from '@/services/tasks.service'
 import { attachmentsService } from '@/services/attachments.service'
 import {
   DropdownMenu,
@@ -73,33 +74,28 @@ export default function TaskDetailDialog({
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
   const availableLists = lists.filter(l => l.campaignId === selectedCampaignId)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast.error('Task title cannot be empty')
       return
     }
 
-    setTasks(currentTasks =>
-      currentTasks.map(t =>
-        t.id === task.id
-          ? {
-              ...t,
-              title: title.trim(),
-              description: description.trim(),
-              campaignId: selectedCampaignId,
-              listId: selectedListId,
-              dueDate: dueDate || undefined,
-              stageDates,
-              comments,
-              attachments,
-              labelIds: selectedLabelIds,
-              updatedAt: new Date().toISOString(),
-            }
-          : t
-      )
-    )
-    toast.success('Task updated')
-    onOpenChange(false)
+    try {
+      await tasksService.update(task.id, {
+        title: title.trim(),
+        description: description.trim(),
+        campaignId: selectedCampaignId,
+        listId: selectedListId,
+        dueDate: dueDate || undefined,
+        stageDates,
+        labelIds: selectedLabelIds,
+      })
+      toast.success('Task updated')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error updating task:', error)
+      toast.error('Failed to update task')
+    }
   }
 
   const handleAddComment = () => {

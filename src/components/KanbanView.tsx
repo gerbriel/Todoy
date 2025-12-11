@@ -1,6 +1,6 @@
-import { Plus, SquaresFour, Archive, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { Plus, SquaresFour, Archive, ArrowCounterClockwise, CalendarBlank } from '@phosphor-icons/react'
 import { Campaign, List, Task, Label, FilterState, Project } from '@/lib/types'
-import { filterTasks } from '@/lib/helpers'
+import { filterTasks, formatDate } from '@/lib/helpers'
 import { listsService } from '@/services/lists.service'
 import { campaignsService } from '@/services/campaigns.service'
 import { Button } from './ui/button'
@@ -250,9 +250,27 @@ export default function KanbanView({
         <div className="p-6 space-y-8">
           {groupedByCampaign.map(({ campaign, lists: campaignLists }) => (
             <div key={campaign.id}>
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                {campaign.title}
-              </h3>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {campaign.title}
+                </h3>
+                {(campaign.launchDate || campaign.endDate) && (
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                    {campaign.launchDate && (
+                      <div className="flex items-center gap-1">
+                        <CalendarBlank size={14} weight="duotone" />
+                        <span>Launch: {formatDate(campaign.launchDate)}</span>
+                      </div>
+                    )}
+                    {campaign.endDate && (
+                      <div className="flex items-center gap-1">
+                        <CalendarBlank size={14} weight="duotone" />
+                        <span>End: {formatDate(campaign.endDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {campaignLists
                   .sort((a, b) => a.order - b.order)

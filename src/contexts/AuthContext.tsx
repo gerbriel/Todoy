@@ -47,8 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
       
-      console.log('[Auth] Initial session check:', session?.user?.id || 'No session')
-      
       if (session?.user) {
         loadUserData(session.user.id).catch(() => {
           if (mounted) setLoading(false)
@@ -57,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       }
     }).catch(() => {
-      console.log('[Auth] Failed to get session')
       if (mounted) setLoading(false)
     })
 
@@ -67,17 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
       
-      console.log('[Auth] State change:', event, session?.user?.id || 'No session')
+      // Ignore INITIAL_SESSION and SIGNED_IN on page load
+      // These happen before session is fully ready, causing query timeouts
+      // Only rely on getSession() for initial load
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') return
       
-      // Only handle actual auth changes, not initial session
-      if (event === 'INITIAL_SESSION') return
-      
-      if (session?.user) {
-        setLoading(true)
-        await loadUserData(session.user.id).catch(() => {
-          if (mounted) setLoading(false)
-        })
-      } else {
+      // Handle actual auth changes like SIGNED_OUT, TOKEN_REFRESHED
+      if (event === 'SIGNED_OUT') {
         setUser(null)
         setOrganization(null)
         setOrgMembers([])
@@ -94,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user profile and organization data
   const loadUserData = async (userId: string) => {
-    console.log('[Auth] Loading user data for:', userId)
     try {
       // Create a timeout promise
       const timeout = new Promise((_, reject) => 
@@ -114,15 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]) as any
 
       if (profileError) {
-        console.log('[Auth] Profile error:', profileError.code, profileError.message)
         // Don't sign out on errors - just show login screen
         setUser(null)
         setOrganization(null)
         setLoading(false)
         return
       }
-
-      console.log('[Auth] Profile loaded successfully')
 
       if (profile) {
         const userData: User = {
@@ -181,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      console.log('[Auth] Error in loadUserData:', error)
+      // Silently handle errors
       setUser(null)
       setOrganization(null)
     } finally {

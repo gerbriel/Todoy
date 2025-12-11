@@ -20,6 +20,8 @@ import { campaignsService } from './services/campaigns.service'
 import { tasksService } from './services/tasks.service'
 import { listsService } from './services/lists.service'
 import { labelsService } from './services/labels.service'
+import { orgMembersService } from './services/orgMembers.service'
+import { orgInvitesService } from './services/orgInvites.service'
 
 export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization'
 
@@ -58,15 +60,19 @@ function MainApp() {
         setLoading(true)
         
         // Load all data in parallel
-        const [projectsData, labelsData, tasksData] = await Promise.all([
+        const [projectsData, labelsData, tasksData, orgMembersData, orgInvitesData] = await Promise.all([
           projectsService.getAll(organization.id),
           labelsService.getByOrg(organization.id),
           tasksService.getByOrg(organization.id),
+          orgMembersService.getByOrg(organization.id),
+          orgInvitesService.getByOrg(organization.id),
         ])
 
         setProjects(projectsData)
         setLabels(labelsData)
         setTasks(tasksData)
+        setOrgMembers(orgMembersData)
+        setOrgInvites(orgInvitesData)
 
         // Load campaigns for all projects
         if (projectsData.length > 0) {
@@ -100,11 +106,13 @@ function MainApp() {
     const unsubProjects = projectsService.subscribe(organization.id, setProjects)
     const unsubLabels = labelsService.subscribe(organization.id, setLabels)
     const unsubTasks = tasksService.subscribe(organization.id, setTasks)
+    const unsubInvites = orgInvitesService.subscribe(organization.id, setOrgInvites)
 
     return () => {
       unsubProjects()
       unsubLabels()
       unsubTasks()
+      unsubInvites()
     }
   }, [organization?.id])
   

@@ -27,7 +27,9 @@ import {
   Target,
   ListChecks
 } from '@phosphor-icons/react'
-import { generateId } from '@/lib/helpers'
+import { organizationsService } from '@/services/organizations.service'
+import { orgMembersService } from '@/services/orgMembers.service'
+import { orgInvitesService } from '@/services/orgInvites.service'
 
 interface OrganizationViewProps {
   organization: Organization | null
@@ -96,64 +98,92 @@ export default function OrganizationView({
     setEditDialogOpen(true)
   }
 
-  const handleSaveOrg = () => {
+  const handleSaveOrg = async () => {
     if (!editName.trim()) {
       toast.error('Organization name cannot be empty')
       return
     }
 
-    setOrganization({
-      ...organization,
-      name: editName.trim(),
-      description: editDescription.trim(),
-    })
-    toast.success('Organization updated')
-    setEditDialogOpen(false)
+    try {
+      const updated = await organizationsService.update(organization.id, {
+        name: editName.trim(),
+        description: editDescription.trim(),
+      })
+      setOrganization(updated)
+      toast.success('Organization updated')
+      setEditDialogOpen(false)
+    } catch (error) {
+      toast.error('Failed to update organization')
+      console.error(error)
+    }
   }
 
-  const handleSendInvite = () => {
+  const handleSendInvite = async () => {
     if (!inviteEmail.trim()) {
       toast.error('Email cannot be empty')
       return
     }
 
-    const newInvite: OrgInvite = {
-      id: generateId(),
-      orgId: organization.id,
-      email: inviteEmail.trim(),
-      role: inviteRole,
-      invitedBy: currentUserId,
-      invitedAt: new Date().toISOString(),
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+    try {
+      const newInvite = await orgInvitesService.create({
+        orgId: organization.id,
+        email: inviteEmail.trim(),
+        role: inviteRole,
+        invitedBy: currentUserId,
+        invitedAt: new Date().toISOString(),
+        status: 'pending',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      })
+
+      setInvites(prev => [...prev, newInvite])
+      toast.success(`Invite sent to ${inviteEmail}`)
+      setInviteEmail('')
+      setInviteRole('member')
+      setInviteDialogOpen(false)
+    } catch (error) {
+      toast.error('Failed to send invite')
+      console.error(error)
     }
-
-    setInvites(prev => [...prev, newInvite])
-    toast.success(`Invite sent to ${inviteEmail}`)
-    setInviteEmail('')
-    setInviteRole('member')
   }
 
-  const handleCancelInvite = (inviteId: string) => {
-    setInvites(prev => prev.filter(i => i.id !== inviteId))
-    toast.success('Invite cancelled')
+  const handleCancelInvite = async (inviteId: string) => {
+    try {
+      await orgInvitesService.cancel(inviteId)
+      setInvites(prev => prev.filter(i => i.id !== inviteId))
+      toast.success('Invite cancelled')
+    } catch (error) {
+      toast.error('Failed to cancel invite')
+      console.error(error)
+    }
   }
 
-  const handleRemoveMember = (memberId: string) => {
+  const handleRemoveMember = async (memberId: string) => {
     const member = members.find(m => m.id === memberId)
     if (!member) return
 
     if (confirm(`Remove ${users.find(u => u.id === member.userId)?.name || 'this member'} from the organization?`)) {
-      setMembers(prev => prev.filter(m => m.id !== memberId))
-      toast.success('Member removed')
+      try {
+        await orgMembersService.remove(memberId)
+        setMembers(prev => prev.filter(m => m.id !== memberId))
+        toast.success('Member removed')
+      } catch (error) {
+        toast.error('Failed to remove member')
+        console.error(error)
+      }
     }
   }
 
-  const handleUpdateMemberRole = (memberId: string, newRole: 'member' | 'admin' | 'owner') => {
-    setMembers(prev =>
-      prev.map(m => (m.id === memberId ? { ...m, role: newRole } : m))
-    )
-    toast.success('Role updated')
+  const handleUpdateMemberRole = async (memberId: string, newRole: 'member' | 'admin' | 'owner') => {
+    try {
+      await orgMembersService.updateRole(memberId, newRole)
+      setMembers(prev =>
+        prev.map(m => (m.id === memberId ? { ...m, role: newRole } : m))
+      )
+      toast.success('Role updated')
+    } catch (error) {
+      toast.error('Failed to update role')
+      console.error(error)
+    }
   }
 
   const getRoleIcon = (role: string) => {

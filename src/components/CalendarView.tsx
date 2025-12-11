@@ -775,7 +775,27 @@ export default function CalendarView({
                             e.preventDefault()
                             e.stopPropagation()
                             console.log('Task clicked:', task.title, 'ID:', task.id)
-                            setSelectedTaskId(task.id)
+                            
+                            // Context-aware navigation based on active filters
+                            if (filters.stageNames && filters.stageNames.length > 0) {
+                              // Filtering by stages - show task detail
+                              setSelectedTaskId(task.id)
+                            } else if (filters.listIds && filters.listIds.length > 0) {
+                              // Filtering by lists - show task detail  
+                              setSelectedTaskId(task.id)
+                            } else if (filters.campaignIds && filters.campaignIds.length > 0 && filters.campaignIds.length === 1) {
+                              // Filtering by single campaign - navigate to campaign
+                              const campaignId = filters.campaignIds[0]
+                              if (onCampaignClick) {
+                                onCampaignClick(campaignId)
+                              }
+                            } else if (filters.projectId && onProjectClick) {
+                              // Filtering by project - navigate to project
+                              onProjectClick(filters.projectId)
+                            } else {
+                              // Default - show task detail
+                              setSelectedTaskId(task.id)
+                            }
                           }}
                           className={cn(
                             "w-full text-left text-[10px] px-1.5 py-1 truncate font-medium relative transition-all cursor-pointer hover:bg-opacity-40 active:scale-[0.98]",

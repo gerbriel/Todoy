@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Project, Campaign, List, Task, Label, ViewMode, FilterState, StageTemplate, OrgMember, OrgInvite } from './lib/types'
 import { Toaster } from './components/ui/sonner'
+import { toast } from 'sonner'
 import { useAuth } from './contexts/AuthContext'
 import LoginView from './components/LoginView'
 import Sidebar from './components/Sidebar'
@@ -154,7 +155,6 @@ function MainApp() {
   const handleNavigateToProject = async (projectId: string) => {
     setActiveProjectId(projectId)
     setActiveCampaignId(null)
-    setNavigationView('project')
     
     // If project is not in the main projects state, it might be archived - fetch it and its campaigns
     if (!projects?.find(p => p.id === projectId)) {
@@ -174,11 +174,15 @@ function MainApp() {
             return [...filtered, ...projectCampaigns]
           })
         }
+        // Only set navigation view after data is loaded
+        setNavigationView('project')
       } catch (error) {
         console.error('Error fetching archived project:', error)
+        toast.error('Failed to load project')
       }
     } else {
       setArchivedProject(null)
+      setNavigationView('project')
     }
   }
 
@@ -368,9 +372,9 @@ function MainApp() {
             />
           )}
           
-          {navigationView === 'project' && activeProjectId && (
+          {navigationView === 'project' && activeProjectId && activeProject && (
             <ProjectView
-              project={activeProject!}
+              project={activeProject}
               projects={projects || []}
               setProjects={setProjects}
               campaigns={campaigns || []}

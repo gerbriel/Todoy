@@ -17,7 +17,8 @@
   html.beggars-cant-be-choosers body {
     background-color: transparent !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    animation: gradientShift 20s ease-in-out infinite;
+    background-size: 100% 100%;
+    animation: gradientShift 60s ease-in-out infinite;
     transition: none !important;
   }
   
@@ -108,20 +109,26 @@
   0% {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  16.66% {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  12.5% {
+    background: linear-gradient(135deg, #667eea 0%, #f5576c 100%);
   }
-  33.33% {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  25% {
+    background: linear-gradient(135deg, #4facfe 0%, #f5576c 100%);
+  }
+  37.5% {
+    background: linear-gradient(135deg, #4facfe 0%, #38f9d7 100%);
   }
   50% {
     background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
   }
-  66.66% {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  62.5% {
+    background: linear-gradient(135deg, #43e97b 0%, #fee140 100%);
   }
-  83.33% {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  75% {
+    background: linear-gradient(135deg, #a8edea 0%, #fee140 100%);
+  }
+  87.5% {
+    background: linear-gradient(135deg, #a8edea 0%, #764ba2 100%);
   }
   100% {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

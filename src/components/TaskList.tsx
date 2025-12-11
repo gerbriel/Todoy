@@ -151,6 +151,13 @@ export default function TaskList({
     // Moving between lists
     if (sourceListId !== list.id) {
       try {
+        // Optimistically update local state
+        setTasks(prev => prev.map(task => 
+          task.id === taskId 
+            ? { ...task, listId: list.id, order: listTasks.length }
+            : task
+        ))
+        
         await tasksService.update(taskId, { 
           listId: list.id, 
           order: listTasks.length 
@@ -159,6 +166,13 @@ export default function TaskList({
       } catch (error) {
         console.error('Error moving task:', error)
         toast.error('Failed to move task')
+        // Revert on error
+        const task = tasks.find(t => t.id === taskId)
+        if (task) {
+          setTasks(prev => prev.map(t => 
+            t.id === taskId ? { ...t, listId: sourceListId } : t
+          ))
+        }
       }
     }
   }

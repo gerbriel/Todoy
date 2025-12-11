@@ -44,6 +44,8 @@ export default function KanbanView({
   onNavigateBack,
 }: KanbanViewProps) {
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
+  const [draggedListId, setDraggedListId] = useState<string | null>(null)
+  const [dragOverListId, setDragOverListId] = useState<string | null>(null)
 
   const activeCampaign = campaigns.find(c => c.id === activeCampaignId)
 
@@ -77,6 +79,71 @@ export default function KanbanView({
     } catch (error) {
       console.error('Error creating list:', error)
       toast.error('Failed to create list')
+    }
+  }
+
+  const handleListDragStart = (listId: string) => {
+    setDraggedListId(listId)
+  }
+
+  const handleListDragOver = (e: React.DragEvent, listId: string) => {
+    e.preventDefault()
+    if (draggedListId && draggedListId !== listId) {
+      setDragOverListId(listId)
+    }
+  }
+
+  const handleListDrop = async (e: React.DragEvent, targetListId: string) => {
+    e.preventDefault()
+    if (!draggedListId || draggedListId === targetListId) {
+      setDraggedListId(null)
+      setDragOverListId(null)
+      return
+    }
+
+    const draggedList = displayLists.find(l => l.id === draggedListId)
+    const targetList = displayLists.find(l => l.id === targetListId)
+    
+    if (!draggedList || !targetList) {
+      setDraggedListId(null)
+      setDragOverListId(null)
+      return
+    }
+
+    // Reorder lists
+    const sortedLists = [...displayLists].sort((a, b) => a.order - b.order)
+    const draggedIndex = sortedLists.findIndex(l => l.id === draggedListId)
+    const targetIndex = sortedLists.findIndex(l => l.id === targetListId)
+
+    // Remove dragged list and insert at target position
+    sortedLists.splice(draggedIndex, 1)
+    sortedLists.splice(targetIndex, 0, draggedList)
+
+    // Update orders
+    const updatedLists = sortedLists.map((list, index) => ({
+      ...list,
+      order: index
+    }))
+
+    // Optimistically update local state
+    setLists(prev => prev.map(list => {
+      const updated = updatedLists.find(ul => ul.id === list.id)
+      return updated ? { ...list, order: updated.order } : list
+    }))
+
+    setDraggedListId(null)
+    setDragOverListId(null)
+
+    // Update in database
+    try {
+      await Promise.all(
+        updatedLists.map(list => 
+          listsService.update(list.id, { order: list.order })
+        )
+      )
+    } catch (error) {
+      console.error('Error reordering lists:', error)
+      toast.error('Failed to reorder lists')
     }
   }
 
@@ -239,20 +306,32 @@ export default function KanbanView({
           {displayLists
             .sort((a, b) => a.order - b.order)
             .map(list => (
-              <TaskList
+              <div
                 key={list.id}
-                list={list}
-                lists={lists}
-                setLists={setLists}
-                tasks={filteredTasks}
-                setTasks={setTasks}
-                labels={labels}
-                setLabels={setLabels}
-                campaigns={campaigns}
-                projects={projects}
-                onOpenStageView={() => setSelectedListId(list.id)}
-                orgId={orgId}
-              />
+                draggable
+                onDragStart={() => handleListDragStart(list.id)}
+                onDragOver={(e) => handleListDragOver(e, list.id)}
+                onDrop={(e) => handleListDrop(e, list.id)}
+                onDragEnd={() => {
+                  setDraggedListId(null)
+                  setDragOverListId(null)
+                }}
+                className={`transition-all ${dragOverListId === list.id && draggedListId !== list.id ? 'scale-105' : ''} ${draggedListId === list.id ? 'opacity-50' : ''}`}
+              >
+                <TaskList
+                  list={list}
+                  lists={lists}
+                  setLists={setLists}
+                  tasks={filteredTasks}
+                  setTasks={setTasks}
+                  labels={labels}
+                  setLabels={setLabels}
+                  campaigns={campaigns}
+                  projects={projects}
+                  onOpenStageView={() => setSelectedListId(list.id)}
+                  orgId={orgId}
+                />
+              </div>
             ))}
           
           <div className="flex-shrink-0">

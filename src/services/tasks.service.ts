@@ -306,4 +306,72 @@ export const tasksService = {
       supabase.removeChannel(channel)
     }
   },
+
+  /**
+   * Duplicate a task as a template with a new title and optional new list/campaign
+   */
+  async duplicate(
+    taskId: string, 
+    newTitle: string, 
+    targetListId?: string,
+    targetCampaignId?: string
+  ): Promise<Task> {
+    try {
+      // Get the original task
+      const originalTask = await this.getById(taskId)
+
+      // Use target list/campaign or keep same
+      const listId = targetListId || originalTask.listId
+      const campaignId = targetCampaignId || originalTask.campaignId
+
+      // Create new task (without dates, assignments, labels - fresh template)
+      const { data: newTask, error: createError } = await supabase
+        .from('tasks')
+        .insert({
+          title: newTitle,
+          description: originalTask.description,
+          list_id: listId,
+          campaign_id: campaignId,
+          order: originalTask.order,
+          due_date: null, // Reset for template
+          current_stage: originalTask.currentStage,
+          completed: false,
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+
+      // Optionally copy stage dates structure (but reset dates)
+      if (originalTask.stageDates && originalTask.stageDates.length > 0) {
+        const newStageDates = originalTask.stageDates.map(sd => ({
+          task_id: newTask.id,
+          stage_name: sd.stageName,
+          start_date: null,
+          end_date: null,
+          color: sd.color,
+          completed: false,
+        }))
+
+        await supabase.from('task_stage_dates').insert(newStageDates)
+      }
+
+      return {
+        ...newTask,
+        createdAt: newTask.created_at,
+        listId: newTask.list_id,
+        campaignId: newTask.campaign_id,
+        dueDate: newTask.due_date,
+        currentStage: newTask.current_stage,
+        assignedTo: [],
+        labelIds: [],
+        stageDates: [],
+        subtasks: [],
+        comments: [],
+        attachments: [],
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to duplicate task'))
+    }
+  },
 }

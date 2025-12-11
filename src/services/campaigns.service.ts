@@ -324,4 +324,64 @@ export const campaignsService = {
       supabase.removeChannel(channel)
     }
   },
+
+  /**
+   * Duplicate a campaign as a template with a new name and optional new project
+   */
+  async duplicate(
+    campaignId: string, 
+    newName: string, 
+    targetProjectId?: string
+  ): Promise<Campaign> {
+    try {
+      // Get the original campaign
+      const originalCampaign = await this.getById(campaignId)
+
+      // Use target project or keep same project
+      const projectId = targetProjectId || originalCampaign.projectId
+
+      // Create new campaign
+      const { data: newCampaign, error: createError } = await supabase
+        .from('campaigns')
+        .insert({
+          name: newName,
+          description: originalCampaign.description,
+          project_id: projectId,
+          org_id: originalCampaign.orgId,
+          start_date: null, // Reset dates for template
+          end_date: null,
+          order: originalCampaign.order,
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+
+      // Copy stage dates if any
+      if (originalCampaign.stageDates && originalCampaign.stageDates.length > 0) {
+        const newStageDates = originalCampaign.stageDates.map(sd => ({
+          campaign_id: newCampaign.id,
+          stage_name: sd.stageName,
+          start_date: null,
+          end_date: null,
+          color: sd.color,
+          completed: false,
+        }))
+
+        await supabase.from('stage_dates').insert(newStageDates)
+      }
+
+      return {
+        ...newCampaign,
+        createdAt: newCampaign.created_at,
+        projectId: newCampaign.project_id,
+        orgId: newCampaign.org_id,
+        startDate: newCampaign.start_date,
+        endDate: newCampaign.end_date,
+        stageDates: [],
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to duplicate campaign'))
+    }
+  },
 }

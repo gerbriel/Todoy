@@ -155,4 +155,48 @@ export const listsService = {
       supabase.removeChannel(channel)
     }
   },
+
+  /**
+   * Duplicate a list as a template with a new name and optional new campaign
+   */
+  async duplicate(
+    listId: string, 
+    newTitle: string, 
+    targetCampaignId?: string
+  ): Promise<List> {
+    try {
+      // Get the original list
+      const { data: originalList, error: fetchError } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('id', listId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Use target campaign or keep same campaign
+      const campaignId = targetCampaignId || originalList.campaign_id
+
+      // Create new list
+      const { data: newList, error: createError } = await supabase
+        .from('lists')
+        .insert({
+          title: newTitle,
+          campaign_id: campaignId,
+          order: originalList.order,
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+
+      return {
+        ...newList,
+        campaignId: newList.campaign_id,
+        taskIds: [],
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to duplicate list'))
+    }
+  },
 }

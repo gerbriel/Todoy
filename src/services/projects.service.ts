@@ -342,4 +342,66 @@ export const projectsService = {
       supabase.removeChannel(channel)
     }
   },
+
+  /**
+   * Duplicate a project as a template with a new name
+   */
+  async duplicate(projectId: string, newName: string): Promise<Project> {
+    try {
+      // Get the original project
+      const { data: originalProject, error: fetchError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Create new project with the same properties but new name
+      const { data: newProject, error: createError } = await supabase
+        .from('projects')
+        .insert({
+          name: newName,
+          description: originalProject.description,
+          org_id: originalProject.org_id,
+          icon: originalProject.icon,
+          color: originalProject.color,
+          completed: false,
+          archived: false,
+          order: originalProject.order,
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+
+      // Copy stage dates if any
+      const { data: stageDates } = await supabase
+        .from('stage_dates')
+        .select('*')
+        .eq('project_id', projectId)
+
+      if (stageDates && stageDates.length > 0) {
+        const newStageDates = stageDates.map(sd => ({
+          project_id: newProject.id,
+          stage_name: sd.stage_name,
+          start_date: null, // Reset dates for template
+          end_date: null,
+          color: sd.color,
+          completed: false,
+        }))
+
+        await supabase.from('stage_dates').insert(newStageDates)
+      }
+
+      return {
+        ...newProject,
+        createdAt: newProject.created_at,
+        stageDates: [],
+        assignedTo: [],
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to duplicate project'))
+    }
+  },
 }

@@ -1,5 +1,5 @@
 import { useState, DragEvent } from 'react'
-import { Plus, Trash, ArrowsOutSimple } from '@phosphor-icons/react'
+import { Plus, Trash, ArrowsOutSimple, Copy } from '@phosphor-icons/react'
 import { Task, Campaign, List, Label, Project } from '@/lib/types'
 import { tasksService } from '@/services/tasks.service'
 import { listsService } from '@/services/lists.service'
@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import TaskCard from './TaskCard'
 import ConfirmDialog from './ConfirmDialog'
+import DuplicateDialog from './DuplicateDialog'
 
 interface TaskListProps {
   list: List
@@ -44,6 +45,7 @@ export default function TaskList({
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
 
   const listTasks = tasks
     .filter(t => t.listId === list.id)
@@ -105,6 +107,20 @@ export default function TaskList({
     } catch (error) {
       console.error('Error deleting list:', error)
       toast.error('Failed to delete list')
+    }
+  }
+
+  const handleDuplicate = async (targetProjectId: string, targetCampaignId?: string, targetListId?: string, newName?: string) => {
+    try {
+      const listName = newName || `${list.title} (Copy)`
+      const duplicatedList = await listsService.duplicate(list.id, listName, targetCampaignId)
+      // Optimistically add to local state
+      setLists(prev => [...prev, duplicatedList])
+      toast.success('List duplicated successfully')
+      setShowDuplicateDialog(false)
+    } catch (error) {
+      console.error('Error duplicating list:', error)
+      toast.error('Failed to duplicate list')
     }
   }
 
@@ -250,6 +266,13 @@ export default function TaskList({
                 <ArrowsOutSimple size={16} weight="bold" />
               </button>
             )}
+            <button
+              className="p-1 opacity-0 group-hover:opacity-100 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-600 rounded transition-all mr-1"
+              onClick={() => setShowDuplicateDialog(true)}
+              title="Duplicate list"
+            >
+              <Copy size={16} weight="bold" />
+            </button>
             <button 
               className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-destructive rounded transition-all"
               onClick={() => setShowDeleteConfirm(true)}
@@ -352,6 +375,18 @@ export default function TaskList({
           Add Task
         </Button>
       )}
+
+      <DuplicateDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        type="list"
+        itemName={list.title}
+        onDuplicate={handleDuplicate}
+        projects={projects}
+        campaigns={campaigns}
+        lists={lists}
+        currentCampaignId={list.campaignId}
+      />
     </div>
   )
 }

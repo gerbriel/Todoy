@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Task, Campaign, List, Label, Comment, Attachment } from '@/lib/types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Label as UILabel } from './ui/label'
@@ -296,6 +296,9 @@ export default function TaskDetailDialog({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Edit Task</DialogTitle>
+            <DialogDescription className="sr-only">
+              Edit task details including title, description, stage, due date, and assignments
+            </DialogDescription>
             <div className="flex gap-2">
               <Button
                 variant="outline"

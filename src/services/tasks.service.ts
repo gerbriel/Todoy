@@ -92,6 +92,53 @@ export const tasksService = {
   },
 
   /**
+   * Get a single task by ID
+   */
+  async getById(id: string): Promise<Task> {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          task_assignees (user_id),
+          task_labels (label_id),
+          task_stage_dates (*),
+          subtasks (*),
+          comments (*),
+          attachments (*)
+        `)
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+
+      return {
+        ...data,
+        createdAt: data.created_at,
+        listId: data.list_id,
+        campaignId: data.campaign_id,
+        dueDate: data.due_date,
+        currentStage: data.current_stage,
+        assignedTo: data.task_assignees?.map((a: any) => a.user_id) || [],
+        labelIds: data.task_labels?.map((l: any) => l.label_id) || [],
+        stageDates: (data.task_stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
+        subtasks: data.subtasks || [],
+        comments: data.comments || [],
+        attachments: data.attachments || [],
+      }
+    } catch (error) {
+      throw new Error(handleSupabaseError(error, 'Failed to fetch task'))
+    }
+  },
+
+  /**
    * Create a new task
    */
   async create(task: Omit<Task, 'id' | 'createdAt'>): Promise<Task> {

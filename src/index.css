@@ -15,23 +15,7 @@
   
   /* Override for animated theme */
   html.beggars-cant-be-choosers body {
-    background: linear-gradient(
-      45deg,
-      #ff6b6b,
-      #4ecdc4,
-      #45b7d1,
-      #f9ca24,
-      #6c5ce7,
-      #fd79a8,
-      #a29bfe,
-      #55efc4,
-      #ffeaa7,
-      #fab1a0,
-      #ff7675,
-      #74b9ff
-    );
-    background-size: 400% 400%;
-    animation: gradientShift 30s ease infinite;
+    animation: gradientShift 20s ease-in-out infinite;
     transition: none !important;
   }
   
@@ -120,13 +104,25 @@
 /* Beggars Can't Be Choosers - Animated Rainbow Gradient Theme */
 @keyframes gradientShift {
   0% {
-    background-position: 0% 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  16.66% {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+  33.33% {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   }
   50% {
-    background-position: 100% 50%;
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+  66.66% {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  }
+  83.33% {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
   }
   100% {
-    background-position: 0% 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
 }
 

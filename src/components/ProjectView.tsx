@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Project, Campaign, Task, Organization } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash } from '@phosphor-icons/react'
+import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash, ArrowCounterClockwise, Archive } from '@phosphor-icons/react'
 import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
 import { campaignsService } from '@/services/campaigns.service'
 import { projectsService } from '@/services/projects.service'
@@ -21,6 +21,7 @@ import {
 } from './ui/dialog'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import { Alert, AlertDescription } from './ui/alert'
 
 interface ProjectViewProps {
   project: Project
@@ -52,6 +53,19 @@ export default function ProjectView({
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
+
+  const handleRestoreProject = async () => {
+    try {
+      await projectsService.update(project.id, { archived: false })
+      // Optimistically update local state
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, archived: false } : p))
+      toast.success('Project restored')
+      onNavigateBack()
+    } catch (error) {
+      console.error('Error restoring project:', error)
+      toast.error('Failed to restore project')
+    }
+  }
 
   const handleDeleteProject = async () => {
     try {
@@ -122,6 +136,26 @@ export default function ProjectView({
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto">
+        {project.archived && (
+          <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <Archive className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-orange-900 dark:text-orange-100">
+                This project is archived. Restore it to make it active again.
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRestoreProject}
+                className="ml-4 border-orange-600 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+              >
+                <ArrowCounterClockwise size={16} className="mr-2" weight="bold" />
+                Restore Project
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-2">{project.title}</h2>
@@ -138,10 +172,12 @@ export default function ProjectView({
               <Trash size={16} weight="bold" />
               Delete
             </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus size={16} weight="bold" />
-              New Campaign
-            </Button>
+            {!project.archived && (
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus size={16} weight="bold" />
+                New Campaign
+              </Button>
+            )}
           </div>
         </div>
 

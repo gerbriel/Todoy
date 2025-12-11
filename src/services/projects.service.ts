@@ -23,7 +23,14 @@ export const projectsService = {
       return (data || []).map(project => ({
         ...project,
         createdAt: project.created_at,
-        stageDates: project.stage_dates || [],
+        stageDates: (project.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
         assignedTo: project.project_assignees?.map((a: any) => a.user_id) || [],
       }))
     } catch (error) {
@@ -52,7 +59,14 @@ export const projectsService = {
       return {
         ...data,
         createdAt: data.created_at,
-        stageDates: data.stage_dates || [],
+        stageDates: (data.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
         assignedTo: data.project_assignees?.map((a: any) => a.user_id) || [],
       }
     } catch (error) {

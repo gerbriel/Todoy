@@ -32,7 +32,14 @@ export const tasksService = {
         currentStage: task.current_stage,
         assignedTo: task.task_assignees?.map((a: any) => a.user_id) || [],
         labelIds: task.task_labels?.map((l: any) => l.label_id) || [],
-        stageDates: task.task_stage_dates || [],
+        stageDates: (task.task_stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
         subtasks: task.subtasks || [],
         comments: task.comments || [],
         attachments: task.attachments || [],
@@ -70,7 +77,14 @@ export const tasksService = {
         currentStage: task.current_stage,
         assignedTo: task.task_assignees?.map((a: any) => a.user_id) || [],
         labelIds: task.task_labels?.map((l: any) => l.label_id) || [],
-        stageDates: task.task_stage_dates || [],
+        stageDates: (task.task_stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
       }))
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to fetch tasks'))

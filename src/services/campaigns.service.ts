@@ -27,7 +27,14 @@ export const campaignsService = {
         launchDate: campaign.launch_date,
         endDate: campaign.end_date,
         followUpDate: campaign.follow_up_date,
-        stageDates: campaign.stage_dates || [],
+        stageDates: (campaign.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
       }))
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to fetch campaigns'))
@@ -59,7 +66,14 @@ export const campaignsService = {
         launchDate: campaign.launch_date,
         endDate: campaign.end_date,
         followUpDate: campaign.follow_up_date,
-        stageDates: campaign.stage_dates || [],
+        stageDates: (campaign.stage_dates || []).map((sd: any) => ({
+          id: sd.id,
+          stageName: sd.stage_name,
+          startDate: sd.start_date,
+          endDate: sd.end_date,
+          color: sd.color,
+          completed: sd.completed || false,
+        })),
       }))
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to fetch campaigns'))

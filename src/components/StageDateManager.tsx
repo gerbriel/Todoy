@@ -203,7 +203,13 @@ export default function StageDateManager({
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       <CalendarBlank size={12} weight="duotone" />
-                      {format(new Date(stage.startDate), 'MMM d, yyyy')} → {format(new Date(stage.endDate), 'MMM d, yyyy')}
+                      {stage.startDate && stage.endDate ? (
+                        <>
+                          {format(new Date(stage.startDate), 'MMM d, yyyy')} → {format(new Date(stage.endDate), 'MMM d, yyyy')}
+                        </>
+                      ) : (
+                        <span className="text-destructive">Invalid dates</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-1">

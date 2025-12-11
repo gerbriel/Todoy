@@ -23,6 +23,7 @@ import { listsService } from './services/lists.service'
 import { labelsService } from './services/labels.service'
 import { orgMembersService } from './services/orgMembers.service'
 import { orgInvitesService } from './services/orgInvites.service'
+import { stageTemplatesService } from './services/stageTemplates.service'
 
 export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization' | 'labels'
 
@@ -61,12 +62,13 @@ function MainApp() {
         setLoading(true)
         
         // Load all data in parallel
-        const [projectsData, labelsData, tasksData, orgMembersData, orgInvitesData] = await Promise.all([
+        const [projectsData, labelsData, tasksData, orgMembersData, orgInvitesData, stageTemplatesData] = await Promise.all([
           projectsService.getAll(organization.id),
           labelsService.getByOrg(organization.id),
           tasksService.getByOrg(organization.id),
           orgMembersService.getByOrg(organization.id),
           orgInvitesService.getByOrg(organization.id),
+          stageTemplatesService.getAll(organization.id),
         ])
 
         setProjects(projectsData)
@@ -74,6 +76,7 @@ function MainApp() {
         setTasks(tasksData)
         setOrgMembers(orgMembersData)
         setOrgInvites(orgInvitesData)
+        setStageTemplates(stageTemplatesData)
 
         // Load campaigns for all projects
         if (projectsData.length > 0) {
@@ -111,6 +114,9 @@ function MainApp() {
     const unsubTasks = tasksService.subscribe(organization.id, setTasks)
     const unsubMembers = orgMembersService.subscribe(organization.id, setOrgMembers)
     const unsubInvites = orgInvitesService.subscribe(organization.id, setOrgInvites)
+    const unsubStageTemplates = stageTemplatesService.subscribeToChanges(organization.id, () => {
+      stageTemplatesService.getAll(organization.id).then(setStageTemplates)
+    })
 
     return () => {
       unsubProjects()
@@ -120,6 +126,7 @@ function MainApp() {
       unsubTasks()
       unsubMembers()
       unsubInvites()
+      unsubStageTemplates()
     }
   }, [organization?.id])
   

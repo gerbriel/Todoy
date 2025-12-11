@@ -13,8 +13,10 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Override for animated theme */
+  /* Override for animated theme - remove background-color completely */
   html.beggars-cant-be-choosers body {
+    background-color: transparent !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     animation: gradientShift 20s ease-in-out infinite;
     transition: none !important;
   }

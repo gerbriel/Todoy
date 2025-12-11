@@ -4,7 +4,7 @@ import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor, Sparkle } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
@@ -286,6 +286,11 @@ export default function Header({
                     <Monitor size={16} className="mr-2" />
                     System
                     {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('beggars-cant-be-choosers')}>
+                    <Sparkle size={16} className="mr-2" />
+                    <span className="text-xs">Beggars Can't Be Choosers</span>
+                    {theme === 'beggars-cant-be-choosers' && <span className="ml-auto text-xs">✓</span>}
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />

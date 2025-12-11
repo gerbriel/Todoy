@@ -30,10 +30,21 @@ export default function ProjectsView({
     if (!project) return
     
     try {
-      await projectsService.update(projectId, { completed: !project.completed })
+      // Optimistically update local state for instant UI feedback
+      const newCompletedState = !project.completed
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, completed: newCompletedState } : p
+      ))
+      
+      await projectsService.update(projectId, { completed: newCompletedState })
       toast.success(project.completed ? 'Project marked as active' : 'Project completed!')
+      // Real-time subscription will sync the state
     } catch (error) {
       console.error('Error toggling project completion:', error)
+      // Revert optimistic update on error
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, completed: project.completed } : p
+      ))
       toast.error('Failed to update project')
     }
   }

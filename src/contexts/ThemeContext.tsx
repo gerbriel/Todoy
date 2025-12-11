@@ -1,18 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark' | 'system' | 'beggars-cant-be-choosers'
 
 interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
-  actualTheme: 'light' | 'dark' // The computed theme (resolves 'system')
+  actualTheme: 'light' | 'dark' | 'beggars-cant-be-choosers' // The computed theme (resolves 'system')
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system')
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light')
+  const [actualTheme, setActualTheme] = useState<'light' | 'dark' | 'beggars-cant-be-choosers'>('light')
 
   useEffect(() => {
     // Load theme from localStorage on mount
@@ -26,7 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement
     
     // Determine the actual theme to apply
-    let themeToApply: 'light' | 'dark' = 'light'
+    let themeToApply: 'light' | 'dark' | 'beggars-cant-be-choosers' = 'light'
     
     if (theme === 'system') {
       // Check system preference
@@ -37,7 +37,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     
     // Update the DOM
-    root.classList.remove('light', 'dark')
+    root.classList.remove('light', 'dark', 'beggars-cant-be-choosers')
     root.classList.add(themeToApply)
     setActualTheme(themeToApply)
     
@@ -46,7 +46,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const handleChange = (e: MediaQueryListEvent) => {
       if (theme === 'system') {
         const newTheme = e.matches ? 'dark' : 'light'
-        root.classList.remove('light', 'dark')
+        root.classList.remove('light', 'dark', 'beggars-cant-be-choosers')
         root.classList.add(newTheme)
         setActualTheme(newTheme)
       }

@@ -133,27 +133,13 @@ export const campaignsService = {
       if (updates.projectId !== undefined) updateData.project_id = updates.projectId
 
       // Only update main fields if there are any changes
-      let data: any
       if (Object.keys(updateData).length > 0) {
-        const result = await supabase
+        const { error } = await supabase
           .from('campaigns')
           .update(updateData)
           .eq('id', id)
-          .select()
-          .single()
 
-        if (result.error) throw result.error
-        data = result.data
-      } else {
-        // If only stageDates are being updated, fetch current campaign data
-        const result = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('id', id)
-          .single()
-        
-        if (result.error) throw result.error
-        data = result.data
+        if (error) throw error
       }
 
       // Handle stage dates if provided
@@ -161,17 +147,8 @@ export const campaignsService = {
         await this.updateStageDates(id, updates.stageDates)
       }
 
-      return {
-        ...data,
-        createdAt: data.created_at,
-        projectId: data.project_id,
-        campaignType: data.campaign_type,
-        planningStartDate: data.planning_start_date,
-        launchDate: data.launch_date,
-        endDate: data.end_date,
-        followUpDate: data.follow_up_date,
-        stageDates: updates.stageDates || [],
-      }
+      // Fetch updated campaign with relations
+      return await this.getById(id) as Campaign
     } catch (error) {
       throw new Error(handleSupabaseError(error, 'Failed to update campaign'))
     }

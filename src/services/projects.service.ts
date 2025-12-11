@@ -119,12 +119,10 @@ export const projectsService = {
 
       // Only update main fields if there are any changes
       if (Object.keys(updateData).length > 0) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('projects')
           .update(updateData)
           .eq('id', id)
-          .select()
-          .single()
 
         if (error) throw error
       }

@@ -1,5 +1,5 @@
 import { useState, DragEvent } from 'react'
-import { Plus, DotsThreeVertical, PencilSimple, DotsSixVertical, ArrowsOutSimple } from '@phosphor-icons/react'
+import { Plus, Trash, ArrowsOutSimple } from '@phosphor-icons/react'
 import { Task, Campaign, List, Label } from '@/lib/types'
 import { tasksService } from '@/services/tasks.service'
 import { listsService } from '@/services/lists.service'
@@ -8,13 +8,6 @@ import { Input } from './ui/input'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import TaskCard from './TaskCard'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu'
 
 interface TaskListProps {
   list: List
@@ -179,7 +172,11 @@ export default function TaskList({
           />
         ) : (
           <>
-            <h3 className="font-semibold text-foreground flex-1 truncate">
+            <h3 
+              className="font-semibold text-foreground flex-1 truncate cursor-pointer hover:text-accent-foreground transition-colors"
+              onDoubleClick={() => setIsEditingTitle(true)}
+              title="Double-click to rename"
+            >
               {list.title} <span className="text-muted-foreground text-sm font-normal">({listTasks.length})</span>
             </h3>
             {onOpenStageView && (
@@ -191,23 +188,13 @@ export default function TaskList({
                 <ArrowsOutSimple size={16} weight="bold" />
               </button>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-all">
-                  <DotsThreeVertical size={16} weight="bold" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
-                  <PencilSimple size={14} className="mr-2" />
-                  Rename
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={handleDeleteList}>
-                  Delete List
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button 
+              className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-destructive rounded transition-all"
+              onClick={handleDeleteList}
+              title="Delete list"
+            >
+              <Trash size={16} weight="bold" />
+            </button>
           </>
         )}
       </div>

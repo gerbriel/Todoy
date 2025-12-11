@@ -15,6 +15,7 @@ import CampaignsView from './components/CampaignsView'
 import TasksView from './components/TasksView'
 import MasterView from './components/MasterView'
 import OrganizationView from './components/OrganizationView'
+import LabelsView from './components/LabelsView'
 import { projectsService } from './services/projects.service'
 import { campaignsService } from './services/campaigns.service'
 import { tasksService } from './services/tasks.service'
@@ -23,7 +24,7 @@ import { labelsService } from './services/labels.service'
 import { orgMembersService } from './services/orgMembers.service'
 import { orgInvitesService } from './services/orgInvites.service'
 
-export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization'
+export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization' | 'labels'
 
 function App() {
   const { isAuthenticated } = useAuth()
@@ -183,6 +184,12 @@ function MainApp() {
     setNavigationView('organization')
   }
 
+  const handleNavigateToLabels = () => {
+    setActiveProjectId(null)
+    setActiveCampaignId(null)
+    setNavigationView('labels')
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar
@@ -203,6 +210,7 @@ function MainApp() {
         onNavigateToMaster={handleNavigateToMaster}
         onNavigateToArchive={handleNavigateToArchive}
         onNavigateToOrganization={handleNavigateToOrganization}
+        onNavigateToLabels={handleNavigateToLabels}
         onNavigateToProject={handleNavigateToProject}
         onNavigateToCampaign={handleNavigateToCampaign}
         filters={filters}
@@ -304,6 +312,14 @@ function MainApp() {
               currentUserId={user?.id || ''}
               onNavigateToProject={handleNavigateToProject}
               onNavigateToCampaign={handleNavigateToCampaign}
+            />
+          )}
+          
+          {navigationView === 'labels' && (
+            <LabelsView
+              labels={labels || []}
+              setLabels={setLabels}
+              orgId={organization?.id || ''}
             />
           )}
           

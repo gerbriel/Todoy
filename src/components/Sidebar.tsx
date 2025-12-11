@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
-import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel } from '@phosphor-icons/react'
+import { Plus, Kanban, CaretDown, CaretRight, Folder, Target, DotsThreeVertical, PencilSimple, DotsSixVertical, Stack, CheckSquare, Briefcase, ChartBar, Archive, Funnel, Tag } from '@phosphor-icons/react'
 import { Project, Campaign, FilterState, List, StageTemplate, Task, Organization } from '@/lib/types'
 import { NavigationView } from '@/App'
 import { generateId, getProjects, getCampaignsForProject, getStandaloneCampaigns, getCampaignStageLabel } from '@/lib/helpers'
@@ -43,6 +43,7 @@ interface SidebarProps {
   onNavigateToMaster?: () => void
   onNavigateToArchive?: () => void
   onNavigateToOrganization?: () => void
+  onNavigateToLabels?: () => void
   onNavigateToProject: (projectId: string) => void
   onNavigateToCampaign: (campaignId: string) => void
   filters: FilterState
@@ -67,6 +68,7 @@ export default function Sidebar({
   onNavigateToMaster,
   onNavigateToArchive,
   onNavigateToOrganization,
+  onNavigateToLabels,
   onNavigateToProject,
   onNavigateToCampaign,
   filters,
@@ -661,6 +663,21 @@ export default function Sidebar({
                 >
                   <Archive size={16} weight="duotone" />
                   Archive
+                </button>
+              )}
+              
+              {onNavigateToLabels && (
+                <button
+                  onClick={onNavigateToLabels}
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    navigationView === 'labels'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Tag size={16} weight="duotone" />
+                  Labels
                 </button>
               )}
               

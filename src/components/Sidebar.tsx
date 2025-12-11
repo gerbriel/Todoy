@@ -92,8 +92,8 @@ export default function Sidebar({
   const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const sortedProjects = getProjects(projects)
-  const standaloneCampaigns = getStandaloneCampaigns(campaigns)
+  const sortedProjects = getProjects(projects).filter(p => !p.archived)
+  const standaloneCampaigns = getStandaloneCampaigns(campaigns).filter(c => !c.archived)
 
   useEffect(() => {
     if ((editingCampaignId || editingProjectId) && inputRef.current) {
@@ -488,7 +488,7 @@ export default function Sidebar({
   }
 
   const renderProjectItem = (project: Project) => {
-    const projectCampaigns = getCampaignsForProject(campaigns, project.id)
+    const projectCampaigns = getCampaignsForProject(campaigns, project.id).filter(c => !c.archived)
     const hasChildren = projectCampaigns.length > 0
     const isExpanded = expandedProjects.has(project.id)
     const isEditing = editingProjectId === project.id

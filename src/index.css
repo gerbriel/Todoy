@@ -13,6 +13,28 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
+  /* Override for animated theme */
+  html.beggars-cant-be-choosers body {
+    background: linear-gradient(
+      45deg,
+      #ff6b6b,
+      #4ecdc4,
+      #45b7d1,
+      #f9ca24,
+      #6c5ce7,
+      #fd79a8,
+      #a29bfe,
+      #55efc4,
+      #ffeaa7,
+      #fab1a0,
+      #ff7675,
+      #74b9ff
+    );
+    background-size: 400% 400%;
+    animation: gradientShift 30s ease infinite;
+    transition: none !important;
+  }
+  
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
@@ -138,30 +160,7 @@
   --label-purple: rgba(162, 89, 255, 0.9);
   --label-blue: rgba(74, 144, 226, 0.9);
   --label-teal: rgba(56, 178, 172, 0.9);
-}
-
-.beggars-cant-be-choosers body {
-  background: linear-gradient(
-    45deg,
-    #ff6b6b,
-    #4ecdc4,
-    #45b7d1,
-    #f9ca24,
-    #6c5ce7,
-    #fd79a8,
-    #a29bfe,
-    #55efc4,
-    #ffeaa7,
-    #fab1a0,
-    #ff7675,
-    #74b9ff
-  );
-  background-size: 400% 400%;
-  animation: gradientShift 30s ease infinite;
-  transition: none !important;
-}
-
-.beggars-cant-be-choosers {
+  
   color-scheme: dark;
 }
 

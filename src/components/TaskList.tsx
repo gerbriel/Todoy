@@ -85,6 +85,10 @@ export default function TaskList({
 
     try {
       await listsService.update(list.id, { title: editedTitle.trim() })
+      // Optimistically update local state
+      setLists(prev => prev.map(l => 
+        l.id === list.id ? { ...l, title: editedTitle.trim() } : l
+      ))
       setIsEditingTitle(false)
       toast.success('List renamed')
     } catch (error) {

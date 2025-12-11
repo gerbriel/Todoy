@@ -341,6 +341,7 @@ function MainApp() {
               tasks={tasks || []}
               organization={organization}
               onNavigateToCampaign={handleNavigateToCampaign}
+              onNavigateBack={handleNavigateToAllProjects}
             />
           )}
           

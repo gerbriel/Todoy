@@ -294,7 +294,29 @@ export default function TaskDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Edit Task</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Edit Task</DialogTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleArchive}
+                className="text-orange-600 hover:bg-orange-50"
+              >
+                <Archive size={16} weight="bold" />
+                Archive
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+                className="text-destructive hover:bg-destructive/10"
+              >
+                <Trash size={16} weight="bold" />
+                Delete
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">

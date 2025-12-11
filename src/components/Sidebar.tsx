@@ -356,7 +356,7 @@ export default function Sidebar({
             <button
               onClick={() => onNavigateToCampaign(campaign.id)}
               className={cn(
-                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors flex items-center gap-2 min-w-0',
+                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors flex items-start gap-2 min-w-0',
                 isActive
                   ? 'bg-accent text-accent-foreground font-medium'
                   : 'text-foreground hover:bg-muted'
@@ -364,8 +364,8 @@ export default function Sidebar({
               title={campaign.title}
               style={{ paddingLeft: `${depth * 12 + 8}px` }}
             >
-              <Target size={14} weight="duotone" className="flex-shrink-0" />
-              <span className="flex-1 truncate min-w-0">{campaign.title}</span>
+              <Target size={14} weight="duotone" className="flex-shrink-0 mt-0.5" />
+              <span className="flex-1 min-w-0 break-words">{campaign.title}</span>
               {campaign.campaignStage && (
                 <span className="text-[10px] opacity-60 uppercase tracking-wide flex-shrink-0">
                   {getCampaignStageLabel(campaign.campaignStage).slice(0, 3)}
@@ -468,12 +468,12 @@ export default function Sidebar({
                 key={task.id}
                 onClick={() => onNavigateToCampaign(campaign.id)}
                 className={cn(
-                  'w-full text-left px-2 py-1 rounded text-xs transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 min-w-0'
+                  'w-full text-left px-2 py-1 rounded text-xs transition-colors flex items-start gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 min-w-0'
                 )}
                 title={task.title}
               >
-                <CheckSquare size={12} weight="duotone" className="flex-shrink-0" />
-                <span className="flex-1 truncate min-w-0">{task.title}</span>
+                <CheckSquare size={12} weight="duotone" className="flex-shrink-0 mt-0.5" />
+                <span className="flex-1 min-w-0 break-words">{task.title}</span>
               </button>
             ))}
             {campaignTasks.length > 5 && (
@@ -584,15 +584,15 @@ export default function Sidebar({
             <button
               onClick={() => onNavigateToProject(project.id)}
               className={cn(
-                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors flex items-center gap-2 min-w-0',
+                'flex-1 text-left px-2 py-1.5 rounded text-sm transition-colors flex items-start gap-2 min-w-0',
                 isActive
                   ? 'bg-accent text-accent-foreground font-medium'
                   : 'text-foreground hover:bg-muted'
               )}
               title={project.title}
             >
-              <Folder size={14} weight="duotone" className="flex-shrink-0" />
-              <span className="flex-1 truncate min-w-0">{project.title}</span>
+              <Folder size={14} weight="duotone" className="flex-shrink-0 mt-0.5" />
+              <span className="flex-1 min-w-0 break-words">{project.title}</span>
               <span className="text-xs text-muted-foreground flex-shrink-0">{projectCampaigns.length}</span>
             </button>
           )}

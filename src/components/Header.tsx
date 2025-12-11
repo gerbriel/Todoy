@@ -3,10 +3,12 @@ import { Project, Campaign, ViewMode, FilterState, Task, List } from '@/lib/type
 import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, MagnifyingGlass, PencilSimple, SignOut, User, Trash } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
+import { campaignsService } from '@/services/campaigns.service'
+import { toast } from 'sonner'
 import NotificationsPanel from './NotificationsPanel'
 import {
   DropdownMenu,
@@ -43,6 +45,7 @@ export default function Header({
   setViewMode,
   onNavigateToProject,
   onNavigateToCampaign,
+  onNavigateToAllProjects,
   projects,
   setProjects,
   campaigns,
@@ -60,6 +63,35 @@ export default function Header({
       onNavigateToCampaign(id)
     }
     // Task navigation would require additional logic
+  }
+
+  const handleDeleteCampaign = async () => {
+    if (!activeCampaign) return
+    
+    const taskCount = tasks.filter(t => t.campaignId === activeCampaign.id).length
+    const confirmMessage = taskCount > 0
+      ? `Delete "${activeCampaign.title}" and its ${taskCount} task(s)? This cannot be undone.`
+      : `Delete "${activeCampaign.title}"? This cannot be undone.`
+    
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      await campaignsService.delete(activeCampaign.id)
+      // Optimistically update local state
+      setCampaigns(prev => prev.filter(c => c.id !== activeCampaign.id))
+      toast.success('Campaign deleted')
+      // Navigate to project if it exists, otherwise to all projects
+      if (activeProject) {
+        onNavigateToProject(activeProject.id)
+      } else {
+        onNavigateToAllProjects()
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error)
+      toast.error('Failed to delete campaign')
+    }
   }
 
   return (
@@ -120,6 +152,15 @@ export default function Header({
                 >
                   <PencilSimple size={16} weight="bold" />
                   Edit Campaign
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteCampaign}
+                  className="text-destructive hover:bg-destructive/10"
+                >
+                  <Trash size={16} weight="bold" />
+                  Delete
                 </Button>
                 <Button
                   variant={viewMode === 'kanban' ? 'default' : 'outline'}

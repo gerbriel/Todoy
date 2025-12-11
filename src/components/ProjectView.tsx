@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Project, Campaign, Task, Organization } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Target, CheckSquare, Calendar, Plus, PencilSimple } from '@phosphor-icons/react'
+import { Target, CheckSquare, Calendar, Plus, PencilSimple, Trash } from '@phosphor-icons/react'
 import { getCampaignsForProject, getCampaignStageLabel } from '@/lib/helpers'
 import { campaignsService } from '@/services/campaigns.service'
+import { projectsService } from '@/services/projects.service'
 import { Badge } from './ui/badge'
 import { format } from 'date-fns'
 import { Button } from './ui/button'
@@ -29,6 +30,7 @@ interface ProjectViewProps {
   tasks: Task[]
   organization: Organization | null
   onNavigateToCampaign: (campaignId: string) => void
+  onNavigateBack: () => void
 }
 
 export default function ProjectView({
@@ -40,6 +42,7 @@ export default function ProjectView({
   tasks,
   organization,
   onNavigateToCampaign,
+  onNavigateBack,
 }: ProjectViewProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -47,6 +50,31 @@ export default function ProjectView({
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
+
+  const handleDeleteProject = async () => {
+    const campaignCount = projectCampaigns.length
+    const taskCount = tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length
+    
+    const confirmMessage = campaignCount > 0
+      ? `Delete "${project.title}" and its ${campaignCount} campaign(s) and ${taskCount} task(s)? This cannot be undone.`
+      : `Delete "${project.title}"? This cannot be undone.`
+    
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      await projectsService.delete(project.id)
+      // Optimistically update local state
+      setProjects(prev => prev.filter(p => p.id !== project.id))
+      setCampaigns(prev => prev.filter(c => c.projectId !== project.id))
+      toast.success('Project deleted')
+      onNavigateBack()
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast.error('Failed to delete project')
+    }
+  }
 
   const handleCreateCampaign = async () => {
     if (!newCampaignTitle.trim()) {
@@ -114,6 +142,10 @@ export default function ProjectView({
             <Button variant="outline" onClick={() => setShowEditDialog(true)}>
               <PencilSimple size={16} weight="bold" />
               Edit Project
+            </Button>
+            <Button variant="outline" onClick={handleDeleteProject} className="text-destructive hover:bg-destructive/10">
+              <Trash size={16} weight="bold" />
+              Delete
             </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus size={16} weight="bold" />

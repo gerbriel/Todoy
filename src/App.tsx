@@ -105,14 +105,18 @@ function MainApp() {
 
     // Set up real-time subscriptions
     const unsubProjects = projectsService.subscribe(organization.id, setProjects)
+    const unsubCampaigns = campaignsService.subscribe(organization.id, setCampaigns)
     const unsubLabels = labelsService.subscribe(organization.id, setLabels)
     const unsubTasks = tasksService.subscribe(organization.id, setTasks)
+    const unsubMembers = orgMembersService.subscribe(organization.id, setOrgMembers)
     const unsubInvites = orgInvitesService.subscribe(organization.id, setOrgInvites)
 
     return () => {
       unsubProjects()
+      unsubCampaigns()
       unsubLabels()
       unsubTasks()
+      unsubMembers()
       unsubInvites()
     }
   }, [organization?.id])

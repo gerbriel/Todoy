@@ -56,4 +56,30 @@ export const orgMembersService = {
 
     if (error) throw error
   },
+
+  /**
+   * Subscribe to real-time changes
+   */
+  subscribe(orgId: string, callback: (members: OrgMember[]) => void) {
+    const channel = supabase
+      .channel('org-members-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'org_members',
+          filter: `org_id=eq.${orgId}`,
+        },
+        async () => {
+          const members = await this.getByOrg(orgId)
+          callback(members)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  },
 }

@@ -861,8 +861,8 @@ export default function Sidebar({
           </div>
         </ScrollArea>
 
-        {/* Collapse/Expand Button - At bottom of sidebar */}
-        <div className="border-t border-border p-2">
+        {/* Collapse/Expand Button - At bottom of sidebar - Hidden on mobile */}
+        <div className="hidden md:block border-t border-border p-2">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={cn(

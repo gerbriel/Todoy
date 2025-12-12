@@ -168,7 +168,7 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
             </button>
 
             {/* Sidebar content in full screen */}
-            <div className="h-full w-full flex flex-col">
+            <div className="h-full w-full flex flex-col pb-16">
               <div className="flex-1 overflow-y-auto [&>aside]:w-full [&>aside]:h-full [&>aside]:border-r-0">
                 <Sidebar
                   {...props}

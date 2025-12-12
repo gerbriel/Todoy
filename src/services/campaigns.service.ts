@@ -344,7 +344,7 @@ export const campaignsService = {
       const { data: newCampaign, error: createError } = await supabase
         .from('campaigns')
         .insert({
-          name: newName,
+          title: newName,
           description: originalCampaign.description,
           project_id: projectId,
           org_id: originalCampaign.orgId,

@@ -196,6 +196,7 @@ export const tasksService = {
       if (updates.description !== undefined) updateData.description = updates.description
       if (updates.order !== undefined) updateData.order = updates.order
       if (updates.listId !== undefined) updateData.list_id = updates.listId
+      if (updates.campaignId !== undefined) updateData.campaign_id = updates.campaignId
       if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate
       if (updates.currentStage !== undefined) updateData.current_stage = updates.currentStage
       if (updates.completed !== undefined) updateData.completed = updates.completed
@@ -218,6 +219,31 @@ export const tasksService = {
       // Handle labels if provided
       if (updates.labelIds !== undefined) {
         await this.updateLabels(id, updates.labelIds)
+      }
+
+      // Handle stage dates if provided
+      if (updates.stageDates !== undefined) {
+        // Delete existing stage dates
+        await supabase
+          .from('task_stage_dates')
+          .delete()
+          .eq('task_id', id)
+
+        // Insert new stage dates
+        if (updates.stageDates.length > 0) {
+          const stageDatesToInsert = updates.stageDates.map(sd => ({
+            task_id: id,
+            stage_name: sd.stageName,
+            start_date: sd.startDate,
+            end_date: sd.endDate,
+            color: sd.color,
+            completed: sd.completed || false,
+          }))
+
+          await supabase
+            .from('task_stage_dates')
+            .insert(stageDatesToInsert)
+        }
       }
 
       // Fetch updated task with relations

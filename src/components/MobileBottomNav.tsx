@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X } from '@phosphor-icons/react'
+import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X, Plus } from '@phosphor-icons/react'
 import { NavigationView } from '@/App'
 import { cn } from '@/lib/utils'
 import Sidebar from './Sidebar'
@@ -55,8 +55,8 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
     <>
       {/* Bottom Navigation Bar - Mobile Only */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-[60]">
-        <div className="grid grid-cols-6 gap-1 px-2 py-2">
-          {/* Left side items - slide in from left */}
+        <div className="grid grid-cols-3 gap-2 px-4 py-3">
+          {/* Projects */}
           <button
             onClick={() => openSlide('projects', 'left')}
             className={cn(
@@ -66,74 +66,32 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
-            <Folder size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Projects</span>
+            <Folder size={24} weight="duotone" />
+            <span className="text-xs mt-1">Projects</span>
           </button>
 
+          {/* Add Campaign */}
           <button
-            onClick={() => openSlide('campaigns', 'left')}
-            className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
-              props.navigationView === 'all-campaigns' || props.navigationView === 'campaign'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
+            onClick={() => {
+              // TODO: Open create campaign dialog
+              console.log('Add Campaign clicked')
+            }}
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <Kanban size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Campaigns</span>
+            <Plus size={24} weight="bold" />
+            <span className="text-xs mt-1">Campaign</span>
           </button>
 
+          {/* Add Project */}
           <button
-            onClick={() => openSlide('tasks', 'left')}
-            className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
-              props.navigationView === 'master'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
+            onClick={() => {
+              // TODO: Open create project dialog
+              console.log('Add Project clicked')
+            }}
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <CheckSquare size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Tasks</span>
-          </button>
-
-          {/* Right side items - slide in from right */}
-          <button
-            onClick={() => openSlide('archive', 'right')}
-            className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
-              props.navigationView === 'archive'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-          >
-            <Archive size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Archive</span>
-          </button>
-
-          <button
-            onClick={() => openSlide('labels', 'right')}
-            className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
-              props.navigationView === 'labels'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-          >
-            <Tag size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Labels</span>
-          </button>
-
-          <button
-            onClick={() => openSlide('organization', 'right')}
-            className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
-              props.navigationView === 'organization'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-          >
-            <Briefcase size={20} weight="duotone" />
-            <span className="text-[10px] mt-1">Org</span>
+            <Plus size={24} weight="bold" />
+            <span className="text-xs mt-1">Project</span>
           </button>
         </div>
       </nav>

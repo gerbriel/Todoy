@@ -357,8 +357,12 @@ export default function ProjectView({
 
   const getCampaignStats = (campaignId: string) => {
     const campaignTasks = tasks.filter(task => task.campaignId === campaignId)
+    const completedTasks = campaignTasks.filter(task => task.completed).length
+    const totalTasks = campaignTasks.length
     return {
-      taskCount: campaignTasks.length,
+      completedTasks,
+      totalTasks,
+      taskCount: totalTasks, // Keep for backward compatibility
     }
   }
 
@@ -574,7 +578,7 @@ export default function ProjectView({
                       )}
                       <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
                         <CheckSquare size={14} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
-                        <span>{stats.taskCount} task{stats.taskCount !== 1 ? 's' : ''}</span>
+                        <span>{stats.completedTasks}/{stats.totalTasks} task{stats.totalTasks !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </CardContent>

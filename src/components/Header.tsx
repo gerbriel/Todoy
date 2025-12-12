@@ -11,6 +11,8 @@ import CampaignEditDialog from './CampaignEditDialog'
 import ConfirmDialog from './ConfirmDialog'
 import DuplicateDialog from './DuplicateDialog'
 import { campaignsService } from '@/services/campaigns.service'
+import { listsService } from '@/services/lists.service'
+import { tasksService } from '@/services/tasks.service'
 import { toast } from 'sonner'
 import NotificationsPanel from './NotificationsPanel'
 import {
@@ -42,6 +44,8 @@ interface HeaderProps {
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   tasks: Task[]
   lists: List[]
+  setLists: (updater: (lists: List[]) => List[]) => void
+  setTasks: (updater: (tasks: Task[]) => Task[]) => void
 }
 
 export default function Header({
@@ -62,6 +66,8 @@ export default function Header({
   setCampaigns,
   tasks,
   lists,
+  setLists,
+  setTasks,
 }: HeaderProps & { onNavigateToCampaign: (campaignId: string) => void }) {
   const [showSearch, setShowSearch] = useState(false)
   const [showEditCampaign, setShowEditCampaign] = useState(false)
@@ -123,6 +129,14 @@ export default function Header({
     try {
       const duplicated = await campaignsService.duplicate(activeCampaign.id, newName, targetProjectId)
       setCampaigns(prev => [...prev, duplicated])
+      
+      // Refetch lists and tasks for the new campaign to populate UI immediately
+      const newLists = await listsService.getByCampaign(duplicated.id)
+      const newTasks = await tasksService.getByCampaign(duplicated.id)
+      
+      setLists(prev => [...prev, ...newLists])
+      setTasks(prev => [...prev, ...newTasks])
+      
       toast.success('Campaign duplicated')
       setShowDuplicateCampaign(false)
     } catch (error) {

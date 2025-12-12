@@ -24,8 +24,6 @@ export function EventBar({
   isResizing = false
 }: EventBarProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isMouseDown, setIsMouseDown] = useState(false)
-  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
   const eventBarRef = useRef<HTMLDivElement>(null)
   const { event, isStart, isEnd, startCol, span } = segment
   
@@ -54,38 +52,33 @@ export function EventBar({
       return
     }
     
-    setIsMouseDown(true)
-    setMouseDownPos({ x: e.clientX, y: e.clientY })
+    const startPos = { x: e.clientX, y: e.clientY }
+    let hasMoved = false
     
     // Start drag after a small movement threshold
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (mouseDownPos) {
-        const dx = moveEvent.clientX - mouseDownPos.x
-        const dy = moveEvent.clientY - mouseDownPos.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        
-        // If moved more than 5px, start dragging
-        if (distance > 5) {
-          setIsMouseDown(false)
-          setMouseDownPos(null)
-          onDragStart(event, e)
-          document.removeEventListener('mousemove', handleMouseMove)
-          document.removeEventListener('mouseup', handleMouseUp)
-        }
+      const dx = moveEvent.clientX - startPos.x
+      const dy = moveEvent.clientY - startPos.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      
+      // If moved more than 5px, start dragging
+      if (distance > 5 && !hasMoved) {
+        hasMoved = true
+        onDragStart(event, e)
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
       }
     }
     
     const handleMouseUp = (upEvent: MouseEvent) => {
-      setIsMouseDown(false)
-      setMouseDownPos(null)
-      
       // If no significant movement, treat as click
-      if (mouseDownPos) {
-        const dx = upEvent.clientX - mouseDownPos.x
-        const dy = upEvent.clientY - mouseDownPos.y
+      if (!hasMoved) {
+        const dx = upEvent.clientX - startPos.x
+        const dy = upEvent.clientY - startPos.y
         const distance = Math.sqrt(dx * dx + dy * dy)
         
         if (distance <= 5) {
+          // Create a synthetic React mouse event for the click handler
           onEventClick(event, e)
         }
       }

@@ -54,7 +54,7 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
   return (
     <>
       {/* Bottom Navigation Bar - Mobile Only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-[60]">
         <div className="grid grid-cols-6 gap-1 px-2 py-2">
           {/* Left side items - slide in from left */}
           <button

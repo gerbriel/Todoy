@@ -348,9 +348,14 @@ export const campaignsService = {
           description: originalCampaign.description,
           project_id: projectId,
           org_id: originalCampaign.orgId,
-          start_date: null, // Reset dates for template
+          campaign_type: originalCampaign.campaignType,
+          planning_start_date: null, // Reset dates for template
+          launch_date: null,
           end_date: null,
+          follow_up_date: null,
           order: originalCampaign.order,
+          completed: false,
+          archived: false,
         })
         .select()
         .single()
@@ -376,8 +381,11 @@ export const campaignsService = {
         createdAt: newCampaign.created_at,
         projectId: newCampaign.project_id,
         orgId: newCampaign.org_id,
-        startDate: newCampaign.start_date,
+        campaignType: newCampaign.campaign_type,
+        planningStartDate: newCampaign.planning_start_date,
+        launchDate: newCampaign.launch_date,
         endDate: newCampaign.end_date,
+        followUpDate: newCampaign.follow_up_date,
         stageDates: [],
       }
     } catch (error) {

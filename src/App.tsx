@@ -55,6 +55,31 @@ function MainApp() {
   const [archivedCampaign, setArchivedCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   
+  // Set random gradient colors on page load for beggars-cant-be-choosers theme
+  useEffect(() => {
+    const generateRandomColor = () => {
+      const colors = [
+        'deepskyblue', 'dodgerblue', 'royalblue', 'mediumblue', 'blue', 'navy',
+        'darkviolet', 'blueviolet', 'mediumpurple', 'rebeccapurple', 'indigo',
+        'crimson', 'deeppink', 'hotpink', 'orangered', 'tomato',
+        'gold', 'orange', 'darkorange', 'coral',
+        'limegreen', 'seagreen', 'teal', 'darkcyan', 'steelblue',
+        'slateblue', 'mediumslateblue', 'darkslateblue'
+      ]
+      return colors[Math.floor(Math.random() * colors.length)]
+    }
+    
+    // Generate three random colors
+    const color1 = generateRandomColor()
+    const color2 = generateRandomColor()
+    const color3 = generateRandomColor()
+    
+    // Set CSS custom properties
+    document.documentElement.style.setProperty('--gradient-color-1', color1)
+    document.documentElement.style.setProperty('--gradient-color-2', color2)
+    document.documentElement.style.setProperty('--gradient-color-3', color3)
+  }, [])
+  
   // Load data from Supabase when organization changes
   useEffect(() => {
     if (!organization?.id) {
@@ -403,7 +428,12 @@ function MainApp() {
               projects={projects || []}
               setProjects={setProjects}
               campaigns={campaigns || []}
+              setCampaigns={setCampaigns}
               tasks={tasks || []}
+              setTasks={setTasks}
+              lists={lists || []}
+              setLists={setLists}
+              organization={organization}
               onNavigateToProject={handleNavigateToProject}
             />
           )}
@@ -455,8 +485,10 @@ function MainApp() {
               campaigns={campaigns || []}
               setCampaigns={setCampaigns}
               tasks={tasks || []}
+              setTasks={setTasks}
               onNavigateToProject={handleNavigateToProject}
               onNavigateToCampaign={handleNavigateToCampaign}
+              onBack={() => setNavigationView('all-projects')}
               orgId={organization?.id || ''}
             />
           )}

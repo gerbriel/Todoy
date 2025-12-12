@@ -16,14 +16,31 @@
   /* Override for animated theme - remove background-color completely */
   html.beggars-cant-be-choosers body {
     background-color: transparent !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-size: 200% 200%;
-    animation: gradientShift 960s ease-in-out infinite;
+    background: linear-gradient(
+      300deg, 
+      var(--gradient-color-1, deepskyblue), 
+      var(--gradient-color-2, darkviolet), 
+      var(--gradient-color-3, blue)
+    );
+    background-size: 180% 180%;
+    animation: gradient-animation 18s ease infinite;
     transition: none !important;
   }
   
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 

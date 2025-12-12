@@ -110,6 +110,8 @@ export default function Header({
 
     try {
       await campaignsService.update(activeCampaign.id, { archived: true })
+      // Optimistically remove from view immediately for better UX
+      setCampaigns(prev => prev.filter(c => c.id !== activeCampaign.id))
       toast.success('Campaign archived')
       // Navigate to project if it exists, otherwise to all projects
       if (activeProject) {

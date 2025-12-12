@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Project } from '@/lib/types'
+import { Project, Campaign } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { Separator } from './ui/separator'
 import { Archive, DotsThree } from '@phosphor-icons/react'
 import { projectsService } from '@/services/projects.service'
+import { campaignsService } from '@/services/campaigns.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,8 @@ interface ProjectEditDialogProps {
   project: Project
   projects: Project[]
   setProjects: (updater: (projects: Project[]) => Project[]) => void
+  campaigns: Campaign[]
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -31,6 +34,8 @@ export default function ProjectEditDialog({
   project,
   projects,
   setProjects,
+  campaigns,
+  setCampaigns,
   open,
   onOpenChange,
 }: ProjectEditDialogProps) {
@@ -70,6 +75,16 @@ export default function ProjectEditDialog({
     try {
       const result = await projectsService.update(project.id, { archived: true })
       console.log('Archived project:', result, 'archived flag:', result.archived)
+      
+      // Archive all campaigns for this project
+      const projectCampaigns = campaigns.filter(c => c.projectId === project.id && !c.archived)
+      if (projectCampaigns.length > 0) {
+        const campaignArchivePromises = projectCampaigns.map(campaign => 
+          campaignsService.update(campaign.id, { archived: true })
+        )
+        await Promise.all(campaignArchivePromises)
+        console.log(`Archived ${projectCampaigns.length} campaigns`)
+      }
       
       // Optimistically remove from parent view
       setProjects(prev => prev.filter(p => p.id !== project.id))

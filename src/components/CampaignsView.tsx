@@ -33,7 +33,10 @@ export default function CampaignsView({
     return tasks.filter(t => t.campaignId === campaignId && t.subtasks?.every(st => st.completed)).length
   }
 
-  const sortedCampaigns = [...campaigns].sort((a, b) => {
+  // Filter out archived campaigns
+  const activeCampaigns = campaigns.filter(c => !c.archived)
+  
+  const sortedCampaigns = [...activeCampaigns].sort((a, b) => {
     if (a.launchDate && b.launchDate) {
       return new Date(a.launchDate).getTime() - new Date(b.launchDate).getTime()
     }
@@ -48,7 +51,7 @@ export default function CampaignsView({
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-foreground mb-2">All Campaigns</h2>
           <p className="text-muted-foreground">
-            {campaigns.length} {campaigns.length === 1 ? 'campaign' : 'campaigns'}
+            {activeCampaigns.length} {activeCampaigns.length === 1 ? 'campaign' : 'campaigns'}
           </p>
         </div>
 

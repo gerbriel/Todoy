@@ -1,20 +1,40 @@
-import { Project, Campaign, Task } from '@/lib/types'
+import { Project, Campaign, Task, Organization, List } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Folder, Target, CheckSquare, Archive, PencilSimple, Copy, Trash } from '@phosphor-icons/react'
+import { Folder, Target, CheckSquare, Archive, PencilSimple, Copy, Trash, Plus } from '@phosphor-icons/react'
 import { Checkbox } from './ui/checkbox'
 import { Button } from './ui/button'
 import { getCampaignsForProject } from '@/lib/helpers'
 import { projectsService } from '@/services/projects.service'
+import { campaignsService } from '@/services/campaigns.service'
+import { listsService } from '@/services/lists.service'
+import { tasksService } from '@/services/tasks.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import ConfirmDialog from './ConfirmDialog'
+import ProjectEditDialog from './ProjectEditDialog'
+import DuplicateDialog from './DuplicateDialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 
 interface ProjectsViewProps {
   projects: Project[]
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
+  setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   tasks: Task[]
+  setTasks: (updater: (tasks: Task[]) => Task[]) => void
+  lists: List[]
+  setLists: (updater: (lists: List[]) => List[]) => void
+  organization: Organization | null
   onNavigateToProject: (projectId: string) => void
 }
 
@@ -22,11 +42,20 @@ export default function ProjectsView({
   projects,
   setProjects,
   campaigns,
+  setCampaigns,
   tasks,
+  setTasks,
+  lists,
+  setLists,
+  organization,
   onNavigateToProject,
 }: ProjectsViewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+  const [newProjectTitle, setNewProjectTitle] = useState('')
   
   const sortedProjects = [...projects].sort((a, b) => a.order - b.order)
 
@@ -62,6 +91,16 @@ export default function ProjectsView({
       console.log('Archive result:', JSON.stringify(result, null, 2))
       console.log('Archived flag value:', result.archived)
       
+      // Archive all campaigns for this project
+      const projectCampaigns = campaigns.filter(c => c.projectId === projectId && !c.archived)
+      if (projectCampaigns.length > 0) {
+        const campaignArchivePromises = projectCampaigns.map(campaign => 
+          campaignsService.update(campaign.id, { archived: true })
+        )
+        await Promise.all(campaignArchivePromises)
+        console.log(`Archived ${projectCampaigns.length} campaigns`)
+      }
+      
       // Optimistically remove from view immediately for better UX
       setProjects(prev => prev.filter(p => p.id !== projectId))
       
@@ -85,6 +124,72 @@ export default function ProjectsView({
     } catch (error) {
       console.error('Error deleting project:', error)
       toast.error('Failed to delete project')
+    }
+  }
+
+  const handleDuplicateProject = async (targetProjectId: string, targetCampaignId?: string, targetListId?: string, newName?: string) => {
+    if (!selectedProjectId) return
+    
+    try {
+      const project = projects.find(p => p.id === selectedProjectId)
+      const projectName = newName || `${project?.title} (Copy)`
+      const duplicatedProject = await projectsService.duplicate(selectedProjectId, projectName)
+      
+      // Load campaigns for the newly duplicated project
+      const newCampaigns = await campaignsService.getByProject(duplicatedProject.id)
+      
+      // Load lists for all new campaigns
+      const listsPromises = newCampaigns.map(campaign => 
+        listsService.getByCampaign(campaign.id)
+      )
+      const listsArrays = await Promise.all(listsPromises)
+      const newLists = listsArrays.flat()
+      
+      // Load tasks for all new campaigns
+      const tasksPromises = newCampaigns.map(campaign => 
+        tasksService.getByCampaign(campaign.id)
+      )
+      const tasksArrays = await Promise.all(tasksPromises)
+      const newTasks = tasksArrays.flat()
+      
+      // Manually add the duplicated project, campaigns, lists, and tasks
+      setProjects(prev => [...prev, duplicatedProject])
+      setCampaigns(prev => [...prev, ...newCampaigns])
+      setLists(prev => [...prev, ...newLists])
+      setTasks(prev => [...prev, ...newTasks])
+      
+      console.log(`Loaded ${newCampaigns.length} campaigns, ${newLists.length} lists, and ${newTasks.length} tasks for duplicated project`)
+      
+      toast.success('Project duplicated successfully')
+      setShowDuplicateDialog(false)
+      setSelectedProjectId(null)
+    } catch (error) {
+      console.error('Error duplicating project:', error)
+      toast.error('Failed to duplicate project')
+    }
+  }
+
+  const handleCreateProject = async () => {
+    if (!newProjectTitle.trim()) {
+      toast.error('Please enter a project title')
+      return
+    }
+
+    try {
+      const newProject = await projectsService.create({
+        title: newProjectTitle.trim(),
+        description: '',
+        order: projects.length,
+        orgId: organization?.id || '',
+      })
+      // Optimistically update local state
+      setProjects(prev => [...prev, newProject])
+      toast.success('Project created')
+      setShowCreateDialog(false)
+      setNewProjectTitle('')
+    } catch (error) {
+      console.error('Error creating project:', error)
+      toast.error('Failed to create project')
     }
   }
 
@@ -133,20 +238,34 @@ export default function ProjectsView({
                   onClick={() => onNavigateToProject(project.id)}
                 >
                   {/* Action buttons - Top right corner */}
-                  {!project.archived && (
-                    <div className="absolute top-3 right-3 flex gap-1 z-10">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onNavigateToProject(project.id)
-                        }}
-                        title="Edit project"
-                      >
-                        <PencilSimple size={16} weight="bold" />
-                      </Button>
+                  <div className="absolute top-3 right-3 flex gap-1 z-10">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedProjectId(project.id)
+                        setShowEditDialog(true)
+                      }}
+                      title="Edit project"
+                    >
+                      <PencilSimple size={16} weight="bold" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedProjectId(project.id)
+                        setShowDuplicateDialog(true)
+                      }}
+                      title="Duplicate project"
+                    >
+                      <Copy size={16} weight="bold" />
+                    </Button>
+                    {!project.archived && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -156,21 +275,21 @@ export default function ProjectsView({
                       >
                         <Archive size={16} weight="bold" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedProjectId(project.id)
-                          setShowDeleteConfirm(true)
-                        }}
-                        title="Delete project"
-                      >
-                        <Trash size={16} weight="bold" />
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedProjectId(project.id)
+                        setShowDeleteConfirm(true)
+                      }}
+                      title="Delete project"
+                    >
+                      <Trash size={16} weight="bold" />
+                    </Button>
+                  </div>
                   
                   <CardHeader className="pb-3 md:pb-4">
                     <div className="flex items-start justify-between gap-2 md:gap-3">
@@ -219,6 +338,20 @@ export default function ProjectsView({
                 </Card>
               )
             })}
+            
+            {/* Add New Project Card */}
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-dashed border-2 hover:border-accent"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
+                <Plus size={48} className="md:w-16 md:h-16 text-muted-foreground mb-4" weight="bold" />
+                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">New Project</h3>
+                <p className="text-sm md:text-base text-muted-foreground text-center">
+                  Create a new project
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
@@ -235,6 +368,65 @@ export default function ProjectsView({
         confirmText="Delete"
         variant="danger"
       />
+
+      {selectedProjectId && (
+        <ProjectEditDialog
+          project={projects.find(p => p.id === selectedProjectId)!}
+          projects={projects}
+          setProjects={setProjects}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+        />
+      )}
+
+      <DuplicateDialog
+        open={showDuplicateDialog}
+        onOpenChange={(open) => {
+          setShowDuplicateDialog(open)
+          if (!open) setSelectedProjectId(null)
+        }}
+        type="project"
+        itemName={selectedProjectId ? projects.find(p => p.id === selectedProjectId)?.title || '' : ''}
+        onDuplicate={handleDuplicateProject}
+        projects={projects}
+        campaigns={campaigns}
+        lists={[]}
+      />
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Create a new project to organize your campaigns and tasks
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-title">Project Title</Label>
+              <Input
+                id="project-title"
+                value={newProjectTitle}
+                onChange={(e) => setNewProjectTitle(e.target.value)}
+                placeholder="Enter project name..."
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateProject}>
+              Create Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

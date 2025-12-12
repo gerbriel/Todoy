@@ -12,6 +12,7 @@ import { format } from 'date-fns'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
 import ProjectEditDialog from './ProjectEditDialog'
+import CampaignEditDialog from './CampaignEditDialog'
 import ConfirmDialog from './ConfirmDialog'
 import DuplicateDialog from './DuplicateDialog'
 import {
@@ -57,13 +58,16 @@ export default function ProjectView({
 }: ProjectViewProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showEditCampaignDialog, setShowEditCampaignDialog] = useState(false)
   const [newCampaignTitle, setNewCampaignTitle] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
-  const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
+  // Filter out archived campaigns
+  const activeCampaigns = projectCampaigns.filter(c => !c.archived)
+  const sortedCampaigns = [...activeCampaigns].sort((a, b) => a.order - b.order)
 
   const handleRestoreProject = async () => {
     try {
@@ -110,7 +114,24 @@ export default function ProjectView({
   const handleArchiveProject = async () => {
     try {
       await projectsService.update(project.id, { archived: true })
-      toast.success('Project archived')
+      
+      // Get all active campaigns for this project
+      const activeCampaigns = projectCampaigns.filter(c => !c.archived)
+      
+      // Archive all campaigns in this project
+      const campaignArchivePromises = activeCampaigns.map(campaign => 
+        campaignsService.update(campaign.id, { archived: true })
+      )
+      
+      if (campaignArchivePromises.length > 0) {
+        await Promise.all(campaignArchivePromises)
+        toast.success(
+          `Project and ${activeCampaigns.length} campaign(s) archived`
+        )
+      } else {
+        toast.success('Project archived')
+      }
+      
       // Navigate back - the real-time subscription will update the lists
       onNavigateBack()
     } catch (error) {
@@ -123,8 +144,32 @@ export default function ProjectView({
     try {
       const projectName = newName || `${project.title} (Copy)`
       const duplicatedProject = await projectsService.duplicate(project.id, projectName)
-      // Optimistically add to local state
+      
+      // Load campaigns for the newly duplicated project
+      const newCampaigns = await campaignsService.getByProject(duplicatedProject.id)
+      
+      // Load lists for all new campaigns
+      const listsPromises = newCampaigns.map(campaign => 
+        listsService.getByCampaign(campaign.id)
+      )
+      const listsArrays = await Promise.all(listsPromises)
+      const newLists = listsArrays.flat()
+      
+      // Load tasks for all new campaigns
+      const tasksPromises = newCampaigns.map(campaign => 
+        tasksService.getByCampaign(campaign.id)
+      )
+      const tasksArrays = await Promise.all(tasksPromises)
+      const newTasks = tasksArrays.flat()
+      
+      // Manually add the duplicated project, campaigns, lists, and tasks
       setProjects(prev => [...prev, duplicatedProject])
+      setCampaigns(prev => [...prev, ...newCampaigns])
+      setLists(prev => [...prev, ...newLists])
+      setTasks(prev => [...prev, ...newTasks])
+      
+      console.log(`Loaded ${newCampaigns.length} campaigns, ${newLists.length} lists, and ${newTasks.length} tasks for duplicated project`)
+      
       toast.success('Project duplicated successfully')
       setShowDuplicateDialog(false)
     } catch (error) {
@@ -184,7 +229,8 @@ export default function ProjectView({
   const handleArchiveCampaign = async (campaignId: string) => {
     try {
       await campaignsService.update(campaignId, { archived: true })
-      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, archived: true } : c))
+      // Optimistically remove from view immediately for better UX
+      setCampaigns(prev => prev.filter(c => c.id !== campaignId))
       toast.success('Campaign archived')
     } catch (error) {
       console.error('Error archiving campaign:', error)
@@ -261,32 +307,6 @@ export default function ProjectView({
               <p className="text-sm md:text-base text-muted-foreground break-words">{project.description}</p>
             )}
           </div>
-          <div className="hidden md:flex flex-col sm:flex-row gap-2">
-            {!project.archived && (
-              <>
-                <Button variant="outline" onClick={() => setShowEditDialog(true)} className="w-full sm:w-auto text-sm md:text-base">
-                  <PencilSimple size={16} weight="bold" className="mr-2" />
-                  Edit Project
-                </Button>
-                <Button variant="outline" onClick={handleArchiveProject} className="w-full sm:w-auto text-sm md:text-base text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
-                  <Archive size={16} weight="bold" className="mr-2" />
-                  Archive
-                </Button>
-                <Button variant="outline" onClick={() => setShowDuplicateDialog(true)} className="w-full sm:w-auto text-sm md:text-base text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950">
-                  <Copy size={16} weight="bold" className="mr-2" />
-                  Duplicate
-                </Button>
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="w-full sm:w-auto text-sm md:text-base text-destructive hover:bg-destructive/10">
-                  <Trash size={16} weight="bold" className="mr-2" />
-                  Delete
-                </Button>
-                <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto text-sm md:text-base">
-                  <Plus size={16} weight="bold" className="mr-2" />
-                  New Campaign
-                </Button>
-              </>
-            )}
-          </div>
         </div>
 
         <ConfirmDialog
@@ -327,34 +347,34 @@ export default function ProjectView({
                   onClick={() => onNavigateToCampaign(campaign.id)}
                 >
                   {/* Action buttons - Top right corner */}
-                  {!campaign.archived && (
-                    <div className="absolute top-3 right-3 flex gap-1 z-10">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedCampaignId(campaign.id)
-                          onNavigateToCampaign(campaign.id)
-                        }}
-                        title="Edit campaign"
-                      >
-                        <PencilSimple size={16} weight="bold" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedCampaignId(campaign.id)
-                          setShowDuplicateDialog(true)
-                        }}
-                        title="Duplicate campaign"
-                      >
-                        <Copy size={16} weight="bold" />
-                      </Button>
+                  <div className="absolute top-3 right-3 flex gap-1 z-10">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCampaignId(campaign.id)
+                        setShowEditCampaignDialog(true)
+                      }}
+                      title="Edit campaign"
+                    >
+                      <PencilSimple size={16} weight="bold" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCampaignId(campaign.id)
+                        setShowDuplicateDialog(true)
+                      }}
+                      title="Duplicate campaign"
+                    >
+                      <Copy size={16} weight="bold" />
+                    </Button>
+                    {!campaign.archived && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -367,21 +387,21 @@ export default function ProjectView({
                       >
                         <Archive size={16} weight="bold" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedCampaignId(campaign.id)
-                          setShowDeleteConfirm(true)
-                        }}
-                        title="Delete campaign"
-                      >
-                        <Trash size={16} weight="bold" />
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCampaignId(campaign.id)
+                        setShowDeleteConfirm(true)
+                      }}
+                      title="Delete campaign"
+                    >
+                      <Trash size={16} weight="bold" />
+                    </Button>
+                  </div>
                   
                   <CardHeader className="pb-3 md:pb-4">
                     <div className="flex items-start justify-between mb-2 gap-2">
@@ -416,6 +436,22 @@ export default function ProjectView({
                 </Card>
               )
             })}
+            
+            {/* Add New Campaign Card */}
+            {!project.archived && (
+              <Card 
+                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-dashed border-2 hover:border-accent"
+                onClick={() => setShowCreateDialog(true)}
+              >
+                <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
+                  <Plus size={48} className="md:w-16 md:h-16 text-muted-foreground mb-4" weight="bold" />
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">New Campaign</h3>
+                  <p className="text-sm md:text-base text-muted-foreground text-center">
+                    Create a new campaign
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>
@@ -457,9 +493,23 @@ export default function ProjectView({
         project={project}
         projects={projects}
         setProjects={setProjects}
+        campaigns={campaigns}
+        setCampaigns={setCampaigns}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
       />
+
+      {selectedCampaignId && (
+        <CampaignEditDialog
+          campaign={campaigns.find(c => c.id === selectedCampaignId)!}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
+          projects={projects}
+          lists={lists}
+          open={showEditCampaignDialog}
+          onOpenChange={setShowEditCampaignDialog}
+        />
+      )}
 
       <DuplicateDialog
         open={showDuplicateDialog}

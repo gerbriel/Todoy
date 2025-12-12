@@ -348,17 +348,18 @@ export const campaignsService = {
         throw new Error('User not authenticated')
       }
 
-      // Verify user is member of the organization
-      const { data: membership, error: memberError } = await supabase
+      // Get user's org membership to get the org_id
+      const { data: memberships, error: memberError } = await supabase
         .from('org_members')
         .select('org_id')
         .eq('user_id', user.id)
-        .eq('org_id', originalCampaign.orgId)
-        .single()
+        .limit(1)
 
-      if (memberError || !membership) {
-        throw new Error('User is not a member of this organization')
+      if (memberError || !memberships || memberships.length === 0) {
+        throw new Error('User is not a member of any organization')
       }
+
+      const orgId = memberships[0].org_id
 
       // Use target project or keep same project
       const projectId = targetProjectId || originalCampaign.projectId
@@ -369,7 +370,7 @@ export const campaignsService = {
         description: originalCampaign.description || '',
         order: originalCampaign.order,
         project_id: projectId,
-        org_id: originalCampaign.orgId, // Use the verified org_id
+        org_id: orgId, // Use the user's org_id from membership
         campaign_type: originalCampaign.campaignType,
         planning_start_date: null, // Reset dates for template
         launch_date: null,

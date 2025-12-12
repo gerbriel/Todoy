@@ -657,7 +657,7 @@ export default function Sidebar({
   return (
     <>
       <aside className={cn(
-        "border-r border-border bg-card flex flex-col transition-all duration-300 relative",
+        "border-r border-border bg-card flex flex-col transition-all duration-300 relative h-full",
         isCollapsed ? "w-16" : "w-72",
         "md:block" // Always show on desktop
       )}>

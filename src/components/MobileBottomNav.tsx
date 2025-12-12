@@ -147,10 +147,10 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
             onClick={closeSlide}
           />
           
-          {/* Slide Panel */}
+          {/* Slide Panel - Full Screen */}
           <div
             className={cn(
-              "md:hidden fixed top-0 bottom-0 w-4/5 max-w-sm bg-card z-50 shadow-2xl transition-transform duration-300 ease-out overflow-hidden",
+              "md:hidden fixed top-0 bottom-0 w-full bg-card z-50 shadow-2xl transition-transform duration-300 ease-out overflow-hidden",
               slideDirection === 'left' ? 'left-0' : 'right-0',
               slideView
                 ? 'translate-x-0'
@@ -168,7 +168,7 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
             </button>
 
             {/* Sidebar content in full screen */}
-            <div className="h-full w-full overflow-y-auto">
+            <div className="h-full w-full overflow-y-auto pb-20">
               <Sidebar
                 {...props}
                 onNavigateToAllProjects={() => handleNavigate(props.onNavigateToAllProjects)}

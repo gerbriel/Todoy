@@ -206,7 +206,7 @@ export default function Header({
               variant="outline"
               size="sm"
               onClick={() => setShowSearch(true)}
-              className="min-w-[120px] md:min-w-[200px]"
+              className="min-w-[150px] md:min-w-[250px] justify-start"
             >
               <MagnifyingGlass size={16} weight="bold" />
               <span className="ml-2">Search</span>
@@ -312,8 +312,8 @@ export default function Header({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
-                    <User size={16} weight="duotone" />
-                    {user.name}
+                    <User size={20} weight="duotone" />
+                    <span className="hidden md:inline">{user.name}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

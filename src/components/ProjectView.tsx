@@ -214,7 +214,7 @@ export default function ProjectView({
               <p className="text-sm md:text-base text-muted-foreground break-words">{project.description}</p>
             )}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="hidden md:flex flex-col sm:flex-row gap-2">
             {!project.archived && (
               <>
                 <Button variant="outline" onClick={() => setShowEditDialog(true)} className="w-full sm:w-auto text-sm md:text-base">

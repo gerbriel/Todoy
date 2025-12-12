@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X, Plus } from '@phosphor-icons/react'
+import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X, Plus, Copy } from '@phosphor-icons/react'
 import { NavigationView } from '@/App'
 import { cn } from '@/lib/utils'
 import Sidebar from './Sidebar'

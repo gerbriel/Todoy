@@ -7,7 +7,7 @@ import LoginView from './components/LoginView'
 import Sidebar from './components/Sidebar'
 import MobileBottomNav from './components/MobileBottomNav'
 import KanbanView from './components/KanbanView'
-import CalendarView from './components/CalendarView'
+import NewCalendarView from './components/NewCalendarView'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import ProjectsView from './components/ProjectsView'
@@ -549,7 +549,7 @@ function MainApp() {
                   onNavigateBack={handleNavigateToAllProjects}
                 />
               ) : (
-                <CalendarView
+                <NewCalendarView
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -589,7 +589,7 @@ function MainApp() {
                   onNavigateBack={activeProject ? () => handleNavigateToProject(activeProject.id) : handleNavigateToAllProjects}
                 />
               ) : (
-                <CalendarView
+                <NewCalendarView
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}

@@ -661,7 +661,7 @@ export default function Sidebar({
         isCollapsed ? "w-16" : "w-72",
         "md:block" // Always show on desktop
       )}>
-        <div className="p-2 md:p-4 border-b border-border">
+        <div className="p-2 md:p-4 border-b border-border hidden md:block">
           {!isCollapsed && (
             <>
               <div className="flex items-center gap-2 mb-4">

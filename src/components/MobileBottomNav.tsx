@@ -143,14 +143,14 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
         <>
           {/* Backdrop */}
           <div
-            className="md:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-300"
             onClick={closeSlide}
           />
           
           {/* Slide Panel */}
           <div
             className={cn(
-              "md:hidden fixed top-0 bottom-0 w-full bg-card z-50 shadow-2xl transition-transform duration-300 ease-out",
+              "md:hidden fixed top-0 bottom-0 w-4/5 max-w-sm bg-card z-50 shadow-2xl transition-transform duration-300 ease-out overflow-hidden",
               slideDirection === 'left' ? 'left-0' : 'right-0',
               slideView
                 ? 'translate-x-0'
@@ -164,11 +164,11 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
               onClick={closeSlide}
               className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
             >
-              <X size={24} />
+              <X size={24} weight="bold" />
             </button>
 
             {/* Sidebar content in full screen */}
-            <div className="h-full overflow-hidden">
+            <div className="h-full w-full overflow-y-auto">
               <Sidebar
                 {...props}
                 onNavigateToAllProjects={() => handleNavigate(props.onNavigateToAllProjects)}

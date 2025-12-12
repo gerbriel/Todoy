@@ -171,6 +171,7 @@ export default function CampaignsView({
                               "font-semibold text-foreground truncate cursor-text",
                               "hover:text-primary transition-colors"
                             )}
+                            onClick={(e) => e.stopPropagation()}
                             onDoubleClick={(e) => handleStartEditing(campaign.id, campaign.title, e)}
                           >
                             {campaign.title}

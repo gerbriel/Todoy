@@ -555,6 +555,7 @@ export default function ProjectView({
                           "text-base md:text-xl break-words cursor-text",
                           "hover:text-primary transition-colors"
                         )}
+                        onClick={(e) => e.stopPropagation()}
                         onDoubleClick={(e) => handleStartEditing(campaign.id, campaign.title, e)}
                       >
                         {campaign.title}

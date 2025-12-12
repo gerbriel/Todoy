@@ -473,6 +473,7 @@ export default function ProjectsView({
                           "text-base md:text-xl mt-2 break-words cursor-text",
                           project.completed && "line-through text-muted-foreground"
                         )}
+                        onClick={(e) => e.stopPropagation()}
                         onDoubleClick={(e) => handleStartEditing(project.id, project.title, e)}
                       >
                         {project.title}

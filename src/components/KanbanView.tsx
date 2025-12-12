@@ -308,6 +308,7 @@ export default function KanbanView({
                       "text-lg font-semibold text-foreground cursor-text",
                       "hover:text-primary transition-colors"
                     )}
+                    onClick={(e) => e.stopPropagation()}
                     onDoubleClick={(e) => handleStartEditing(campaign.id, campaign.title, e)}
                   >
                     {campaign.title}
@@ -405,6 +406,7 @@ export default function KanbanView({
                   "text-2xl font-bold text-foreground mb-2 cursor-text",
                   "hover:text-primary transition-colors"
                 )}
+                onClick={(e) => e.stopPropagation()}
                 onDoubleClick={(e) => handleStartEditing(activeCampaign.id, activeCampaign.title, e)}
               >
                 {activeCampaign.title}

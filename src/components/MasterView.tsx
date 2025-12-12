@@ -20,6 +20,7 @@ interface MasterViewProps {
   tasks: Task[]
   setTasks: (updater: (tasks: Task[]) => Task[]) => void
   lists: List[]
+  setLists: (updater: (lists: List[]) => List[]) => void
   labels: Label[]
   setLabels: (updater: (labels: Label[]) => Label[]) => void
   onNavigateToProject?: (projectId: string) => void
@@ -35,6 +36,7 @@ export default function MasterView({
   tasks,
   setTasks,
   lists,
+  setLists,
   labels,
   setLabels,
   onNavigateToProject,
@@ -442,6 +444,8 @@ export default function MasterView({
           project={editingProject}
           projects={projects}
           setProjects={setProjects}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
           open={!!editingProjectId}
           onOpenChange={(open) => {
             if (!open) setEditingProjectId(null)
@@ -456,6 +460,8 @@ export default function MasterView({
           setCampaigns={setCampaigns}
           projects={projects}
           lists={lists}
+          setLists={setLists}
+          setTasks={setTasks}
           open={!!editingCampaignId}
           onOpenChange={(open) => {
             if (!open) setEditingCampaignId(null)

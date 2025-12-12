@@ -471,6 +471,7 @@ function MainApp() {
               tasks={tasks || []}
               setTasks={setTasks}
               lists={lists || []}
+              setLists={setLists}
               labels={labels || []}
               setLabels={setLabels}
               onNavigateToProject={handleNavigateToProject}

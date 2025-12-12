@@ -246,9 +246,12 @@ export default function ProjectView({
       const duplicated = await campaignsService.duplicate(selectedCampaignId, newName, targetProjectId)
       setCampaigns(prev => [...prev, duplicated])
       
-      // Refetch lists and tasks for the new campaign
+      // Refetch lists and tasks for the new campaign to populate UI immediately
       const newLists = await listsService.getByCampaign(duplicated.id)
       const newTasks = await tasksService.getByCampaign(duplicated.id)
+      
+      setLists(prev => [...prev, ...newLists])
+      setTasks(prev => [...prev, ...newTasks])
       
       toast.success('Campaign duplicated')
       setShowDuplicateDialog(false)
@@ -568,6 +571,8 @@ export default function ProjectView({
           setCampaigns={setCampaigns}
           projects={projects}
           lists={lists}
+          setLists={setLists}
+          setTasks={setTasks}
           open={showEditCampaignDialog}
           onOpenChange={setShowEditCampaignDialog}
         />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Campaign, CampaignType, CampaignStage, Project, List } from '@/lib/types'
+import { Campaign, CampaignType, CampaignStage, Project, List, Task } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -10,6 +10,8 @@ import { toast } from 'sonner'
 import { Separator } from './ui/separator'
 import { Folder, Archive, DotsThree, ArrowsLeftRight, Copy } from '@phosphor-icons/react'
 import { campaignsService } from '@/services/campaigns.service'
+import { listsService } from '@/services/lists.service'
+import { tasksService } from '@/services/tasks.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +32,8 @@ interface CampaignEditDialogProps {
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   projects: Project[]
   lists: List[]
+  setLists?: (updater: (lists: List[]) => List[]) => void
+  setTasks?: (updater: (tasks: Task[]) => Task[]) => void
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -58,6 +62,8 @@ export default function CampaignEditDialog({
   setCampaigns,
   projects,
   lists,
+  setLists,
+  setTasks,
   open,
   onOpenChange,
 }: CampaignEditDialogProps) {
@@ -145,8 +151,19 @@ export default function CampaignEditDialog({
     try {
       const campaignName = newName || `${campaign.title} (Copy)`
       const duplicatedCampaign = await campaignsService.duplicate(campaign.id, campaignName, targetProjectId)
+      
       // Optimistically add to local state
       setCampaigns(prev => [...prev, duplicatedCampaign])
+      
+      // Refetch lists and tasks for the new campaign to populate UI immediately
+      if (setLists && setTasks) {
+        const newLists = await listsService.getByCampaign(duplicatedCampaign.id)
+        const newTasks = await tasksService.getByCampaign(duplicatedCampaign.id)
+        
+        setLists(prev => [...prev, ...newLists])
+        setTasks(prev => [...prev, ...newTasks])
+      }
+      
       toast.success('Campaign duplicated successfully')
       setShowDuplicateDialog(false)
       onOpenChange(false)

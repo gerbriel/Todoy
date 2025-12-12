@@ -446,16 +446,6 @@ export const campaignsService = {
               console.error('Error fetching tasks for list:', tasksError)
             }
 
-            // Debug logging
-            console.log(`[DUPLICATE DEBUG] List "${originalList.title}" has ${originalTasks?.length || 0} tasks`)
-            if (originalTasks && originalTasks.length > 0) {
-              console.log('[DUPLICATE DEBUG] Original tasks:', originalTasks.map(t => ({ 
-                id: t.id, 
-                title: t.title, 
-                updated_at: t.updated_at 
-              })))
-            }
-
             if (originalTasks && originalTasks.length > 0) {
               // Duplicate each task (without dates, comments, attachments, labels)
               const newTasks = originalTasks.map(task => ({

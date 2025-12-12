@@ -348,6 +348,9 @@ export const projectsService = {
    */
   async duplicate(projectId: string, newName: string): Promise<Project> {
     try {
+      // Add a small delay to ensure any recent database updates have been committed
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Get the original project
       const { data: originalProject, error: fetchError } = await supabase
         .from('projects')

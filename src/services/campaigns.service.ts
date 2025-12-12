@@ -336,6 +336,9 @@ export const campaignsService = {
     targetProjectId?: string
   ): Promise<Campaign> {
     try {
+      // Add a small delay to ensure any recent database updates have been committed
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Get the original campaign
       const originalCampaign = await this.getById(campaignId)
       if (!originalCampaign) {

@@ -145,7 +145,7 @@ export default function TaskCard({
           task.completed && 'opacity-60'
         )}
       >
-        <div className="flex items-start gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start gap-2 mb-2">
           <Checkbox
             checked={task.completed || false}
             onCheckedChange={handleToggleComplete}

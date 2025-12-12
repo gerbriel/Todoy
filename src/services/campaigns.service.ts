@@ -438,16 +438,21 @@ export const campaignsService = {
               // Duplicate each task (without dates, comments, attachments, labels)
               const newTasks = originalTasks.map(task => ({
                 title: task.title,
-                description: task.description,
+                description: task.description || '',
                 list_id: newList.id,
                 campaign_id: newCampaign.id,
-                project_id: projectId,
+                project_id: projectId || null,
+                org_id: orgId,
                 order: task.order,
                 completed: false,
                 // Explicitly exclude: due_date, start_date, assigned_to, labels, priority, comments, attachments
               }))
 
-              await supabase.from('tasks').insert(newTasks)
+              const { error: tasksError } = await supabase.from('tasks').insert(newTasks)
+              if (tasksError) {
+                console.error('Error inserting tasks:', tasksError)
+                // Continue with other lists even if tasks fail
+              }
             }
           }
         }

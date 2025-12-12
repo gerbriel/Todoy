@@ -337,7 +337,7 @@ export function CalendarGrid({
                       className="pointer-events-auto"
                       style={{
                         position: 'absolute',
-                        top: `${row * (120 / 6)}px`,
+                        top: `${row * 120}px`,
                         left: 0,
                         right: 0,
                         height: '120px'
@@ -367,7 +367,7 @@ export function CalendarGrid({
                     className="pointer-events-none"
                     style={{
                       position: 'absolute',
-                      top: `${segment.row * (120 / 6)}px`,
+                      top: `${segment.row * 120}px`,
                       left: `${(segment.startCol / 7) * 100}%`,
                       width: `${(segment.span / 7) * 100}%`,
                       height: '24px',

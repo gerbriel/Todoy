@@ -242,7 +242,7 @@ export default function TaskList({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex-shrink-0 w-80 bg-muted/30 border border-border rounded-lg p-4 transition-colors',
+        'flex-shrink-0 w-full md:w-80 bg-muted/30 border border-border rounded-lg p-4 transition-colors',
         isDragOver && 'border-accent bg-accent/10'
       )}
     >

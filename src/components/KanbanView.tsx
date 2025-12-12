@@ -271,7 +271,7 @@ export default function KanbanView({
                   </div>
                 )}
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-4">
+              <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
                 {campaignLists
                   .sort((a, b) => a.order - b.order)
                   .map(list => (
@@ -320,7 +320,7 @@ export default function KanbanView({
             </AlertDescription>
           </Alert>
         )}
-        <div className="flex gap-4 h-full overflow-x-auto pb-4">
+        <div className="flex flex-col md:flex-row gap-4 h-full md:overflow-x-auto pb-4">
           {displayLists
             .sort((a, b) => a.order - b.order)
             .map(list => (
@@ -352,11 +352,11 @@ export default function KanbanView({
               </div>
             ))}
           
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-full md:w-auto">
             <Button
               onClick={handleCreateList}
               variant="outline"
-              className="h-full min-h-[100px] whitespace-nowrap"
+              className="h-full min-h-[100px] w-full whitespace-nowrap"
             >
               <Plus size={16} weight="bold" />
               Add List

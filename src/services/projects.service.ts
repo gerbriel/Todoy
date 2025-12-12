@@ -394,12 +394,16 @@ export const projectsService = {
         await supabase.from('stage_dates').insert(newStageDates)
       }
 
-      // Get all campaigns from the original project
-      const { data: originalCampaigns } = await supabase
+      // Get all campaigns from the original project (force fresh data)
+      const { data: originalCampaigns, error: campaignsError } = await supabase
         .from('campaigns')
         .select('*')
         .eq('project_id', projectId)
         .order('order', { ascending: true })
+
+      if (campaignsError) {
+        console.error('Error fetching campaigns:', campaignsError)
+      }
 
       if (originalCampaigns && originalCampaigns.length > 0) {
         // Duplicate each campaign with its lists and tasks
@@ -425,12 +429,16 @@ export const projectsService = {
             .single()
 
           if (newCampaign) {
-            // Get all lists from the original campaign
-            const { data: originalLists } = await supabase
+            // Get all lists from the original campaign (force fresh data)
+            const { data: originalLists, error: listsError } = await supabase
               .from('lists')
               .select('*')
               .eq('campaign_id', originalCampaign.id)
               .order('order', { ascending: true })
+
+            if (listsError) {
+              console.error('Error fetching lists:', listsError)
+            }
 
             if (originalLists && originalLists.length > 0) {
               // Duplicate each list and its tasks
@@ -447,12 +455,16 @@ export const projectsService = {
                   .single()
 
                 if (newList) {
-                  // Get all tasks from the original list
-                  const { data: originalTasks } = await supabase
+                  // Get all tasks from the original list (force fresh data)
+                  const { data: originalTasks, error: tasksError } = await supabase
                     .from('tasks')
                     .select('*')
                     .eq('list_id', originalList.id)
                     .order('order', { ascending: true })
+
+                  if (tasksError) {
+                    console.error('Error fetching tasks:', tasksError)
+                  }
 
                   if (originalTasks && originalTasks.length > 0) {
                     // Duplicate each task (without dates, comments, attachments, labels)

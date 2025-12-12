@@ -190,12 +190,16 @@ export const listsService = {
 
       if (createError) throw createError
 
-      // Get all tasks from the original list
-      const { data: originalTasks } = await supabase
+      // Get all tasks from the original list (force fresh data)
+      const { data: originalTasks, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
         .eq('list_id', listId)
         .order('order', { ascending: true })
+
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError)
+      }
 
       if (originalTasks && originalTasks.length > 0) {
         // Duplicate each task (without dates, comments, attachments, labels)

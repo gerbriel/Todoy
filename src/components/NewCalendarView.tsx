@@ -133,14 +133,23 @@ export default function NewCalendarView({
     console.log('Resizing event:', eventId, newStartDate, newEndDate)
     
     const event = calendarEvents.find(e => e.id === eventId)
-    if (!event) return
+    if (!event) {
+      console.log('  -> Event not found!')
+      return
+    }
+    
+    console.log('  -> Event type:', event.type, 'metadata:', event.metadata)
     
     try {
       // Handle task resizes (just update due date since tasks don't have start dates)
       if (event.type === 'task' && event.metadata.taskId) {
+        console.log('  -> Updating task dueDate to:', newEndDate.toISOString())
+        
         await tasksService.update(event.metadata.taskId, {
           dueDate: newEndDate.toISOString()
         })
+        
+        console.log('  -> Task service update successful')
         
         setTasks(prevTasks => 
           prevTasks.map(t => 
@@ -215,9 +224,13 @@ export default function NewCalendarView({
       
       // Handle stage date resizes (for both campaigns and projects)
       if (event.type === 'stage' && event.metadata.stageId) {
+        console.log('  -> Resizing stage:', event.metadata.stageId)
+        
         if (event.metadata.campaignId) {
+          console.log('  -> Campaign stage')
           const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
           if (campaign?.stageDates) {
+            console.log('  -> Found campaign with stageDates')
             const updatedStageDates = campaign.stageDates.map(stage =>
               stage.id === event.metadata.stageId
                 ? { 
@@ -228,6 +241,7 @@ export default function NewCalendarView({
                 : stage
             )
             
+            console.log('  -> Updating campaign stageDates')
             await campaignsService.update(event.metadata.campaignId, {
               stageDates: updatedStageDates
             })
@@ -242,11 +256,16 @@ export default function NewCalendarView({
               )
             }
             
+            console.log('  -> Campaign stage dates updated successfully')
             toast.success('Stage dates updated')
+          } else {
+            console.log('  -> Campaign not found or no stageDates')
           }
         } else if (event.metadata.projectId) {
+          console.log('  -> Project stage')
           const project = projects.find(p => p.id === event.metadata.projectId)
           if (project?.stageDates) {
+            console.log('  -> Found project with stageDates')
             const updatedStageDates = project.stageDates.map(stage =>
               stage.id === event.metadata.stageId
                 ? { 
@@ -257,6 +276,7 @@ export default function NewCalendarView({
                 : stage
             )
             
+            console.log('  -> Updating project stageDates')
             await projectsService.update(event.metadata.projectId, {
               stageDates: updatedStageDates
             })
@@ -271,9 +291,16 @@ export default function NewCalendarView({
               )
             }
             
+            console.log('  -> Project stage dates updated successfully')
             toast.success('Stage dates updated')
+          } else {
+            console.log('  -> Project not found or no stageDates')
           }
+        } else {
+          console.log('  -> Stage has no campaignId or projectId!')
         }
+      } else {
+        console.log('  -> Event type not handled:', event.type)
       }
       
     } catch (error) {

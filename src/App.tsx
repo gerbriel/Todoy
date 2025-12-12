@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useAuth } from './contexts/AuthContext'
 import LoginView from './components/LoginView'
 import Sidebar from './components/Sidebar'
+import MobileBottomNav from './components/MobileBottomNav'
 import KanbanView from './components/KanbanView'
 import CalendarView from './components/CalendarView'
 import Header from './components/Header'
@@ -313,33 +314,63 @@ function MainApp() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar
-        projects={projects || []}
-        setProjects={setProjects}
-        campaigns={campaigns || []}
-        setCampaigns={setCampaigns}
-        lists={lists || []}
-        stageTemplates={stageTemplates || []}
-        tasks={tasks || []}
-        activeProjectId={activeProjectId}
-        activeCampaignId={activeCampaignId}
-        navigationView={navigationView}
-        organization={organization}
-        onNavigateToAllProjects={handleNavigateToAllProjects}
-        onNavigateToAllCampaigns={handleNavigateToAllCampaigns}
-        onNavigateToAllTasks={handleNavigateToAllTasks}
-        onNavigateToMaster={handleNavigateToMaster}
-        onNavigateToArchive={handleNavigateToArchive}
-        onNavigateToRecentlyCompleted={handleNavigateToRecentlyCompleted}
-        onNavigateToOrganization={handleNavigateToOrganization}
-        onNavigateToLabels={handleNavigateToLabels}
-        onNavigateToProject={handleNavigateToProject}
-        onNavigateToCampaign={handleNavigateToCampaign}
-        filters={filters}
-        setFilters={setFilters}
-      />
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar
+          projects={projects || []}
+          setProjects={setProjects}
+          campaigns={campaigns || []}
+          setCampaigns={setCampaigns}
+          lists={lists || []}
+          stageTemplates={stageTemplates || []}
+          tasks={tasks || []}
+          activeProjectId={activeProjectId}
+          activeCampaignId={activeCampaignId}
+          navigationView={navigationView}
+          organization={organization}
+          onNavigateToAllProjects={handleNavigateToAllProjects}
+          onNavigateToAllCampaigns={handleNavigateToAllCampaigns}
+          onNavigateToAllTasks={handleNavigateToAllTasks}
+          onNavigateToMaster={handleNavigateToMaster}
+          onNavigateToArchive={handleNavigateToArchive}
+          onNavigateToRecentlyCompleted={handleNavigateToRecentlyCompleted}
+          onNavigateToOrganization={handleNavigateToOrganization}
+          onNavigateToLabels={handleNavigateToLabels}
+          onNavigateToProject={handleNavigateToProject}
+          onNavigateToCampaign={handleNavigateToCampaign}
+          filters={filters}
+          setFilters={setFilters}
+        />
+      </div>
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pb-0 md:pb-0">
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav
+          projects={projects || []}
+          setProjects={setProjects}
+          campaigns={campaigns || []}
+          setCampaigns={setCampaigns}
+          lists={lists || []}
+          stageTemplates={stageTemplates || []}
+          tasks={tasks || []}
+          activeProjectId={activeProjectId}
+          activeCampaignId={activeCampaignId}
+          navigationView={navigationView}
+          organization={organization}
+          onNavigateToAllProjects={handleNavigateToAllProjects}
+          onNavigateToAllCampaigns={handleNavigateToAllCampaigns}
+          onNavigateToAllTasks={handleNavigateToAllTasks}
+          onNavigateToMaster={handleNavigateToMaster}
+          onNavigateToArchive={handleNavigateToArchive}
+          onNavigateToRecentlyCompleted={handleNavigateToRecentlyCompleted}
+          onNavigateToOrganization={handleNavigateToOrganization}
+          onNavigateToLabels={handleNavigateToLabels}
+          onNavigateToProject={handleNavigateToProject}
+          onNavigateToCampaign={handleNavigateToCampaign}
+          filters={filters}
+          setFilters={setFilters}
+        />
+        
         <Header
           navigationView={navigationView}
           activeProject={navigationView === 'campaign' ? campaignProject : (activeProject || undefined)}
@@ -366,7 +397,7 @@ function MainApp() {
           setTasks={setTasks}
         />
         
-        <main className="flex-1 overflow-hidden relative">
+        <main className="flex-1 overflow-hidden relative pb-16 md:pb-0">
           {navigationView === 'all-projects' && (
             <ProjectsView
               projects={projects || []}

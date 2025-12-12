@@ -461,8 +461,6 @@ export const projectsService = {
                       description: task.description || '',
                       list_id: newList.id,
                       campaign_id: newCampaign.id,
-                      project_id: newProject.id,
-                      org_id: originalProject.org_id,
                       order: task.order,
                       completed: false,
                       // Explicitly exclude: due_date, start_date, assigned_to, labels, priority, comments, attachments

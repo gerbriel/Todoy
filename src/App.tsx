@@ -559,6 +559,7 @@ function MainApp() {
                   activeCampaignId={null}
                   filters={{...filters, projectId: activeProjectId}}
                   projects={projects || []}
+                  setProjects={setProjects}
                   users={users || []}
                   viewLevel="project"
                   onCampaignClick={handleNavigateToCampaign}
@@ -599,6 +600,7 @@ function MainApp() {
                   activeCampaignId={activeCampaignId}
                   filters={filters}
                   projects={projects || []}
+                  setProjects={setProjects}
                   users={users || []}
                   viewLevel="campaign"
                   onCampaignClick={handleNavigateToCampaign}

@@ -6,7 +6,11 @@ import { convertToCalendarEvents } from './Calendar/converters'
 import { differenceInDays, addDays } from 'date-fns'
 import { toast } from 'sonner'
 import { tasksService } from '@/services/tasks.service'
+import { campaignsService } from '@/services/campaigns.service'
+import { projectsService } from '@/services/projects.service'
 import TaskDetailDialog from './TaskDetailDialog'
+import CampaignEditDialog from './CampaignEditDialog'
+import ProjectEditDialog from './ProjectEditDialog'
 
 interface NewCalendarViewProps {
   campaigns: Campaign[]
@@ -18,6 +22,7 @@ interface NewCalendarViewProps {
   activeCampaignId: string | null
   filters: FilterState
   projects?: Project[]
+  setProjects?: (updater: (projects: Project[]) => Project[]) => void
   users?: User[]
   viewLevel?: 'campaign' | 'project' | 'all'
   onCampaignClick?: (campaignId: string) => void
@@ -37,6 +42,7 @@ export default function NewCalendarView({
   activeCampaignId,
   filters,
   projects = [],
+  setProjects,
   users = [],
   viewLevel = 'campaign',
   onCampaignClick,
@@ -46,6 +52,8 @@ export default function NewCalendarView({
   onNavigateBack,
 }: NewCalendarViewProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   
   // Convert data to calendar events
@@ -72,14 +80,14 @@ export default function NewCalendarView({
       setSelectedTaskId(event.metadata.taskId)
     }
     
-    // If it's a campaign, navigate to campaign
-    if (event.type === 'campaign' && event.metadata.campaignId && onCampaignClick) {
-      onCampaignClick(event.metadata.campaignId)
+    // If it's a campaign or stage with campaignId, open campaign dialog
+    if ((event.type === 'campaign' || event.type === 'stage') && event.metadata.campaignId) {
+      setSelectedCampaignId(event.metadata.campaignId)
     }
     
-    // If it's a project, navigate to project
-    if (event.type === 'project' && event.metadata.projectId && onProjectClick) {
-      onProjectClick(event.metadata.projectId)
+    // If it's a project or project stage, open project dialog
+    if (event.type === 'project' && event.metadata.projectId) {
+      setSelectedProjectId(event.metadata.projectId)
     }
   }
   
@@ -128,7 +136,7 @@ export default function NewCalendarView({
     if (!event) return
     
     try {
-      // Handle task resizes (just update due date)
+      // Handle task resizes (just update due date since tasks don't have start dates)
       if (event.type === 'task' && event.metadata.taskId) {
         await tasksService.update(event.metadata.taskId, {
           dueDate: newEndDate.toISOString()
@@ -145,7 +153,128 @@ export default function NewCalendarView({
         toast.success('Task date updated')
       }
       
-      // TODO: Handle campaign and project resizes
+      // Handle campaign phase resizes
+      if (event.type === 'campaign' && event.metadata.campaignId) {
+        const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
+        if (!campaign) return
+        
+        const updates: Partial<Campaign> = {}
+        
+        // Determine which phase based on event ID
+        if (eventId.includes('-planning-')) {
+          updates.planningStartDate = newStartDate.toISOString()
+          updates.launchDate = newEndDate.toISOString()
+        } else if (eventId.includes('-active-')) {
+          updates.launchDate = newStartDate.toISOString()
+          updates.endDate = newEndDate.toISOString()
+        } else if (eventId.includes('-followup-')) {
+          updates.endDate = newStartDate.toISOString()
+          updates.followUpDate = newEndDate.toISOString()
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await campaignsService.update(event.metadata.campaignId, updates)
+          
+          if (setCampaigns) {
+            setCampaigns(prevCampaigns =>
+              prevCampaigns.map(c =>
+                c.id === event.metadata.campaignId
+                  ? { ...c, ...updates }
+                  : c
+              )
+            )
+          }
+          
+          toast.success('Campaign dates updated')
+        }
+      }
+      
+      // Handle project resizes
+      if (event.type === 'project' && event.metadata.projectId) {
+        await projectsService.update(event.metadata.projectId, {
+          startDate: newStartDate.toISOString(),
+          targetEndDate: newEndDate.toISOString()
+        })
+        
+        if (setProjects) {
+          setProjects(prevProjects =>
+            prevProjects.map(p =>
+              p.id === event.metadata.projectId
+                ? { 
+                    ...p, 
+                    startDate: newStartDate.toISOString(),
+                    targetEndDate: newEndDate.toISOString()
+                  }
+                : p
+            )
+          )
+        }
+        
+        toast.success('Project dates updated')
+      }
+      
+      // Handle stage date resizes (for both campaigns and projects)
+      if (event.type === 'stage' && event.metadata.stageId) {
+        if (event.metadata.campaignId) {
+          const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
+          if (campaign?.stageDates) {
+            const updatedStageDates = campaign.stageDates.map(stage =>
+              stage.id === event.metadata.stageId
+                ? { 
+                    ...stage, 
+                    startDate: newStartDate.toISOString(),
+                    endDate: newEndDate.toISOString()
+                  }
+                : stage
+            )
+            
+            await campaignsService.update(event.metadata.campaignId, {
+              stageDates: updatedStageDates
+            })
+            
+            if (setCampaigns) {
+              setCampaigns(prevCampaigns =>
+                prevCampaigns.map(c =>
+                  c.id === event.metadata.campaignId
+                    ? { ...c, stageDates: updatedStageDates }
+                    : c
+                )
+              )
+            }
+            
+            toast.success('Stage dates updated')
+          }
+        } else if (event.metadata.projectId) {
+          const project = projects.find(p => p.id === event.metadata.projectId)
+          if (project?.stageDates) {
+            const updatedStageDates = project.stageDates.map(stage =>
+              stage.id === event.metadata.stageId
+                ? { 
+                    ...stage, 
+                    startDate: newStartDate.toISOString(),
+                    endDate: newEndDate.toISOString()
+                  }
+                : stage
+            )
+            
+            await projectsService.update(event.metadata.projectId, {
+              stageDates: updatedStageDates
+            })
+            
+            if (setProjects) {
+              setProjects(prevProjects =>
+                prevProjects.map(p =>
+                  p.id === event.metadata.projectId
+                    ? { ...p, stageDates: updatedStageDates }
+                    : p
+                )
+              )
+            }
+            
+            toast.success('Stage dates updated')
+          }
+        }
+      }
       
     } catch (error) {
       console.error('Error resizing event:', error)
@@ -159,6 +288,8 @@ export default function NewCalendarView({
   }
   
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : null
+  const selectedCampaign = selectedCampaignId ? campaigns.find(c => c.id === selectedCampaignId) : null
+  const selectedProject = selectedProjectId ? projects.find(p => p.id === selectedProjectId) : null
   
   return (
     <>
@@ -183,6 +314,32 @@ export default function NewCalendarView({
           open={!!selectedTaskId}
           onOpenChange={(open) => !open && setSelectedTaskId(null)}
           orgId={orgId}
+        />
+      )}
+      
+      {selectedCampaign && setCampaigns && (
+        <CampaignEditDialog
+          campaign={selectedCampaign}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
+          projects={projects}
+          lists={lists}
+          setLists={undefined}
+          setTasks={setTasks}
+          open={!!selectedCampaignId}
+          onOpenChange={(open) => !open && setSelectedCampaignId(null)}
+        />
+      )}
+      
+      {selectedProject && setProjects && setCampaigns && (
+        <ProjectEditDialog
+          project={selectedProject}
+          projects={projects}
+          setProjects={setProjects}
+          campaigns={campaigns}
+          setCampaigns={setCampaigns}
+          open={!!selectedProjectId}
+          onOpenChange={(open) => !open && setSelectedProjectId(null)}
         />
       )}
     </>

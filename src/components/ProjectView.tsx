@@ -458,9 +458,10 @@ export default function ProjectView({
                     setDraggedCampaignId(null)
                     setDragOverCampaignId(null)
                   }}
+                  onClick={() => onNavigateToCampaign(campaign.id)}
                   className={cn(
                     "hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
-                    "cursor-move",
+                    "cursor-pointer",
                     draggedCampaignId === campaign.id && "opacity-50",
                     dragOverCampaignId === campaign.id && "border-2 border-accent"
                   )}
@@ -565,10 +566,7 @@ export default function ProjectView({
                       </CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent 
-                    className="cursor-pointer"
-                    onClick={() => onNavigateToCampaign(campaign.id)}
-                  >
+                  <CardContent>
                     <div className="space-y-2 md:space-y-3">
                       {campaign.launchDate && (
                         <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">

@@ -66,6 +66,8 @@ export default function ProjectView({
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
+  const [draggedCampaignId, setDraggedCampaignId] = useState<string | null>(null)
+  const [dragOverCampaignId, setDragOverCampaignId] = useState<string | null>(null)
 
   const handleStartEditing = (campaignId: string, currentTitle: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -289,6 +291,70 @@ export default function ProjectView({
     }
   }
 
+  const handleCampaignDragStart = (campaignId: string) => {
+    setDraggedCampaignId(campaignId)
+  }
+
+  const handleCampaignDragOver = (e: React.DragEvent, campaignId: string) => {
+    e.preventDefault()
+    if (draggedCampaignId && draggedCampaignId !== campaignId) {
+      setDragOverCampaignId(campaignId)
+    }
+  }
+
+  const handleCampaignDragLeave = () => {
+    setDragOverCampaignId(null)
+  }
+
+  const handleCampaignDrop = async (e: React.DragEvent, targetCampaignId: string) => {
+    e.preventDefault()
+    
+    if (!draggedCampaignId || draggedCampaignId === targetCampaignId) {
+      setDraggedCampaignId(null)
+      setDragOverCampaignId(null)
+      return
+    }
+
+    try {
+      const draggedIndex = sortedCampaigns.findIndex(c => c.id === draggedCampaignId)
+      const targetIndex = sortedCampaigns.findIndex(c => c.id === targetCampaignId)
+
+      if (draggedIndex === -1 || targetIndex === -1) return
+
+      // Reorder the campaigns array
+      const reorderedCampaigns = [...sortedCampaigns]
+      const [draggedCampaign] = reorderedCampaigns.splice(draggedIndex, 1)
+      reorderedCampaigns.splice(targetIndex, 0, draggedCampaign)
+
+      // Update order property for all affected campaigns
+      const updatedCampaigns = reorderedCampaigns.map((campaign, index) => ({
+        ...campaign,
+        order: index
+      }))
+
+      // Optimistically update UI
+      setCampaigns(prev => {
+        const otherCampaigns = prev.filter(c => c.projectId !== project.id)
+        return [...updatedCampaigns, ...otherCampaigns]
+      })
+
+      // Update in database
+      await Promise.all(
+        updatedCampaigns.map(campaign =>
+          campaignsService.update(campaign.id, { order: campaign.order })
+        )
+      )
+
+      toast.success('Campaigns reordered')
+    } catch (error) {
+      console.error('Error reordering campaigns:', error)
+      toast.error('Failed to reorder campaigns')
+    } finally {
+      setDraggedCampaignId(null)
+      setDragOverCampaignId(null)
+    }
+  }
+
   const getCampaignStats = (campaignId: string) => {
     const campaignTasks = tasks.filter(task => task.campaignId === campaignId)
     return {
@@ -379,7 +445,21 @@ export default function ProjectView({
               return (
                 <Card
                   key={campaign.id}
-                  className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
+                  draggable
+                  onDragStart={() => handleCampaignDragStart(campaign.id)}
+                  onDragOver={(e) => handleCampaignDragOver(e, campaign.id)}
+                  onDragLeave={handleCampaignDragLeave}
+                  onDrop={(e) => handleCampaignDrop(e, campaign.id)}
+                  onDragEnd={() => {
+                    setDraggedCampaignId(null)
+                    setDragOverCampaignId(null)
+                  }}
+                  className={cn(
+                    "hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
+                    "cursor-move",
+                    draggedCampaignId === campaign.id && "opacity-50",
+                    dragOverCampaignId === campaign.id && "border-2 border-accent"
+                  )}
                 >
                   {/* Action buttons - Top right corner */}
                   <div className="absolute top-3 right-3 flex gap-1 z-10">

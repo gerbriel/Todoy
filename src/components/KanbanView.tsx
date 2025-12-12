@@ -330,7 +330,7 @@ export default function KanbanView({
                   </div>
                 )}
               </div>
-              <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
+              <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto md:overflow-y-visible pb-4 md:snap-x md:snap-mandatory">
                 {campaignLists
                   .sort((a, b) => a.order - b.order)
                   .map(list => (
@@ -379,7 +379,7 @@ export default function KanbanView({
             </AlertDescription>
           </Alert>
         )}
-        <div className="flex flex-col md:flex-row gap-4 h-full md:overflow-x-auto pb-4">
+        <div className="flex flex-col md:flex-row gap-4 h-full md:overflow-x-auto md:overflow-y-visible pb-4 md:snap-x md:snap-mandatory">
           {displayLists
             .sort((a, b) => a.order - b.order)
             .map(list => (

@@ -60,6 +60,8 @@ export default function ProjectsView({
   const [editingTitle, setEditingTitle] = useState('')
   const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null)
   const [clickedProjectId, setClickedProjectId] = useState<string | null>(null)
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null)
+  const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null)
 
   const handleCardClick = (projectId: string) => {
     // If we're already tracking a click timeout, clear it (this is a double-click)
@@ -232,6 +234,71 @@ export default function ProjectsView({
     setEditingTitle('')
   }
 
+  const handleDragStart = (projectId: string) => {
+    setDraggedProjectId(projectId)
+  }
+
+  const handleDragOver = (e: React.DragEvent, projectId: string) => {
+    e.preventDefault()
+    if (draggedProjectId && draggedProjectId !== projectId) {
+      setDragOverProjectId(projectId)
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverProjectId(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, targetProjectId: string) => {
+    e.preventDefault()
+    
+    if (!draggedProjectId || draggedProjectId === targetProjectId) {
+      setDraggedProjectId(null)
+      setDragOverProjectId(null)
+      return
+    }
+
+    try {
+      const activeProjects = sortedProjects.filter(p => !p.archived && !p.completed)
+      const draggedIndex = activeProjects.findIndex(p => p.id === draggedProjectId)
+      const targetIndex = activeProjects.findIndex(p => p.id === targetProjectId)
+
+      if (draggedIndex === -1 || targetIndex === -1) return
+
+      // Reorder the projects array
+      const reorderedProjects = [...activeProjects]
+      const [draggedProject] = reorderedProjects.splice(draggedIndex, 1)
+      reorderedProjects.splice(targetIndex, 0, draggedProject)
+
+      // Update order property for all affected projects
+      const updatedProjects = reorderedProjects.map((project, index) => ({
+        ...project,
+        order: index
+      }))
+
+      // Optimistically update UI
+      setProjects(prev => {
+        const otherProjects = prev.filter(p => p.archived || p.completed)
+        return [...updatedProjects, ...otherProjects]
+      })
+
+      // Update in database
+      await Promise.all(
+        updatedProjects.map(project =>
+          projectsService.update(project.id, { order: project.order })
+        )
+      )
+
+      toast.success('Projects reordered')
+    } catch (error) {
+      console.error('Error reordering projects:', error)
+      toast.error('Failed to reorder projects')
+    } finally {
+      setDraggedProjectId(null)
+      setDragOverProjectId(null)
+    }
+  }
+
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) {
       toast.error('Please enter a project title')
@@ -294,9 +361,20 @@ export default function ProjectsView({
               return (
                 <Card
                   key={project.id}
+                  draggable
+                  onDragStart={() => handleDragStart(project.id)}
+                  onDragOver={(e) => handleDragOver(e, project.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, project.id)}
+                  onDragEnd={() => {
+                    setDraggedProjectId(null)
+                    setDragOverProjectId(null)
+                  }}
                   className={cn(
-                    "hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
-                    project.completed && "opacity-60"
+                    "hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative cursor-move",
+                    project.completed && "opacity-60",
+                    draggedProjectId === project.id && "opacity-50",
+                    dragOverProjectId === project.id && "border-2 border-accent"
                   )}
                 >
                   {/* Action buttons - Top right corner */}

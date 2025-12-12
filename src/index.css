@@ -242,3 +242,31 @@ html.beggars-cant-be-choosers [data-slot="popover-content"] {
   --radius-2xl: calc(var(--radius) * 3);
   --radius-full: 9999px;
 }
+/* Horizontal scrolling for Kanban view */
+@media (min-width: 768px) {
+  .md\:overflow-x-auto {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  
+  .md\:overflow-x-auto::-webkit-scrollbar {
+    height: 12px;
+  }
+  
+  .md\:overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: var(--radius);
+  }
+  
+  .md\:overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: var(--radius);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  .md\:overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+}

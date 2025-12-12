@@ -8,7 +8,7 @@ interface EventBarProps {
   segment: EventSegment
   layer: number
   onEventClick: (event: CalendarEvent, e: React.MouseEvent) => void
-  onDragStart: (event: CalendarEvent, e: React.DragEvent) => void
+  onDragStart: (event: CalendarEvent, e: React.MouseEvent) => void
   onResizeStart: (event: CalendarEvent, handle: 'start' | 'end', e: React.MouseEvent) => void
   isDragging?: boolean
   isResizing?: boolean
@@ -24,6 +24,8 @@ export function EventBar({
   isResizing = false
 }: EventBarProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isMouseDown, setIsMouseDown] = useState(false)
+  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
   const eventBarRef = useRef<HTMLDivElement>(null)
   const { event, isStart, isEnd, startCol, span } = segment
   
@@ -45,22 +47,65 @@ export function EventBar({
   const showFullTitle = isStart || (isEnd && span > 1)
   const showHandle = isStart || isEnd
   
+  // Handle mouse down on the event bar (for dragging)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Ignore if clicking on resize handle
+    if ((e.target as HTMLElement).hasAttribute('data-resize-handle')) {
+      return
+    }
+    
+    setIsMouseDown(true)
+    setMouseDownPos({ x: e.clientX, y: e.clientY })
+    
+    // Start drag after a small movement threshold
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (mouseDownPos) {
+        const dx = moveEvent.clientX - mouseDownPos.x
+        const dy = moveEvent.clientY - mouseDownPos.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        
+        // If moved more than 5px, start dragging
+        if (distance > 5) {
+          setIsMouseDown(false)
+          setMouseDownPos(null)
+          onDragStart(event, e)
+          document.removeEventListener('mousemove', handleMouseMove)
+          document.removeEventListener('mouseup', handleMouseUp)
+        }
+      }
+    }
+    
+    const handleMouseUp = (upEvent: MouseEvent) => {
+      setIsMouseDown(false)
+      setMouseDownPos(null)
+      
+      // If no significant movement, treat as click
+      if (mouseDownPos) {
+        const dx = upEvent.clientX - mouseDownPos.x
+        const dy = upEvent.clientY - mouseDownPos.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        
+        if (distance <= 5) {
+          onEventClick(event, e)
+        }
+      }
+      
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+  
   return (
     <div
       ref={eventBarRef}
-      draggable
-      onDragStart={(e) => {
-        e.stopPropagation()
-        onDragStart(event, e)
-      }}
-      onClick={(e) => {
-        e.stopPropagation()
-        onEventClick(event, e)
-      }}
+      onMouseDown={handleMouseDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'absolute h-6 px-2 py-1 cursor-move select-none',
+        'absolute h-6 px-2 py-1 cursor-pointer select-none',
         'transition-all duration-150',
         'flex items-center gap-1',
         'border-t-2 border-b-2',
@@ -86,6 +131,7 @@ export function EventBar({
       {/* Start resize handle */}
       {isStart && showHandle && (
         <div
+          data-resize-handle
           className={cn(
             'absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
             'hover:bg-current hover:opacity-30 active:opacity-50',
@@ -96,8 +142,6 @@ export function EventBar({
             e.preventDefault()
             onResizeStart(event, 'start', e)
           }}
-          onClick={(e) => e.stopPropagation()}
-          draggable={false}
           title="Drag to change start date"
         />
       )}
@@ -121,6 +165,7 @@ export function EventBar({
       {/* End resize handle */}
       {isEnd && showHandle && (
         <div
+          data-resize-handle
           className={cn(
             'absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
             'hover:bg-current hover:opacity-30 active:opacity-50',
@@ -131,8 +176,6 @@ export function EventBar({
             e.preventDefault()
             onResizeStart(event, 'end', e)
           }}
-          onClick={(e) => e.stopPropagation()}
-          draggable={false}
           title="Drag to change end date"
         />
       )}

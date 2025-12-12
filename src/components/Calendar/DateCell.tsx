@@ -53,6 +53,7 @@ export function DateCell({
       <div
         ref={cellRef}
         data-calendar-cell
+        data-date={date.toISOString()}
         className={cn(
           'relative min-h-[120px] border-r border-b border-border p-2',
           'hover:bg-accent/5 transition-colors cursor-pointer',

@@ -49,6 +49,7 @@ export function CalendarGrid({
     originalEndDate: null
   })
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null)
   const [resizeStartX, setResizeStartX] = useState<number | null>(null)
   const [resizeCellWidth, setResizeCellWidth] = useState<number>(0)
   
@@ -101,8 +102,7 @@ export function CalendarGrid({
   // Organize segments by row and layer
   const segmentsByRow = organizeSegmentsByRow(allSegments)
   
-  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
-    e.dataTransfer.effectAllowed = 'move'
+  const handleDragStart = (event: CalendarEvent, e: React.MouseEvent) => {
     setDragState({
       eventId: event.id,
       isDragging: true,
@@ -113,6 +113,47 @@ export function CalendarGrid({
       originalStartDate: event.startDate,
       originalEndDate: event.endDate
     })
+    setDragStartPos({ x: e.clientX, y: e.clientY })
+    
+    // Add global mouse move and mouse up listeners
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      // Find which date cell we're over
+      const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY)
+      const dateCell = elements.find(el => el.hasAttribute('data-calendar-cell'))
+      
+      if (dateCell) {
+        const dateStr = dateCell.getAttribute('data-date')
+        if (dateStr) {
+          const date = new Date(dateStr)
+          setDragOverDate(date)
+        }
+      }
+    }
+    
+    const handleMouseUp = () => {
+      if (dragState.isDragging && dragState.eventId && dragOverDate) {
+        onEventMove(dragState.eventId, dragOverDate)
+      }
+      
+      setDragState({
+        eventId: null,
+        isDragging: false,
+        isResizing: false,
+        resizeHandle: null,
+        startDate: null,
+        endDate: null,
+        originalStartDate: null,
+        originalEndDate: null
+      })
+      setDragOverDate(null)
+      setDragStartPos(null)
+      
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
   }
   
   const handleDragOver = (date: Date, e: React.DragEvent) => {

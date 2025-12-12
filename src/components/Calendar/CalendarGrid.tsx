@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -7,7 +7,11 @@ import {
   eachDayOfInterval,
   addMonths,
   subMonths,
-  format
+  format,
+  differenceInDays,
+  addDays,
+  startOfDay,
+  isSameDay
 } from 'date-fns'
 import { Button } from '../ui/button'
 import { CaretLeft, CaretRight } from '@phosphor-icons/react'
@@ -45,6 +49,22 @@ export function CalendarGrid({
     originalEndDate: null
   })
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
+  const [resizeStartX, setResizeStartX] = useState<number | null>(null)
+  const [resizeCellWidth, setResizeCellWidth] = useState<number>(0)
+  
+  // Store cell width for resize calculations
+  useEffect(() => {
+    const updateCellWidth = () => {
+      const firstCell = document.querySelector('[data-calendar-cell]')
+      if (firstCell) {
+        setResizeCellWidth(firstCell.getBoundingClientRect().width)
+      }
+    }
+    
+    updateCellWidth()
+    window.addEventListener('resize', updateCellWidth)
+    return () => window.removeEventListener('resize', updateCellWidth)
+  }, [])
   
   // Calculate calendar grid (always 6 weeks for consistency)
   const monthStart = startOfMonth(currentDate)
@@ -63,6 +83,20 @@ export function CalendarGrid({
   const allSegments = events.flatMap(event => 
     calculateEventSegments(event, calendarStart, calendarEnd)
   )
+  
+  // If resizing, create a preview event with adjusted dates
+  let resizePreviewSegments: ReturnType<typeof calculateEventSegments> = []
+  if (dragState.isResizing && dragState.eventId && dragState.startDate && dragState.endDate) {
+    const originalEvent = events.find(e => e.id === dragState.eventId)
+    if (originalEvent) {
+      const previewEvent: CalendarEvent = {
+        ...originalEvent,
+        startDate: dragState.startDate,
+        endDate: dragState.endDate
+      }
+      resizePreviewSegments = calculateEventSegments(previewEvent, calendarStart, calendarEnd)
+    }
+  }
   
   // Organize segments by row and layer
   const segmentsByRow = organizeSegmentsByRow(allSegments)
@@ -106,6 +140,8 @@ export function CalendarGrid({
   
   const handleResizeStart = (event: CalendarEvent, handle: 'start' | 'end', e: React.MouseEvent) => {
     e.stopPropagation()
+    e.preventDefault()
+    
     setDragState({
       eventId: event.id,
       isDragging: false,
@@ -116,7 +152,71 @@ export function CalendarGrid({
       originalStartDate: event.startDate,
       originalEndDate: event.endDate
     })
-    // TODO: Add mouse move listeners for resize
+    
+    setResizeStartX(e.clientX)
+    
+    // Add global mouse move and mouse up listeners
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!resizeCellWidth) return
+      
+      const deltaX = moveEvent.clientX - e.clientX
+      const daysDelta = Math.round(deltaX / resizeCellWidth)
+      
+      if (daysDelta === 0) return
+      
+      setDragState(prev => {
+        if (!prev.originalStartDate || !prev.originalEndDate) return prev
+        
+        let newStartDate = prev.originalStartDate
+        let newEndDate = prev.originalEndDate
+        
+        if (handle === 'start') {
+          newStartDate = startOfDay(addDays(prev.originalStartDate, daysDelta))
+          // Prevent start from going past end
+          if (newStartDate >= prev.originalEndDate) {
+            newStartDate = startOfDay(addDays(prev.originalEndDate, -1))
+          }
+        } else {
+          newEndDate = startOfDay(addDays(prev.originalEndDate, daysDelta))
+          // Prevent end from going before start
+          if (newEndDate <= prev.originalStartDate) {
+            newEndDate = startOfDay(addDays(prev.originalStartDate, 1))
+          }
+        }
+        
+        return {
+          ...prev,
+          startDate: newStartDate,
+          endDate: newEndDate
+        }
+      })
+    }
+    
+    const handleMouseUp = () => {
+      setDragState(prev => {
+        if (prev.isResizing && prev.eventId && prev.startDate && prev.endDate) {
+          onEventResize(prev.eventId, prev.startDate, prev.endDate)
+        }
+        
+        return {
+          eventId: null,
+          isDragging: false,
+          isResizing: false,
+          resizeHandle: null,
+          startDate: null,
+          endDate: null,
+          originalStartDate: null,
+          originalEndDate: null
+        }
+      })
+      setResizeStartX(null)
+      
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
   }
   
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1))
@@ -174,6 +274,7 @@ export function CalendarGrid({
                 onEventClick={onEventClick}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                data-calendar-cell
               />
             ))}
           </div>
@@ -182,28 +283,64 @@ export function CalendarGrid({
           <div className="absolute inset-0 pointer-events-none">
             {Array.from(segmentsByRow.entries()).map(([row, layers]) => 
               layers.map((layer, layerIndex) => 
-                layer.map(segment => (
+                layer.map(segment => {
+                  const isDraggingThis = dragState.isDragging && dragState.eventId === segment.event.id
+                  const isResizingThis = dragState.isResizing && dragState.eventId === segment.event.id
+                  
+                  // Don't render original if we're showing preview
+                  if (isResizingThis) return null
+                  
+                  return (
+                    <div
+                      key={`${segment.event.id}-${segment.row}-${segment.startCol}`}
+                      className="pointer-events-auto"
+                      style={{
+                        position: 'absolute',
+                        top: `${row * (120 / 6)}px`,
+                        left: 0,
+                        right: 0,
+                        height: '120px'
+                      }}
+                    >
+                      <EventBar
+                        segment={segment}
+                        layer={layerIndex}
+                        onEventClick={onEventClick}
+                        onDragStart={handleDragStart}
+                        onResizeStart={handleResizeStart}
+                        isDragging={isDraggingThis}
+                        isResizing={isResizingThis}
+                      />
+                    </div>
+                  )
+                })
+              )
+            )}
+            
+            {/* Resize preview overlay */}
+            {dragState.isResizing && resizePreviewSegments.length > 0 && (
+              <>
+                {resizePreviewSegments.map((segment, index) => (
                   <div
-                    key={`${segment.event.id}-${segment.row}-${segment.startCol}`}
-                    className="pointer-events-auto"
+                    key={`preview-${index}`}
+                    className="pointer-events-none"
                     style={{
                       position: 'absolute',
-                      top: `${row * (120 / 6)}px`, // Distribute across 6 weeks
-                      left: 0,
-                      right: 0,
-                      height: '120px'
+                      top: `${segment.row * (120 / 6)}px`,
+                      left: `${(segment.startCol / 7) * 100}%`,
+                      width: `${(segment.span / 7) * 100}%`,
+                      height: '24px',
+                      marginTop: '2.5rem',
+                      backgroundColor: `${events.find(e => e.id === dragState.eventId)?.color}40`,
+                      border: `2px dashed ${events.find(e => e.id === dragState.eventId)?.color}`,
+                      borderRadius: segment.isStart && segment.isEnd ? '0.375rem' : 
+                                   segment.isStart ? '0.375rem 0 0 0.375rem' :
+                                   segment.isEnd ? '0 0.375rem 0.375rem 0' : '0',
+                      zIndex: 50
                     }}
-                  >
-                    <EventBar
-                      segment={segment}
-                      layer={layerIndex}
-                      onEventClick={onEventClick}
-                      onDragStart={handleDragStart}
-                      onResizeStart={handleResizeStart}
-                    />
-                  </div>
-                ))
-              )
+                  />
+                ))}
+              </>
             )}
           </div>
         </div>

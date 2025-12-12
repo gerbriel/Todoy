@@ -2,6 +2,7 @@ import { format, isSameDay, isSameMonth } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { CalendarEvent } from './types'
 import { getEventsForDate } from './utils'
+import { useState } from 'react'
 
 interface DateCellProps {
   date: Date
@@ -13,6 +14,7 @@ interface DateCellProps {
   onDragOver: (date: Date, e: React.DragEvent) => void
   onDrop: (date: Date, e: React.DragEvent) => void
   maxVisibleEvents?: number
+  'data-calendar-cell'?: boolean
 }
 
 export function DateCell({
@@ -26,6 +28,7 @@ export function DateCell({
   onDrop,
   maxVisibleEvents = 3
 }: DateCellProps) {
+  const [isDragOver, setIsDragOver] = useState(false)
   const isCurrentMonth = isSameMonth(date, currentMonth)
   const isToday = isSameDay(date, today)
   const dayEvents = getEventsForDate(events, date)
@@ -35,19 +38,24 @@ export function DateCell({
   
   return (
     <div
+      data-calendar-cell
       className={cn(
         'relative min-h-[120px] border-r border-b border-border p-2',
         'hover:bg-accent/5 transition-colors cursor-pointer',
         !isCurrentMonth && 'bg-muted/30',
-        isToday && 'bg-accent/10'
+        isToday && 'bg-accent/10',
+        isDragOver && 'bg-accent/20 ring-2 ring-accent ring-inset'
       )}
       onClick={() => onDateClick(date)}
       onDragOver={(e) => {
         e.preventDefault()
+        setIsDragOver(true)
         onDragOver(date, e)
       }}
+      onDragLeave={() => setIsDragOver(false)}
       onDrop={(e) => {
         e.preventDefault()
+        setIsDragOver(false)
         onDrop(date, e)
       }}
     >

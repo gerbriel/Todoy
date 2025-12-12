@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { CalendarEvent } from './types'
@@ -10,6 +10,8 @@ interface EventBarProps {
   onEventClick: (event: CalendarEvent, e: React.MouseEvent) => void
   onDragStart: (event: CalendarEvent, e: React.DragEvent) => void
   onResizeStart: (event: CalendarEvent, handle: 'start' | 'end', e: React.MouseEvent) => void
+  isDragging?: boolean
+  isResizing?: boolean
 }
 
 export function EventBar({
@@ -17,9 +19,12 @@ export function EventBar({
   layer,
   onEventClick,
   onDragStart,
-  onResizeStart
+  onResizeStart,
+  isDragging = false,
+  isResizing = false
 }: EventBarProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const eventBarRef = useRef<HTMLDivElement>(null)
   const { event, isStart, isEnd, startCol, span } = segment
   
   // Calculate positioning
@@ -42,8 +47,12 @@ export function EventBar({
   
   return (
     <div
+      ref={eventBarRef}
       draggable
-      onDragStart={(e) => onDragStart(event, e)}
+      onDragStart={(e) => {
+        e.stopPropagation()
+        onDragStart(event, e)
+      }}
       onClick={(e) => {
         e.stopPropagation()
         onEventClick(event, e)
@@ -51,12 +60,14 @@ export function EventBar({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'absolute h-6 px-2 py-1 cursor-move',
+        'absolute h-6 px-2 py-1 cursor-move select-none',
         'transition-all duration-150',
         'flex items-center gap-1',
         'border-t-2 border-b-2',
         borderRadius,
-        isHovered && 'shadow-md z-10 scale-[1.02]'
+        isHovered && !isDragging && !isResizing && 'shadow-md z-10 scale-[1.02]',
+        isDragging && 'opacity-50 cursor-grabbing',
+        isResizing && 'cursor-ew-resize'
       )}
       style={{
         left,
@@ -70,16 +81,24 @@ export function EventBar({
         borderRightStyle: 'solid',
         color: event.color,
       }}
-      title={`${event.title} (${format(event.startDate, 'MMM d')} - ${format(event.endDate, 'MMM d')})`}
+      title={`${event.title}\n${format(event.startDate, 'MMM d')} - ${format(event.endDate, 'MMM d')}\nDrag to move • Drag edges to resize • Click for details`}
     >
       {/* Start resize handle */}
       {isStart && showHandle && (
         <div
-          className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-current hover:opacity-50"
+          className={cn(
+            'absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
+            'hover:bg-current hover:opacity-30 active:opacity-50',
+            'transition-opacity'
+          )}
           onMouseDown={(e) => {
             e.stopPropagation()
+            e.preventDefault()
             onResizeStart(event, 'start', e)
           }}
+          onClick={(e) => e.stopPropagation()}
+          draggable={false}
+          title="Drag to change start date"
         />
       )}
       
@@ -102,11 +121,19 @@ export function EventBar({
       {/* End resize handle */}
       {isEnd && showHandle && (
         <div
-          className="absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-current hover:opacity-50"
+          className={cn(
+            'absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
+            'hover:bg-current hover:opacity-30 active:opacity-50',
+            'transition-opacity'
+          )}
           onMouseDown={(e) => {
             e.stopPropagation()
+            e.preventDefault()
             onResizeStart(event, 'end', e)
           }}
+          onClick={(e) => e.stopPropagation()}
+          draggable={false}
+          title="Drag to change end date"
         />
       )}
     </div>

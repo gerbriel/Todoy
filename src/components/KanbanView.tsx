@@ -379,6 +379,63 @@ export default function KanbanView({
             </AlertDescription>
           </Alert>
         )}
+        
+        {activeCampaign && (
+          <div className="mb-6">
+            {editingCampaignId === activeCampaign.id ? (
+              <Input
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onBlur={() => handleSaveEdit(activeCampaign.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveEdit(activeCampaign.id)
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit()
+                  }
+                  e.stopPropagation()
+                }}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                className="text-2xl font-bold mb-2"
+              />
+            ) : (
+              <h2 
+                className={cn(
+                  "text-2xl font-bold text-foreground mb-2 cursor-text",
+                  "hover:text-primary transition-colors"
+                )}
+                onDoubleClick={(e) => handleStartEditing(activeCampaign.id, activeCampaign.title, e)}
+              >
+                {activeCampaign.title}
+              </h2>
+            )}
+            {(activeCampaign.launchDate || activeCampaign.endDate || activeCampaign.description) && (
+              <div className="space-y-2">
+                {activeCampaign.description && (
+                  <p className="text-sm text-muted-foreground">{activeCampaign.description}</p>
+                )}
+                {(activeCampaign.launchDate || activeCampaign.endDate) && (
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {activeCampaign.launchDate && (
+                      <div className="flex items-center gap-1.5">
+                        <CalendarBlank size={14} weight="duotone" />
+                        <span>Launch: {formatDate(activeCampaign.launchDate)}</span>
+                      </div>
+                    )}
+                    {activeCampaign.endDate && (
+                      <div className="flex items-center gap-1.5">
+                        <CalendarBlank size={14} weight="duotone" />
+                        <span>End: {formatDate(activeCampaign.endDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
         <div className="flex flex-col md:flex-row gap-4 h-full md:overflow-x-auto md:overflow-y-visible pb-4 md:snap-x md:snap-mandatory">
           {displayLists
             .sort((a, b) => a.order - b.order)

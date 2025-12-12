@@ -203,22 +203,56 @@ export default function CalendarView({
       title: string
       type: string
       color: string
-      position: 'single'
+      position: 'start' | 'middle' | 'end' | 'single'
       projectId: string
     }> = []
     
     if (viewLevel === 'all' || viewLevel === 'project') {
       projects.forEach(project => {
-        // Project creation date
-        if (project.createdAt && isSameDay(new Date(project.createdAt), date)) {
-          // Remove emojis from title
-          const cleanTitle = project.title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()
+        // Remove emojis from title
+        const cleanTitle = project.title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()
+        
+        // Project Active Phase (Start to Target End or Actual End)
+        if (project.startDate && (project.targetEndDate || project.actualEndDate)) {
+          const startDate = new Date(project.startDate)
+          const endDate = project.actualEndDate 
+            ? new Date(project.actualEndDate) 
+            : new Date(project.targetEndDate!)
           
+          if (isWithinInterval(date, { start: startDate, end: endDate })) {
+            const isStart = isSameDay(date, startDate)
+            const isEnd = isSameDay(date, endDate)
+            const position = isStart && isEnd ? 'single' : isStart ? 'start' : isEnd ? 'end' : 'middle'
+            events.push({
+              id: `project-active-${project.id}`,
+              title: project.actualEndDate 
+                ? `${cleanTitle} (Completed)` 
+                : `${cleanTitle} (Active)`,
+              type: 'project-active',
+              color: project.actualEndDate ? '#10b981' : '#8b5cf6',
+              position,
+              projectId: project.id
+            })
+          }
+        } else if (project.startDate && isSameDay(new Date(project.startDate), date)) {
+          // Single start date (no end date set)
+          events.push({
+            id: `project-start-${project.id}`,
+            title: `${cleanTitle} (Start)`,
+            type: 'project-start',
+            color: '#8b5cf6',
+            position: 'single',
+            projectId: project.id
+          })
+        }
+        
+        // Project creation date (only if no other dates are set)
+        if (!project.startDate && project.createdAt && isSameDay(new Date(project.createdAt), date)) {
           events.push({
             id: `project-created-${project.id}`,
             title: `${cleanTitle} (Created)`,
             type: 'project-created',
-            color: '#8b5cf6',
+            color: '#6366f1',
             position: 'single',
             projectId: project.id
           })

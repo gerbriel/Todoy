@@ -179,6 +179,9 @@ export interface Project {
   description: string
   order: number
   createdAt: string
+  startDate?: string
+  targetEndDate?: string
+  actualEndDate?: string
   stageDates?: StageDate[]
   completed?: boolean
   archived?: boolean

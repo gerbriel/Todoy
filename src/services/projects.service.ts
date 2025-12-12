@@ -24,6 +24,9 @@ export const projectsService = {
       return (data || []).map(project => ({
         ...project,
         createdAt: project.created_at,
+        startDate: project.start_date,
+        targetEndDate: project.target_end_date,
+        actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
           stageName: sd.stage_name,
@@ -61,6 +64,9 @@ export const projectsService = {
       return (data || []).map(project => ({
         ...project,
         createdAt: project.created_at,
+        startDate: project.start_date,
+        targetEndDate: project.target_end_date,
+        actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
           stageName: sd.stage_name,
@@ -98,6 +104,9 @@ export const projectsService = {
       return (data || []).map(project => ({
         ...project,
         createdAt: project.created_at,
+        startDate: project.start_date,
+        targetEndDate: project.target_end_date,
+        actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
           stageName: sd.stage_name,
@@ -204,6 +213,9 @@ export const projectsService = {
       if (updates.title !== undefined) updateData.title = updates.title
       if (updates.description !== undefined) updateData.description = updates.description
       if (updates.order !== undefined) updateData.order = updates.order
+      if (updates.startDate !== undefined) updateData.start_date = updates.startDate
+      if (updates.targetEndDate !== undefined) updateData.target_end_date = updates.targetEndDate
+      if (updates.actualEndDate !== undefined) updateData.actual_end_date = updates.actualEndDate
       if (updates.completed !== undefined) updateData.completed = updates.completed
       if (updates.archived !== undefined) updateData.archived = updates.archived
       if (updates.visibility !== undefined) updateData.visibility = updates.visibility

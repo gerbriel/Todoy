@@ -169,19 +169,21 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
 
             {/* Sidebar content in full screen */}
             <div className="h-full w-full overflow-y-auto pb-20">
-              <Sidebar
-                {...props}
-                onNavigateToAllProjects={() => handleNavigate(props.onNavigateToAllProjects)}
-                onNavigateToAllCampaigns={() => handleNavigate(props.onNavigateToAllCampaigns)}
-                onNavigateToAllTasks={() => handleNavigate(props.onNavigateToAllTasks)}
-                onNavigateToMaster={() => handleNavigate(props.onNavigateToMaster || (() => {}))}
-                onNavigateToArchive={() => handleNavigate(props.onNavigateToArchive || (() => {}))}
-                onNavigateToRecentlyCompleted={() => handleNavigate(props.onNavigateToRecentlyCompleted || (() => {}))}
-                onNavigateToOrganization={() => handleNavigate(props.onNavigateToOrganization || (() => {}))}
-                onNavigateToLabels={() => handleNavigate(props.onNavigateToLabels || (() => {}))}
-                onNavigateToProject={(id) => handleNavigate(() => props.onNavigateToProject(id))}
-                onNavigateToCampaign={(id) => handleNavigate(() => props.onNavigateToCampaign(id))}
-              />
+              <div className="[&>aside]:w-full [&>aside]:border-r-0">
+                <Sidebar
+                  {...props}
+                  onNavigateToAllProjects={() => handleNavigate(props.onNavigateToAllProjects)}
+                  onNavigateToAllCampaigns={() => handleNavigate(props.onNavigateToAllCampaigns)}
+                  onNavigateToAllTasks={() => handleNavigate(props.onNavigateToAllTasks)}
+                  onNavigateToMaster={() => handleNavigate(props.onNavigateToMaster || (() => {}))}
+                  onNavigateToArchive={() => handleNavigate(props.onNavigateToArchive || (() => {}))}
+                  onNavigateToRecentlyCompleted={() => handleNavigate(props.onNavigateToRecentlyCompleted || (() => {}))}
+                  onNavigateToOrganization={() => handleNavigate(props.onNavigateToOrganization || (() => {}))}
+                  onNavigateToLabels={() => handleNavigate(props.onNavigateToLabels || (() => {}))}
+                  onNavigateToProject={(id) => handleNavigate(() => props.onNavigateToProject(id))}
+                  onNavigateToCampaign={(id) => handleNavigate(() => props.onNavigateToCampaign(id))}
+                />
+              </div>
             </div>
           </div>
         </>

@@ -4,7 +4,7 @@ import { NavigationView } from '@/App'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from './ui/button'
-import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor, Sparkle, Copy } from '@phosphor-icons/react'
+import { Kanban, CalendarBlank, CaretRight, CaretLeft, ArrowLeft, MagnifyingGlass, PencilSimple, SignOut, User, Trash, Archive, Tag, Briefcase, Sun, Moon, Monitor, Sparkle, Copy, Bell } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import GlobalSearch from './GlobalSearch'
 import CampaignEditDialog from './CampaignEditDialog'
@@ -168,34 +168,37 @@ export default function Header({
               </Button>
             )}
             
-            {navigationView === 'all-projects' && (
-              <h2 className="text-xl font-semibold text-foreground">All Projects</h2>
-            )}
-            {navigationView === 'all-campaigns' && (
-              <h2 className="text-xl font-semibold text-foreground">All Campaigns</h2>
-            )}
-            {navigationView === 'all-tasks' && (
-              <h2 className="text-xl font-semibold text-foreground">All Tasks</h2>
-            )}
-            {navigationView === 'recently-completed' && (
-              <h2 className="text-xl font-semibold text-foreground">Recently Completed Projects</h2>
-            )}
-            {navigationView === 'project' && activeProject && (
-              <h2 className="text-xl font-semibold text-foreground">{activeProject.title}</h2>
-            )}
-            {navigationView === 'campaign' && (
-              <>
-                {activeProject && (
-                  <>
-                    <span className="text-muted-foreground">{activeProject.title}</span>
-                    <CaretRight size={16} className="text-muted-foreground" weight="bold" />
-                  </>
-                )}
-                <h2 className="text-xl font-semibold text-foreground">
-                  {activeCampaign?.title || 'Campaign'}
-                </h2>
-              </>
-            )}
+            {/* Hide project/campaign names on mobile */}
+            <div className="hidden md:block">
+              {navigationView === 'all-projects' && (
+                <h2 className="text-xl font-semibold text-foreground">All Projects</h2>
+              )}
+              {navigationView === 'all-campaigns' && (
+                <h2 className="text-xl font-semibold text-foreground">All Campaigns</h2>
+              )}
+              {navigationView === 'all-tasks' && (
+                <h2 className="text-xl font-semibold text-foreground">All Tasks</h2>
+              )}
+              {navigationView === 'recently-completed' && (
+                <h2 className="text-xl font-semibold text-foreground">Recently Completed Projects</h2>
+              )}
+              {navigationView === 'project' && activeProject && (
+                <h2 className="text-xl font-semibold text-foreground">{activeProject.title}</h2>
+              )}
+              {navigationView === 'campaign' && (
+                <>
+                  {activeProject && (
+                    <>
+                      <span className="text-muted-foreground">{activeProject.title}</span>
+                      <CaretRight size={16} className="text-muted-foreground" weight="bold" />
+                    </>
+                  )}
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {activeCampaign?.title || 'Campaign'}
+                  </h2>
+                </>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -203,22 +206,27 @@ export default function Header({
               variant="outline"
               size="sm"
               onClick={() => setShowSearch(true)}
+              className="min-w-[120px] md:min-w-[200px]"
             >
               <MagnifyingGlass size={16} weight="bold" />
-              Search
+              <span className="ml-2">Search</span>
             </Button>
 
+            {/* Notifications - Hidden on mobile, moved to user dropdown */}
             {user && (
-              <NotificationsPanel 
-                userId={user.id}
-                onNavigate={handleNavigateFromNotification}
-              />
+              <div className="hidden md:block">
+                <NotificationsPanel 
+                  userId={user.id}
+                  onNavigate={handleNavigateFromNotification}
+                />
+              </div>
             )}
 
+            {/* Campaign action buttons - Hidden on mobile */}
             {navigationView === 'campaign' && activeCampaign && (
               <>
                 {!activeCampaign.archived && (
-                  <>
+                  <div className="hidden md:flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -254,23 +262,25 @@ export default function Header({
                       <Trash size={16} weight="bold" />
                       Delete
                     </Button>
-                  </>
+                  </div>
                 )}
                 <Button
                   variant={viewMode === 'kanban' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('kanban')}
+                  className="w-10 h-10 p-0"
+                  title="Kanban"
                 >
-                  <Kanban size={16} weight="bold" />
-                  Kanban
+                  <Kanban size={20} weight="bold" />
                 </Button>
                 <Button
                   variant={viewMode === 'calendar' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('calendar')}
+                  className="w-10 h-10 p-0"
+                  title="Calendar"
                 >
-                  <CalendarBlank size={16} weight="bold" />
-                  Calendar
+                  <CalendarBlank size={20} weight="bold" />
                 </Button>
               </>
             )}
@@ -281,17 +291,19 @@ export default function Header({
                   variant={viewMode === 'kanban' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('kanban')}
+                  className="w-10 h-10 p-0"
+                  title="Kanban"
                 >
-                  <Kanban size={16} weight="bold" />
-                  Kanban
+                  <Kanban size={20} weight="bold" />
                 </Button>
                 <Button
                   variant={viewMode === 'calendar' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('calendar')}
+                  className="w-10 h-10 p-0"
+                  title="Calendar"
                 >
-                  <CalendarBlank size={16} weight="bold" />
-                  Calendar
+                  <CalendarBlank size={20} weight="bold" />
                 </Button>
               </>
             )}
@@ -310,6 +322,20 @@ export default function Header({
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  
+                  {/* Notifications - Show on mobile only */}
+                  <div className="md:hidden">
+                    <DropdownMenuItem asChild>
+                      <div className="w-full">
+                        <NotificationsPanel 
+                          userId={user.id}
+                          onNavigate={handleNavigateFromNotification}
+                        />
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </div>
+                  
                   {onNavigateToLabels && (
                     <DropdownMenuItem onClick={onNavigateToLabels}>
                       <Tag size={16} className="mr-2" />

@@ -60,6 +60,7 @@ export default function ProjectView({
   const [newCampaignTitle, setNewCampaignTitle] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   const sortedCampaigns = [...projectCampaigns].sort((a, b) => a.order - b.order)
@@ -157,6 +158,52 @@ export default function ProjectView({
     } catch (error) {
       console.error('Error creating campaign:', error)
       toast.error('Failed to create campaign')
+    }
+  }
+
+  const handleDuplicateCampaign = async (newName: string, targetProjectId?: string) => {
+    if (!selectedCampaignId) return
+
+    try {
+      const duplicated = await campaignsService.duplicate(selectedCampaignId, newName, targetProjectId)
+      setCampaigns(prev => [...prev, duplicated])
+      
+      // Refetch lists and tasks for the new campaign
+      const newLists = await listsService.getByCampaign(duplicated.id)
+      const newTasks = await tasksService.getByCampaign(duplicated.id)
+      
+      toast.success('Campaign duplicated')
+      setShowDuplicateDialog(false)
+      setSelectedCampaignId(null)
+    } catch (error) {
+      console.error('Error duplicating campaign:', error)
+      toast.error('Failed to duplicate campaign')
+    }
+  }
+
+  const handleArchiveCampaign = async (campaignId: string) => {
+    try {
+      await campaignsService.update(campaignId, { archived: true })
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, archived: true } : c))
+      toast.success('Campaign archived')
+    } catch (error) {
+      console.error('Error archiving campaign:', error)
+      toast.error('Failed to archive campaign')
+    }
+  }
+
+  const handleDeleteCampaign = async () => {
+    if (!selectedCampaignId) return
+
+    try {
+      await campaignsService.delete(selectedCampaignId)
+      setCampaigns(prev => prev.filter(c => c.id !== selectedCampaignId))
+      toast.success('Campaign deleted')
+      setShowDeleteConfirm(false)
+      setSelectedCampaignId(null)
+    } catch (error) {
+      console.error('Error deleting campaign:', error)
+      toast.error('Failed to delete campaign')
     }
   }
 
@@ -276,9 +323,63 @@ export default function ProjectView({
               return (
                 <Card
                   key={campaign.id}
-                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
                   onClick={() => onNavigateToCampaign(campaign.id)}
                 >
+                  {/* Mobile action buttons - Top right corner */}
+                  {!campaign.archived && (
+                    <div className="md:hidden absolute top-3 right-3 flex gap-1 z-10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCampaignId(campaign.id)
+                          onNavigateToCampaign(campaign.id)
+                        }}
+                      >
+                        <PencilSimple size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCampaignId(campaign.id)
+                          setShowDuplicateDialog(true)
+                        }}
+                      >
+                        <Copy size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-orange-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Add archive handler
+                          handleArchiveCampaign(campaign.id)
+                        }}
+                      >
+                        <Archive size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCampaignId(campaign.id)
+                          setShowDeleteConfirm(true)
+                        }}
+                      >
+                        <Trash size={16} weight="bold" />
+                      </Button>
+                    </div>
+                  )}
+                  
                   <CardHeader className="pb-3 md:pb-4">
                     <div className="flex items-start justify-between mb-2 gap-2">
                       <Target size={28} className="md:w-8 md:h-8 text-accent flex-shrink-0" weight="duotone" />
@@ -359,13 +460,37 @@ export default function ProjectView({
 
       <DuplicateDialog
         open={showDuplicateDialog}
-        onOpenChange={setShowDuplicateDialog}
-        type="project"
-        itemName={project.title}
-        onDuplicate={handleDuplicate}
+        onOpenChange={(open) => {
+          setShowDuplicateDialog(open)
+          if (!open) setSelectedCampaignId(null)
+        }}
+        type={selectedCampaignId ? "campaign" : "project"}
+        itemName={selectedCampaignId 
+          ? campaigns.find(c => c.id === selectedCampaignId)?.title || ''
+          : project.title
+        }
+        onDuplicate={selectedCampaignId ? handleDuplicateCampaign : handleDuplicate}
         projects={projects}
         campaigns={campaigns}
         lists={lists}
+      />
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          setShowDeleteConfirm(open)
+          if (!open) setSelectedCampaignId(null)
+        }}
+        onConfirm={selectedCampaignId ? handleDeleteCampaign : handleDeleteProject}
+        title={selectedCampaignId ? "Delete Campaign?" : "Delete Project?"}
+        description={
+          selectedCampaignId
+            ? `Are you sure you want to delete "${campaigns.find(c => c.id === selectedCampaignId)?.title}"? This action cannot be undone.`
+            : projectCampaigns.length > 0
+            ? `Are you sure you want to delete "${project.title}" and its ${projectCampaigns.length} campaign${projectCampaigns.length === 1 ? '' : 's'} with ${tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length} task${tasks.filter(t => t.campaignId && projectCampaigns.some(c => c.id === t.campaignId)).length === 1 ? '' : 's'}? This action cannot be undone.`
+            : `Are you sure you want to delete "${project.title}"? This action cannot be undone.`
+        }
+        confirmText={selectedCampaignId ? "Delete Campaign" : "Delete Project"}
       />
     </div>
   )

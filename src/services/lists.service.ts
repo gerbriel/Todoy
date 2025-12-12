@@ -190,6 +190,36 @@ export const listsService = {
 
       if (createError) throw createError
 
+      // Get all tasks from the original list
+      const { data: originalTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('list_id', listId)
+        .order('order', { ascending: true })
+
+      if (originalTasks && originalTasks.length > 0) {
+        // Get campaign and project info for the new list
+        const { data: campaign } = await supabase
+          .from('campaigns')
+          .select('project_id')
+          .eq('id', campaignId)
+          .single()
+
+        // Duplicate each task (without dates, comments, attachments, labels)
+        const newTasks = originalTasks.map(task => ({
+          title: task.title,
+          description: task.description,
+          list_id: newList.id,
+          campaign_id: campaignId,
+          project_id: campaign?.project_id || null,
+          order: task.order,
+          completed: false,
+          // Explicitly exclude: due_date, start_date, assigned_to, labels, priority, comments, attachments
+        }))
+
+        await supabase.from('tasks').insert(newTasks)
+      }
+
       return {
         ...newList,
         campaignId: newList.campaign_id,

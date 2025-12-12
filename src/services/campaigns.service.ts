@@ -1,5 +1,7 @@
 import { supabase, handleSupabaseError } from '../lib/supabase'
 import { Campaign } from '../lib/types'
+import { listsService } from './lists.service'
+import { tasksService } from './tasks.service'
 
 export const campaignsService = {
   /**
@@ -340,7 +342,7 @@ export const campaignsService = {
       // Use target project or keep same project
       const projectId = targetProjectId || originalCampaign.projectId
 
-      // Create new campaign
+      // Create new campaign with campaign_stage to satisfy RLS
       const { data: newCampaign, error: createError } = await supabase
         .from('campaigns')
         .insert({
@@ -348,7 +350,8 @@ export const campaignsService = {
           description: originalCampaign.description,
           project_id: projectId,
           org_id: originalCampaign.orgId,
-          campaign_type: originalCampaign.campaignType,
+          campaign_type: originalCampaign.campaignType || 'other',
+          campaign_stage: originalCampaign.campaignStage || 'planning',
           planning_start_date: null, // Reset dates for template
           launch_date: null,
           end_date: null,
@@ -376,12 +379,61 @@ export const campaignsService = {
         await supabase.from('stage_dates').insert(newStageDates)
       }
 
+      // Get all lists from the original campaign
+      const { data: originalLists } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('order', { ascending: true })
+
+      if (originalLists && originalLists.length > 0) {
+        // Duplicate each list and its tasks
+        for (const originalList of originalLists) {
+          // Create new list
+          const { data: newList } = await supabase
+            .from('lists')
+            .insert({
+              title: originalList.title,
+              campaign_id: newCampaign.id,
+              order: originalList.order,
+            })
+            .select()
+            .single()
+
+          if (newList) {
+            // Get all tasks from the original list
+            const { data: originalTasks } = await supabase
+              .from('tasks')
+              .select('*')
+              .eq('list_id', originalList.id)
+              .order('order', { ascending: true })
+
+            if (originalTasks && originalTasks.length > 0) {
+              // Duplicate each task (without dates, comments, attachments, labels)
+              const newTasks = originalTasks.map(task => ({
+                title: task.title,
+                description: task.description,
+                list_id: newList.id,
+                campaign_id: newCampaign.id,
+                project_id: projectId,
+                order: task.order,
+                completed: false,
+                // Explicitly exclude: due_date, start_date, assigned_to, labels, priority, comments, attachments
+              }))
+
+              await supabase.from('tasks').insert(newTasks)
+            }
+          }
+        }
+      }
+
       return {
         ...newCampaign,
         createdAt: newCampaign.created_at,
         projectId: newCampaign.project_id,
         orgId: newCampaign.org_id,
         campaignType: newCampaign.campaign_type,
+        campaignStage: newCampaign.campaign_stage,
         planningStartDate: newCampaign.planning_start_date,
         launchDate: newCampaign.launch_date,
         endDate: newCampaign.end_date,

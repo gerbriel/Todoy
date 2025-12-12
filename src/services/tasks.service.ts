@@ -202,12 +202,14 @@ export const tasksService = {
 
       // Only update main fields if there are any changes
       if (Object.keys(updateData).length > 0) {
+        console.log(`[TASK UPDATE] Updating task ${id}:`, updateData)
         const { error } = await supabase
           .from('tasks')
           .update(updateData)
           .eq('id', id)
 
         if (error) throw error
+        console.log(`[TASK UPDATE] Task ${id} update completed`)
       }
 
       // Handle assigned users if provided

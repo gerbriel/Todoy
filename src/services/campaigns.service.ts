@@ -336,8 +336,9 @@ export const campaignsService = {
     targetProjectId?: string
   ): Promise<Campaign> {
     try {
-      // Add a small delay to ensure any recent database updates have been committed
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Add a delay to ensure any recent database updates have been committed
+      // This prevents duplicating stale data when a user makes changes right before duplicating
+      await new Promise(resolve => setTimeout(resolve, 1500))
       
       // Get the original campaign
       const originalCampaign = await this.getById(campaignId)
@@ -443,6 +444,16 @@ export const campaignsService = {
 
             if (tasksError) {
               console.error('Error fetching tasks for list:', tasksError)
+            }
+
+            // Debug logging
+            console.log(`[DUPLICATE DEBUG] List "${originalList.title}" has ${originalTasks?.length || 0} tasks`)
+            if (originalTasks && originalTasks.length > 0) {
+              console.log('[DUPLICATE DEBUG] Original tasks:', originalTasks.map(t => ({ 
+                id: t.id, 
+                title: t.title, 
+                updated_at: t.updated_at 
+              })))
             }
 
             if (originalTasks && originalTasks.length > 0) {

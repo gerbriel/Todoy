@@ -165,8 +165,8 @@ export const listsService = {
     targetCampaignId?: string
   ): Promise<List> {
     try {
-      // Add a small delay to ensure any recent database updates have been committed
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Add a delay to ensure any recent database updates have been committed
+      await new Promise(resolve => setTimeout(resolve, 1500))
       
       // Get the original list
       const { data: originalList, error: fetchError } = await supabase

@@ -10,7 +10,7 @@ import { listsService } from '@/services/lists.service'
 import { tasksService } from '@/services/tasks.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ConfirmDialog from './ConfirmDialog'
 import ProjectEditDialog from './ProjectEditDialog'
 import DuplicateDialog from './DuplicateDialog'
@@ -56,6 +56,39 @@ export default function ProjectsView({
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [newProjectTitle, setNewProjectTitle] = useState('')
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [clickedProjectId, setClickedProjectId] = useState<string | null>(null)
+
+  const handleCardClick = (projectId: string) => {
+    // If we're already tracking a click timeout, clear it (this is a double-click)
+    if (clickTimeout) {
+      clearTimeout(clickTimeout)
+      setClickTimeout(null)
+      setClickedProjectId(null)
+      return
+    }
+
+    // Set a timeout for single click
+    const timeout = setTimeout(() => {
+      onNavigateToProject(projectId)
+      setClickTimeout(null)
+      setClickedProjectId(null)
+    }, 250) // 250ms delay to detect double-click
+
+    setClickTimeout(timeout)
+    setClickedProjectId(projectId)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeout) {
+        clearTimeout(clickTimeout)
+      }
+    }
+  }, [clickTimeout])
   
   const sortedProjects = [...projects].sort((a, b) => a.order - b.order)
 
@@ -169,6 +202,36 @@ export default function ProjectsView({
     }
   }
 
+  const handleStartEditing = (projectId: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingProjectId(projectId)
+    setEditingTitle(currentTitle)
+  }
+
+  const handleSaveEdit = async (projectId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('Project title cannot be empty')
+      return
+    }
+
+    try {
+      await projectsService.update(projectId, { title: editingTitle })
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, title: editingTitle } : p
+      ))
+      setEditingProjectId(null)
+      toast.success('Project renamed')
+    } catch (error) {
+      console.error('Error renaming project:', error)
+      toast.error('Failed to rename project')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingProjectId(null)
+    setEditingTitle('')
+  }
+
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) {
       toast.error('Please enter a project title')
@@ -232,10 +295,9 @@ export default function ProjectsView({
                 <Card
                   key={project.id}
                   className={cn(
-                    "cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
+                    "hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
                     project.completed && "opacity-60"
                   )}
-                  onClick={() => onNavigateToProject(project.id)}
                 >
                   {/* Action buttons - Top right corner */}
                   <div className="absolute top-3 right-3 flex gap-1 z-10">
@@ -311,19 +373,43 @@ export default function ProjectsView({
                         <Archive size={16} className="md:w-[18px] md:h-[18px]" weight="bold" />
                       </Button>
                     </div>
-                    <CardTitle className={cn(
-                      "text-base md:text-xl mt-2 break-words",
-                      project.completed && "line-through text-muted-foreground"
-                    )}>
-                      {project.title}
-                    </CardTitle>
+                    {editingProjectId === project.id ? (
+                      <Input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => handleSaveEdit(project.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveEdit(project.id)
+                          } else if (e.key === 'Escape') {
+                            handleCancelEdit()
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-2 text-base md:text-xl font-semibold"
+                        autoFocus
+                      />
+                    ) : (
+                      <CardTitle 
+                        className={cn(
+                          "text-base md:text-xl mt-2 break-words cursor-text",
+                          project.completed && "line-through text-muted-foreground"
+                        )}
+                        onDoubleClick={(e) => handleStartEditing(project.id, project.title, e)}
+                      >
+                        {project.title}
+                      </CardTitle>
+                    )}
                     {project.description && (
                       <CardDescription className="line-clamp-2 text-xs md:text-sm mt-1">
                         {project.description}
                       </CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent 
+                    className="pt-0 cursor-pointer" 
+                    onClick={() => handleCardClick(project.id)}
+                  >
                     <div className="flex items-center gap-3 md:gap-6 text-xs md:text-sm flex-wrap">
                       <div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground">
                         <Target size={16} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />

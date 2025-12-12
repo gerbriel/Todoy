@@ -1,10 +1,11 @@
-import { useState, DragEvent } from 'react'
+import { useState, DragEvent, useEffect } from 'react'
 import { Clock, Tag, CheckSquare } from '@phosphor-icons/react'
 import { Task, Label, List, Campaign, Project } from '@/lib/types'
 import { getLabelColor, formatDate, isOverdue } from '@/lib/helpers'
 import { tasksService } from '@/services/tasks.service'
 import { Badge } from './ui/badge'
 import { Checkbox } from './ui/checkbox'
+import { Input } from './ui/input'
 import TaskDetailDialog from './TaskDetailDialog'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -36,6 +37,65 @@ export default function TaskCard({
 }: TaskCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editingTitle, setEditingTitle] = useState('')
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  const handleCardClick = () => {
+    // If we're already tracking a click timeout, clear it (this is a double-click)
+    if (clickTimeout) {
+      clearTimeout(clickTimeout)
+      setClickTimeout(null)
+      return
+    }
+
+    // Set a timeout for single click
+    const timeout = setTimeout(() => {
+      setIsDialogOpen(true)
+      setClickTimeout(null)
+    }, 250) // 250ms delay to detect double-click
+
+    setClickTimeout(timeout)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeout) {
+        clearTimeout(clickTimeout)
+      }
+    }
+  }, [clickTimeout])
+
+  const handleStartEditingTitle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditingTitle(true)
+    setEditingTitle(task.title)
+  }
+
+  const handleSaveTitleEdit = async () => {
+    if (!editingTitle.trim()) {
+      toast.error('Task title cannot be empty')
+      return
+    }
+
+    try {
+      await tasksService.update(task.id, { title: editingTitle })
+      setTasks(prev => prev.map(t => 
+        t.id === task.id ? { ...t, title: editingTitle } : t
+      ))
+      setIsEditingTitle(false)
+      toast.success('Task renamed')
+    } catch (error) {
+      console.error('Error renaming task:', error)
+      toast.error('Failed to rename task')
+    }
+  }
+
+  const handleCancelTitleEdit = () => {
+    setIsEditingTitle(false)
+    setEditingTitle('')
+  }
 
   const taskLabels = labels.filter(l => task.labelIds.includes(l.id))
   const visibleLabels = taskLabels.slice(0, 3)
@@ -77,30 +137,52 @@ export default function TaskCard({
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        onClick={() => setIsDialogOpen(true)}
         className={cn(
-          'group bg-card border border-border rounded-md p-3 cursor-pointer transition-all',
+          'group bg-card border border-border rounded-md p-3 transition-all',
           'hover:shadow-md hover:border-accent',
           isDragging && 'opacity-40 cursor-grabbing',
           task.completed && 'opacity-60'
         )}
       >
-        <div className="flex items-start gap-2 mb-2">
+        <div className="flex items-start gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={task.completed || false}
             onCheckedChange={handleToggleComplete}
             onClick={(e) => e.stopPropagation()}
             className="mt-0.5"
           />
-          <h4 className={cn(
-            "text-sm font-medium text-foreground leading-snug flex-1",
-            task.completed && "line-through text-muted-foreground"
-          )}>
-            {task.title}
-          </h4>
+          {isEditingTitle ? (
+            <Input
+              value={editingTitle}
+              onChange={(e) => setEditingTitle(e.target.value)}
+              onBlur={handleSaveTitleEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSaveTitleEdit()
+                } else if (e.key === 'Escape') {
+                  handleCancelTitleEdit()
+                }
+                e.stopPropagation()
+              }}
+              onClick={(e) => e.stopPropagation()}
+              autoFocus
+              className="text-sm font-medium flex-1 h-auto py-0"
+            />
+          ) : (
+            <h4 
+              className={cn(
+                "text-sm font-medium text-foreground leading-snug flex-1 cursor-text",
+                "hover:text-primary transition-colors",
+                task.completed && "line-through text-muted-foreground"
+              )}
+              onDoubleClick={handleStartEditingTitle}
+            >
+              {task.title}
+            </h4>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="flex flex-wrap gap-1.5 mb-2 cursor-pointer" onClick={handleCardClick}>
           {visibleLabels.map(label => (
             <Badge
               key={label.id}
@@ -119,7 +201,7 @@ export default function TaskCard({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground cursor-pointer" onClick={handleCardClick}>
           {task.dueDate && (
             <div className={cn(
               'flex items-center gap-1',

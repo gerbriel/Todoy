@@ -441,6 +441,7 @@ function MainApp() {
           {navigationView === 'all-campaigns' && (
             <CampaignsView
               campaigns={campaigns || []}
+              setCampaigns={setCampaigns}
               projects={projects || []}
               tasks={tasks || []}
               onNavigateToCampaign={handleNavigateToCampaign}

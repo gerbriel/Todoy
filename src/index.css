@@ -45,80 +45,81 @@
 }
 
 :root {
-  --background: oklch(0.98 0.002 250);
-  --foreground: oklch(0.25 0.015 250);
+  /* Modern Tech Company Theme - Sleek slate/neutral palette */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.20 0.01 240);
   
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.015 250);
+  --card: oklch(0.99 0 0);
+  --card-foreground: oklch(0.20 0.01 240);
   
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.015 250);
+  --popover: oklch(0.99 0 0);
+  --popover-foreground: oklch(0.20 0.01 240);
   
-  --primary: oklch(0.25 0.015 250);
-  --primary-foreground: oklch(1 0 0);
+  --primary: oklch(0.35 0.08 260); /* Deep slate blue */
+  --primary-foreground: oklch(0.99 0 0);
   
-  --secondary: oklch(0.96 0.002 250);
-  --secondary-foreground: oklch(0.25 0.015 250);
+  --secondary: oklch(0.96 0.005 240);
+  --secondary-foreground: oklch(0.30 0.01 240);
   
-  --muted: oklch(0.96 0.002 250);
-  --muted-foreground: oklch(0.55 0.01 250);
+  --muted: oklch(0.96 0.005 240);
+  --muted-foreground: oklch(0.50 0.01 240);
   
-  --accent: oklch(0.55 0.18 250);
-  --accent-foreground: oklch(1 0 0);
+  --accent: oklch(0.55 0.15 260); /* Vibrant blue accent */
+  --accent-foreground: oklch(0.99 0 0);
   
-  --destructive: oklch(0.60 0.20 25);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
   
-  --border: oklch(0.85 0.01 250);
-  --input: oklch(0.85 0.01 250);
-  --ring: oklch(0.55 0.18 250);
+  --border: oklch(0.90 0.01 240);
+  --input: oklch(0.90 0.01 240);
+  --ring: oklch(0.55 0.15 260);
   
-  --label-red: oklch(0.60 0.20 25);
-  --label-orange: oklch(0.70 0.15 60);
-  --label-green: oklch(0.65 0.15 150);
-  --label-purple: oklch(0.60 0.15 290);
-  --label-blue: oklch(0.60 0.15 250);
-  --label-teal: oklch(0.65 0.12 200);
+  --label-red: oklch(0.55 0.22 25);
+  --label-orange: oklch(0.65 0.18 50);
+  --label-green: oklch(0.60 0.18 150);
+  --label-purple: oklch(0.55 0.18 290);
+  --label-blue: oklch(0.55 0.18 250);
+  --label-teal: oklch(0.60 0.15 200);
   
   --radius: 0.5rem;
 }
 
-/* GitHub-style Dark Mode */
+/* Modern Dark Theme - Sophisticated dark with blue accents */
 .dark {
-  --background: oklch(0.17 0.005 250);
-  --foreground: oklch(0.88 0.005 250);
+  --background: oklch(0.14 0.01 240);
+  --foreground: oklch(0.92 0.01 240);
   
-  --card: oklch(0.20 0.005 250);
-  --card-foreground: oklch(0.88 0.005 250);
+  --card: oklch(0.17 0.01 240);
+  --card-foreground: oklch(0.92 0.01 240);
   
-  --popover: oklch(0.20 0.005 250);
-  --popover-foreground: oklch(0.88 0.005 250);
+  --popover: oklch(0.17 0.01 240);
+  --popover-foreground: oklch(0.92 0.01 240);
   
-  --primary: oklch(0.88 0.005 250);
-  --primary-foreground: oklch(0.17 0.005 250);
+  --primary: oklch(0.65 0.18 260); /* Bright blue */
+  --primary-foreground: oklch(0.14 0.01 240);
   
-  --secondary: oklch(0.25 0.005 250);
-  --secondary-foreground: oklch(0.88 0.005 250);
+  --secondary: oklch(0.22 0.01 240);
+  --secondary-foreground: oklch(0.92 0.01 240);
   
-  --muted: oklch(0.25 0.005 250);
-  --muted-foreground: oklch(0.60 0.005 250);
+  --muted: oklch(0.22 0.01 240);
+  --muted-foreground: oklch(0.60 0.01 240);
   
-  --accent: oklch(0.60 0.18 250);
-  --accent-foreground: oklch(1 0 0);
+  --accent: oklch(0.60 0.18 260);
+  --accent-foreground: oklch(0.98 0 0);
   
-  --destructive: oklch(0.65 0.18 25);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
   
-  --border: oklch(0.30 0.005 250);
-  --input: oklch(0.30 0.005 250);
-  --ring: oklch(0.60 0.18 250);
+  --border: oklch(0.27 0.01 240);
+  --input: oklch(0.27 0.01 240);
+  --ring: oklch(0.60 0.18 260);
   
-  --label-red: oklch(0.65 0.18 25);
-  --label-orange: oklch(0.72 0.14 60);
-  --label-green: oklch(0.68 0.14 150);
-  --label-purple: oklch(0.65 0.14 290);
-  --label-blue: oklch(0.65 0.14 250);
-  --label-teal: oklch(0.68 0.12 200);
+  --label-red: oklch(0.60 0.22 25);
+  --label-orange: oklch(0.68 0.18 50);
+  --label-green: oklch(0.65 0.18 150);
+  --label-purple: oklch(0.60 0.18 290);
+  --label-blue: oklch(0.60 0.18 250);
+  --label-teal: oklch(0.65 0.15 200);
 }
 
 /* Beggars Can't Be Choosers - Animated Rainbow Gradient Theme */
@@ -166,10 +167,10 @@
   --foreground: oklch(0.15 0 0);
   --card-foreground: oklch(0.15 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.15 0 0);
-  --primary-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.50 0.15 270); /* Purple for primary buttons/icons */
+  --primary-foreground: oklch(0.98 0 0); /* White text on primary */
   --secondary-foreground: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.3 0 0);
+  --muted-foreground: oklch(0.40 0.10 280); /* Darker purple-gray for muted elements */
   --accent-foreground: oklch(0.15 0 0);
   --destructive-foreground: oklch(0.15 0 0);
   

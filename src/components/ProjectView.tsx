@@ -11,6 +11,7 @@ import { Badge } from './ui/badge'
 import { format } from 'date-fns'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import ProjectEditDialog from './ProjectEditDialog'
 import CampaignEditDialog from './CampaignEditDialog'
 import ConfirmDialog from './ConfirmDialog'
@@ -63,6 +64,38 @@ export default function ProjectView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+
+  const handleStartEditing = (campaignId: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingCampaignId(campaignId)
+    setEditingTitle(currentTitle)
+  }
+
+  const handleSaveEdit = async (campaignId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('Campaign title cannot be empty')
+      return
+    }
+
+    try {
+      await campaignsService.update(campaignId, { title: editingTitle })
+      setCampaigns(prev => prev.map(c => 
+        c.id === campaignId ? { ...c, title: editingTitle } : c
+      ))
+      setEditingCampaignId(null)
+      toast.success('Campaign renamed')
+    } catch (error) {
+      console.error('Error renaming campaign:', error)
+      toast.error('Failed to rename campaign')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCampaignId(null)
+    setEditingTitle('')
+  }
   
   const projectCampaigns = getCampaignsForProject(campaigns, project.id)
   // Filter out archived campaigns
@@ -343,8 +376,7 @@ export default function ProjectView({
               return (
                 <Card
                   key={campaign.id}
-                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
-                  onClick={() => onNavigateToCampaign(campaign.id)}
+                  className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
                 >
                   {/* Action buttons - Top right corner */}
                   <div className="absolute top-3 right-3 flex gap-1 z-10">
@@ -412,14 +444,44 @@ export default function ProjectView({
                         </Badge>
                       )}
                     </div>
-                    <CardTitle className="text-base md:text-xl break-words">{campaign.title}</CardTitle>
+                    {editingCampaignId === campaign.id ? (
+                      <Input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => handleSaveEdit(campaign.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveEdit(campaign.id)
+                          } else if (e.key === 'Escape') {
+                            handleCancelEdit()
+                          }
+                          e.stopPropagation()
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="text-base md:text-xl font-semibold"
+                      />
+                    ) : (
+                      <CardTitle 
+                        className={cn(
+                          "text-base md:text-xl break-words cursor-text",
+                          "hover:text-primary transition-colors"
+                        )}
+                        onDoubleClick={(e) => handleStartEditing(campaign.id, campaign.title, e)}
+                      >
+                        {campaign.title}
+                      </CardTitle>
+                    )}
                     {campaign.description && (
                       <CardDescription className="line-clamp-2 text-xs md:text-sm">
                         {campaign.description}
                       </CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent>
+                  <CardContent 
+                    className="cursor-pointer"
+                    onClick={() => onNavigateToCampaign(campaign.id)}
+                  >
                     <div className="space-y-2 md:space-y-3">
                       {campaign.launchDate && (
                         <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">

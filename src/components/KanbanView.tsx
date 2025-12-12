@@ -4,9 +4,11 @@ import { filterTasks, formatDate } from '@/lib/helpers'
 import { listsService } from '@/services/lists.service'
 import { campaignsService } from '@/services/campaigns.service'
 import { Button } from './ui/button'
+import { Input } from './ui/input'
 import { ScrollArea } from './ui/scroll-area'
 import { Alert, AlertDescription } from './ui/alert'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import TaskList from './TaskList'
 import EmptyState from './EmptyState'
 import StageView from './StageView'
@@ -46,6 +48,38 @@ export default function KanbanView({
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
   const [draggedListId, setDraggedListId] = useState<string | null>(null)
   const [dragOverListId, setDragOverListId] = useState<string | null>(null)
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+
+  const handleStartEditing = (campaignId: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingCampaignId(campaignId)
+    setEditingTitle(currentTitle)
+  }
+
+  const handleSaveEdit = async (campaignId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('Campaign title cannot be empty')
+      return
+    }
+
+    try {
+      await campaignsService.update(campaignId, { title: editingTitle })
+      setCampaigns(prev => prev.map(c => 
+        c.id === campaignId ? { ...c, title: editingTitle } : c
+      ))
+      setEditingCampaignId(null)
+      toast.success('Campaign renamed')
+    } catch (error) {
+      console.error('Error renaming campaign:', error)
+      toast.error('Failed to rename campaign')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCampaignId(null)
+    setEditingTitle('')
+  }
 
   const activeCampaign = campaigns.find(c => c.id === activeCampaignId)
 
@@ -251,9 +285,34 @@ export default function KanbanView({
           {groupedByCampaign.map(({ campaign, lists: campaignLists }) => (
             <div key={campaign.id}>
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {campaign.title}
-                </h3>
+                {editingCampaignId === campaign.id ? (
+                  <Input
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={() => handleSaveEdit(campaign.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveEdit(campaign.id)
+                      } else if (e.key === 'Escape') {
+                        handleCancelEdit()
+                      }
+                      e.stopPropagation()
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                    className="text-lg font-semibold mb-1"
+                  />
+                ) : (
+                  <h3 
+                    className={cn(
+                      "text-lg font-semibold text-foreground cursor-text",
+                      "hover:text-primary transition-colors"
+                    )}
+                    onDoubleClick={(e) => handleStartEditing(campaign.id, campaign.title, e)}
+                  >
+                    {campaign.title}
+                  </h3>
+                )}
                 {(campaign.launchDate || campaign.endDate) && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                     {campaign.launchDate && (

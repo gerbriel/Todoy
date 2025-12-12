@@ -338,31 +338,57 @@ export const campaignsService = {
     try {
       // Get the original campaign
       const originalCampaign = await this.getById(campaignId)
+      if (!originalCampaign) {
+        throw new Error('Original campaign not found')
+      }
+
+      // Verify user is authenticated and get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('User not authenticated')
+      }
+
+      // Verify user is member of the organization
+      const { data: membership, error: memberError } = await supabase
+        .from('org_members')
+        .select('org_id')
+        .eq('user_id', user.id)
+        .eq('org_id', originalCampaign.orgId)
+        .single()
+
+      if (memberError || !membership) {
+        throw new Error('User is not a member of this organization')
+      }
 
       // Use target project or keep same project
       const projectId = targetProjectId || originalCampaign.projectId
 
-      // Create new campaign
+      // Create new campaign using the same pattern as create()
+      const campaignData = {
+        title: newName,
+        description: originalCampaign.description || '',
+        order: originalCampaign.order,
+        project_id: projectId,
+        org_id: originalCampaign.orgId, // Use the verified org_id
+        campaign_type: originalCampaign.campaignType,
+        planning_start_date: null, // Reset dates for template
+        launch_date: null,
+        end_date: null,
+        follow_up_date: null,
+        completed: false,
+        archived: false,
+      }
+
       const { data: newCampaign, error: createError } = await supabase
         .from('campaigns')
-        .insert({
-          title: newName,
-          description: originalCampaign.description,
-          project_id: projectId,
-          org_id: originalCampaign.orgId,
-          campaign_type: originalCampaign.campaignType || 'other',
-          planning_start_date: null, // Reset dates for template
-          launch_date: null,
-          end_date: null,
-          follow_up_date: null,
-          order: originalCampaign.order,
-          completed: false,
-          archived: false,
-        })
+        .insert(campaignData)
         .select()
         .single()
 
-      if (createError) throw createError
+      if (createError) {
+        console.error('Campaign insert error:', createError)
+        throw createError
+      }
 
       // Copy stage dates if any
       if (originalCampaign.stageDates && originalCampaign.stageDates.length > 0) {

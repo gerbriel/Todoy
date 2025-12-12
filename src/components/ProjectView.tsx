@@ -326,9 +326,9 @@ export default function ProjectView({
                   className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
                   onClick={() => onNavigateToCampaign(campaign.id)}
                 >
-                  {/* Mobile action buttons - Top right corner */}
+                  {/* Action buttons - Top right corner */}
                   {!campaign.archived && (
-                    <div className="md:hidden absolute top-3 right-3 flex gap-1 z-10">
+                    <div className="absolute top-3 right-3 flex gap-1 z-10">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -338,6 +338,7 @@ export default function ProjectView({
                           setSelectedCampaignId(campaign.id)
                           onNavigateToCampaign(campaign.id)
                         }}
+                        title="Edit campaign"
                       >
                         <PencilSimple size={16} weight="bold" />
                       </Button>
@@ -350,6 +351,7 @@ export default function ProjectView({
                           setSelectedCampaignId(campaign.id)
                           setShowDuplicateDialog(true)
                         }}
+                        title="Duplicate campaign"
                       >
                         <Copy size={16} weight="bold" />
                       </Button>
@@ -359,9 +361,9 @@ export default function ProjectView({
                         className="h-8 w-8 p-0 text-orange-600"
                         onClick={(e) => {
                           e.stopPropagation()
-                          // Add archive handler
                           handleArchiveCampaign(campaign.id)
                         }}
+                        title="Archive campaign"
                       >
                         <Archive size={16} weight="bold" />
                       </Button>
@@ -374,6 +376,7 @@ export default function ProjectView({
                           setSelectedCampaignId(campaign.id)
                           setShowDeleteConfirm(true)
                         }}
+                        title="Delete campaign"
                       >
                         <Trash size={16} weight="bold" />
                       </Button>

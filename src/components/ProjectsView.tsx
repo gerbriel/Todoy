@@ -1,12 +1,14 @@
 import { Project, Campaign, Task } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Folder, Target, CheckSquare, Archive } from '@phosphor-icons/react'
+import { Folder, Target, CheckSquare, Archive, PencilSimple, Copy, Trash } from '@phosphor-icons/react'
 import { Checkbox } from './ui/checkbox'
 import { Button } from './ui/button'
 import { getCampaignsForProject } from '@/lib/helpers'
 import { projectsService } from '@/services/projects.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
+import ConfirmDialog from './ConfirmDialog'
 
 interface ProjectsViewProps {
   projects: Project[]
@@ -23,6 +25,9 @@ export default function ProjectsView({
   tasks,
   onNavigateToProject,
 }: ProjectsViewProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  
   const sortedProjects = [...projects].sort((a, b) => a.order - b.order)
 
   const handleToggleComplete = async (projectId: string) => {
@@ -68,6 +73,21 @@ export default function ProjectsView({
     }
   }
 
+  const handleDeleteProject = async () => {
+    if (!selectedProjectId) return
+    
+    try {
+      await projectsService.delete(selectedProjectId)
+      setProjects(prev => prev.filter(p => p.id !== selectedProjectId))
+      toast.success('Project deleted')
+      setShowDeleteConfirm(false)
+      setSelectedProjectId(null)
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast.error('Failed to delete project')
+    }
+  }
+
   const getProjectStats = (projectId: string) => {
     const projectCampaigns = getCampaignsForProject(campaigns, projectId)
     const projectTasks = tasks.filter(task => 
@@ -107,11 +127,51 @@ export default function ProjectsView({
                 <Card
                   key={project.id}
                   className={cn(
-                    "cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]",
+                    "cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative",
                     project.completed && "opacity-60"
                   )}
                   onClick={() => onNavigateToProject(project.id)}
                 >
+                  {/* Action buttons - Top right corner */}
+                  {!project.archived && (
+                    <div className="absolute top-3 right-3 flex gap-1 z-10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onNavigateToProject(project.id)
+                        }}
+                        title="Edit project"
+                      >
+                        <PencilSimple size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-orange-600"
+                        onClick={(e) => handleArchive(project.id, e)}
+                        title="Archive project"
+                      >
+                        <Archive size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedProjectId(project.id)
+                          setShowDeleteConfirm(true)
+                        }}
+                        title="Delete project"
+                      >
+                        <Trash size={16} weight="bold" />
+                      </Button>
+                    </div>
+                  )}
+                  
                   <CardHeader className="pb-3 md:pb-4">
                     <div className="flex items-start justify-between gap-2 md:gap-3">
                       <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
@@ -127,7 +187,7 @@ export default function ProjectsView({
                         variant="ghost"
                         size="sm"
                         onClick={(e) => handleArchive(project.id, e)}
-                        className="h-8 w-8 md:h-9 md:w-9 p-0 flex-shrink-0 touch-manipulation"
+                        className="h-8 w-8 md:h-9 md:w-9 p-0 flex-shrink-0 touch-manipulation md:hidden"
                       >
                         <Archive size={16} className="md:w-[18px] md:h-[18px]" weight="bold" />
                       </Button>
@@ -162,6 +222,19 @@ export default function ProjectsView({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          setShowDeleteConfirm(open)
+          if (!open) setSelectedProjectId(null)
+        }}
+        onConfirm={handleDeleteProject}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This action cannot be undone and will also delete all campaigns and tasks associated with this project."
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   )
 }

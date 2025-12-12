@@ -168,8 +168,8 @@ export default function Header({
               </Button>
             )}
             
-            {/* Hide project/campaign names on mobile */}
-            <div className="hidden md:block">
+            {/* Hide project/campaign names - commented out to remove from desktop */}
+            {/* <div className="hidden md:block">
               {navigationView === 'all-projects' && (
                 <h2 className="text-xl font-semibold text-foreground">All Projects</h2>
               )}
@@ -198,7 +198,7 @@ export default function Header({
                   </h2>
                 </>
               )}
-            </div>
+            </div> */}
           </div>
           
           <div className="flex items-center gap-2 flex-1 max-w-2xl">

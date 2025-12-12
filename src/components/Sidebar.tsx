@@ -661,7 +661,7 @@ export default function Sidebar({
         isCollapsed ? "w-16" : "w-72",
         "md:block" // Always show on desktop
       )}>
-        <div className="p-2 md:p-4 border-b border-border hidden md:block">
+        <div className="p-2 md:p-4 border-b border-border">
           {!isCollapsed && (
             <>
               <div className="flex items-center gap-2 mb-4">
@@ -669,7 +669,7 @@ export default function Sidebar({
                 <h1 className="text-lg font-semibold text-foreground truncate">Marketing</h1>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 hidden md:flex">
                 <Button
                   onClick={() => handleCreateNew('project')}
                   className="flex-1"

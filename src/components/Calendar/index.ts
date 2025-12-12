@@ -1,5 +1,7 @@
 export { CalendarGrid } from './CalendarGrid'
 export { DateCell } from './DateCell'
 export { EventBar } from './EventBar'
+export { EventPopover } from './EventPopover'
 export * from './types'
 export * from './utils'
+export * from './converters'

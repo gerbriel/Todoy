@@ -148,8 +148,8 @@ export default function Header({
   return (
     <>
       <header className="border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Back button for project and campaign views */}
             {(navigationView === 'project' || navigationView === 'campaign') && (
               <Button
@@ -201,17 +201,19 @@ export default function Header({
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 max-w-2xl">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowSearch(true)}
-              className="min-w-[150px] md:min-w-[250px] justify-start"
+              className="w-full justify-start"
             >
               <MagnifyingGlass size={16} weight="bold" />
               <span className="ml-2">Search</span>
             </Button>
+          </div>
 
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Notifications - Hidden on mobile, moved to user dropdown */}
             {user && (
               <div className="hidden md:block">

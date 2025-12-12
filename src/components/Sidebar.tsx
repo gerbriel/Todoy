@@ -691,21 +691,21 @@ export default function Sidebar({
         </div>
         
         <ScrollArea className="flex-1 h-full">
-          <div className="p-2">
-            <div className="space-y-1 mb-3">
+          <div className="p-2 md:p-2">
+            <div className="space-y-2 md:space-y-1 mb-3">
               {onNavigateToMaster && (
                 <button
                   onClick={onNavigateToMaster}
                   className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    'w-full text-left px-6 md:px-3 py-6 md:py-2 rounded-lg md:rounded text-base md:text-sm font-medium transition-colors flex items-center justify-center md:justify-start gap-3 md:gap-2',
                     navigationView === 'master'
                       ? 'bg-accent text-accent-foreground'
                       : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
+                    isCollapsed && 'md:justify-center md:px-0'
                   )}
                   title={isCollapsed ? "Master View" : ""}
                 >
-                  <ChartBar size={16} weight="duotone" />
+                  <ChartBar size={24} weight="duotone" className="md:w-4 md:h-4" />
                   {!isCollapsed && "Master View"}
                 </button>
               )}
@@ -713,41 +713,41 @@ export default function Sidebar({
               <button
                 onClick={onNavigateToAllProjects}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                  'w-full text-left px-6 md:px-3 py-6 md:py-2 rounded-lg md:rounded text-base md:text-sm font-medium transition-colors flex items-center justify-center md:justify-start gap-3 md:gap-2',
                   navigationView === 'all-projects'
                     ? 'bg-accent text-accent-foreground'
                     : 'text-foreground hover:bg-muted',
-                  isCollapsed && 'justify-center px-0'
+                  isCollapsed && 'md:justify-center md:px-0'
                 )}
                 title={isCollapsed ? "All Projects" : ""}
               >
-                <Stack size={16} weight="duotone" />
+                <Stack size={24} weight="duotone" className="md:w-4 md:h-4" />
                 {!isCollapsed && "All Projects"}
               </button>
               
               <button
                 onClick={onNavigateToAllCampaigns}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                  'w-full text-left px-6 md:px-3 py-6 md:py-2 rounded-lg md:rounded text-base md:text-sm font-medium transition-colors flex items-center justify-center md:justify-start gap-3 md:gap-2',
                   navigationView === 'all-campaigns'
                     ? 'bg-accent text-accent-foreground'
                     : 'text-foreground hover:bg-muted',
-                  isCollapsed && 'justify-center px-0'
+                  isCollapsed && 'md:justify-center md:px-0'
                 )}
                 title={isCollapsed ? "All Campaigns" : ""}
               >
-                <Briefcase size={16} weight="duotone" />
+                <Briefcase size={24} weight="duotone" className="md:w-4 md:h-4" />
                 {!isCollapsed && "All Campaigns"}
               </button>
               
               <button
                 onClick={onNavigateToAllTasks}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                  'w-full text-left px-6 md:px-3 py-6 md:py-2 rounded-lg md:rounded text-base md:text-sm font-medium transition-colors flex items-center justify-center md:justify-start gap-3 md:gap-2',
                   navigationView === 'all-tasks'
                     ? 'bg-accent text-accent-foreground'
                     : 'text-foreground hover:bg-muted',
-                  isCollapsed && 'justify-center px-0'
+                  isCollapsed && 'md:justify-center md:px-0'
                 )}
                 title={isCollapsed ? "All Tasks" : ""}
               >
@@ -759,15 +759,15 @@ export default function Sidebar({
                 <button
                   onClick={onNavigateToRecentlyCompleted}
                   className={cn(
-                    'w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2',
+                    'w-full text-left px-6 md:px-3 py-6 md:py-2 rounded-lg md:rounded text-base md:text-sm font-medium transition-colors flex items-center justify-center md:justify-start gap-3 md:gap-2',
                     navigationView === 'recently-completed'
                       ? 'bg-accent text-accent-foreground'
                       : 'text-foreground hover:bg-muted',
-                    isCollapsed && 'justify-center px-0'
+                    isCollapsed && 'md:justify-center md:px-0'
                   )}
                   title={isCollapsed ? "Recently Completed" : ""}
                 >
-                  <CheckCircle size={16} weight="duotone" className="text-green-600" />
+                  <CheckCircle size={24} weight="duotone" className="text-green-600 md:w-4 md:h-4" />
                   {!isCollapsed && "Recently Completed"}
                 </button>
               )}
@@ -838,7 +838,7 @@ export default function Sidebar({
             })()}
             
             {!isCollapsed && sortedProjects.length > 0 && (
-              <div className="mb-4">
+              <div className="mb-4 hidden md:block">
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Projects
                 </div>
@@ -849,7 +849,7 @@ export default function Sidebar({
             )}
 
             {!isCollapsed && standaloneCampaigns.length > 0 && (
-              <div>
+              <div className="hidden md:block">
                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Campaigns
                 </div>

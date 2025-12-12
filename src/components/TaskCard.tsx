@@ -137,8 +137,9 @@ export default function TaskCard({
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onClick={handleCardClick}
         className={cn(
-          'group bg-card border border-border rounded-md p-3 transition-all',
+          'group bg-card border border-border rounded-md p-3 transition-all cursor-pointer',
           'hover:shadow-md hover:border-accent',
           isDragging && 'opacity-40 cursor-grabbing',
           task.completed && 'opacity-60'
@@ -182,7 +183,7 @@ export default function TaskCard({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-2 cursor-pointer" onClick={handleCardClick}>
+        <div className="flex flex-wrap gap-1.5 mb-2">
           {visibleLabels.map(label => (
             <Badge
               key={label.id}
@@ -201,7 +202,7 @@ export default function TaskCard({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground cursor-pointer" onClick={handleCardClick}>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           {task.dueDate && (
             <div className={cn(
               'flex items-center gap-1',

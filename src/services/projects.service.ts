@@ -413,7 +413,6 @@ export const projectsService = {
               project_id: newProject.id,
               org_id: originalCampaign.org_id,
               campaign_type: originalCampaign.campaign_type || 'other',
-              campaign_stage: originalCampaign.campaign_stage || 'planning',
               planning_start_date: null, // Reset dates for template
               launch_date: null,
               end_date: null,

@@ -342,7 +342,7 @@ export const campaignsService = {
       // Use target project or keep same project
       const projectId = targetProjectId || originalCampaign.projectId
 
-      // Create new campaign with campaign_stage to satisfy RLS
+      // Create new campaign
       const { data: newCampaign, error: createError } = await supabase
         .from('campaigns')
         .insert({
@@ -351,7 +351,6 @@ export const campaignsService = {
           project_id: projectId,
           org_id: originalCampaign.orgId,
           campaign_type: originalCampaign.campaignType || 'other',
-          campaign_stage: originalCampaign.campaignStage || 'planning',
           planning_start_date: null, // Reset dates for template
           launch_date: null,
           end_date: null,
@@ -433,7 +432,6 @@ export const campaignsService = {
         projectId: newCampaign.project_id,
         orgId: newCampaign.org_id,
         campaignType: newCampaign.campaign_type,
-        campaignStage: newCampaign.campaign_stage,
         planningStartDate: newCampaign.planning_start_date,
         launchDate: newCampaign.launch_date,
         endDate: newCampaign.end_date,

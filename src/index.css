@@ -18,7 +18,7 @@
     background-color: transparent !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     background-size: 100% 100%;
-    animation: gradientShift 18000s ease-in-out infinite;
+    animation: gradientShift 7200s ease-in-out infinite;
     transition: none !important;
   }
   

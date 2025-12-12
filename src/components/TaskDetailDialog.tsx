@@ -87,7 +87,7 @@ export default function TaskDetailDialog({
     }
 
     try {
-      await tasksService.update(task.id, {
+      const updates = {
         title: title.trim(),
         description: description.trim(),
         campaignId: selectedCampaignId,
@@ -95,7 +95,17 @@ export default function TaskDetailDialog({
         dueDate: dueDate || undefined,
         stageDates,
         labelIds: selectedLabelIds,
-      })
+      }
+      
+      await tasksService.update(task.id, updates)
+      
+      // Update local state with the changes
+      setTasks(prev => prev.map(t => 
+        t.id === task.id 
+          ? { ...t, ...updates }
+          : t
+      ))
+      
       toast.success('Task updated')
       onOpenChange(false)
     } catch (error) {
@@ -399,7 +409,7 @@ export default function TaskDetailDialog({
                 <div className="space-y-2">
                   <UILabel htmlFor="task-campaign">Campaign</UILabel>
                   <Select value={selectedCampaignId} onValueChange={handleCampaignChange}>
-                    <SelectTrigger id="task-campaign">
+                    <SelectTrigger id="task-campaign" className="truncate">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -407,7 +417,7 @@ export default function TaskDetailDialog({
                         <SelectItem key={campaign.id} value={campaign.id}>
                           <div className="flex items-center gap-2">
                             <Target size={14} weight="duotone" />
-                            {campaign.title}
+                            <span className="truncate">{campaign.title}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -419,13 +429,13 @@ export default function TaskDetailDialog({
                   <div className="space-y-2">
                     <UILabel htmlFor="task-list">List</UILabel>
                     <Select value={selectedListId} onValueChange={setSelectedListId}>
-                      <SelectTrigger id="task-list">
+                      <SelectTrigger id="task-list" className="truncate">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {availableLists.map(list => (
                           <SelectItem key={list.id} value={list.id}>
-                            {list.title}
+                            <span className="truncate">{list.title}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>

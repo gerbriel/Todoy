@@ -337,6 +337,10 @@ export const campaignsService = {
       // Get the original campaign
       const originalCampaign = await this.getById(campaignId)
 
+      // Get current user for created_by
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
       // Use target project or keep same project
       const projectId = targetProjectId || originalCampaign.projectId
 
@@ -356,6 +360,7 @@ export const campaignsService = {
           order: originalCampaign.order,
           completed: false,
           archived: false,
+          created_by: user.id,
         })
         .select()
         .single()

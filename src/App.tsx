@@ -426,60 +426,152 @@ function MainApp() {
         
         <main className="flex-1 overflow-y-auto md:overflow-hidden relative pb-16 md:pb-0">
           {navigationView === 'all-projects' && (
-            <ProjectsView
-              projects={projects || []}
-              setProjects={setProjects}
-              campaigns={campaigns || []}
-              setCampaigns={setCampaigns}
-              tasks={tasks || []}
-              setTasks={setTasks}
-              lists={lists || []}
-              setLists={setLists}
-              organization={organization}
-              onNavigateToProject={handleNavigateToProject}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <ProjectsView
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  campaigns={campaigns || []}
+                  setCampaigns={setCampaigns}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  lists={lists || []}
+                  setLists={setLists}
+                  organization={organization}
+                  onNavigateToProject={handleNavigateToProject}
+                />
+              ) : (
+                <NewCalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={filters}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  users={users || []}
+                  viewLevel="all"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
           
           {navigationView === 'all-campaigns' && (
-            <CampaignsView
-              campaigns={campaigns || []}
-              setCampaigns={setCampaigns}
-              projects={projects || []}
-              tasks={tasks || []}
-              onNavigateToCampaign={handleNavigateToCampaign}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <CampaignsView
+                  campaigns={campaigns || []}
+                  setCampaigns={setCampaigns}
+                  projects={projects || []}
+                  tasks={tasks || []}
+                  onNavigateToCampaign={handleNavigateToCampaign}
+                />
+              ) : (
+                <NewCalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={filters}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  users={users || []}
+                  viewLevel="all"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
           
           {navigationView === 'all-tasks' && (
-            <TasksView
-              tasks={tasks || []}
-              campaigns={campaigns || []}
-              projects={projects || []}
-              lists={lists || []}
-              labels={labels || []}
-              setTasks={setTasks}
-              setLabels={setLabels}
-              onNavigateToCampaign={handleNavigateToCampaign}
-              orgId={organization?.id || ''}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <TasksView
+                  tasks={tasks || []}
+                  campaigns={campaigns || []}
+                  projects={projects || []}
+                  lists={lists || []}
+                  labels={labels || []}
+                  setTasks={setTasks}
+                  setLabels={setLabels}
+                  onNavigateToCampaign={handleNavigateToCampaign}
+                  orgId={organization?.id || ''}
+                />
+              ) : (
+                <NewCalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={filters}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  users={users || []}
+                  viewLevel="all"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
 
           {navigationView === 'master' && (
-            <MasterView
-              projects={projects || []}
-              setProjects={setProjects}
-              campaigns={campaigns || []}
-              setCampaigns={setCampaigns}
-              tasks={tasks || []}
-              setTasks={setTasks}
-              lists={lists || []}
-              setLists={setLists}
-              labels={labels || []}
-              setLabels={setLabels}
-              onNavigateToProject={handleNavigateToProject}
-              onNavigateToCampaign={handleNavigateToCampaign}
-              orgId={organization?.id || ''}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <MasterView
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  campaigns={campaigns || []}
+                  setCampaigns={setCampaigns}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  lists={lists || []}
+                  setLists={setLists}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  onNavigateToProject={handleNavigateToProject}
+                  onNavigateToCampaign={handleNavigateToCampaign}
+                  orgId={organization?.id || ''}
+                />
+              ) : (
+                <NewCalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={filters}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  users={users || []}
+                  viewLevel="all"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
 
           {navigationView === 'archive' && (
@@ -498,13 +590,36 @@ function MainApp() {
           )}
 
           {navigationView === 'recently-completed' && (
-            <RecentlyCompletedView
-              projects={projects || []}
-              setProjects={setProjects}
-              campaigns={campaigns || []}
-              tasks={tasks || []}
-              onNavigateToProject={handleNavigateToProject}
-            />
+            <>
+              {viewMode === 'kanban' ? (
+                <RecentlyCompletedView
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  onNavigateToProject={handleNavigateToProject}
+                />
+              ) : (
+                <NewCalendarView
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
+                  setTasks={setTasks}
+                  labels={labels || []}
+                  setLabels={setLabels}
+                  lists={lists || []}
+                  activeCampaignId={null}
+                  filters={filters}
+                  projects={projects || []}
+                  setProjects={setProjects}
+                  users={users || []}
+                  viewLevel="all"
+                  onCampaignClick={handleNavigateToCampaign}
+                  onProjectClick={handleNavigateToProject}
+                  orgId={organization?.id || ''}
+                  setCampaigns={setCampaigns}
+                />
+              )}
+            </>
           )}
           
           {navigationView === 'organization' && (

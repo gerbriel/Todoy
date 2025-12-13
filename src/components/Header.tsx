@@ -226,6 +226,30 @@ export default function Header({
               </div>
             )}
 
+            {/* View mode toggles for Master View, All views, and Recently Completed */}
+            {(navigationView === 'master' || navigationView === 'all-projects' || navigationView === 'all-campaigns' || navigationView === 'all-tasks' || navigationView === 'recently-completed') && (
+              <>
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('kanban')}
+                  className="w-10 h-10 p-0"
+                  title="Kanban"
+                >
+                  <Kanban size={20} weight="bold" />
+                </Button>
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                  className="w-10 h-10 p-0"
+                  title="Calendar"
+                >
+                  <CalendarBlank size={20} weight="bold" />
+                </Button>
+              </>
+            )}
+
             {/* Campaign action buttons - Hidden on mobile */}
             {navigationView === 'campaign' && activeCampaign && (
               <>

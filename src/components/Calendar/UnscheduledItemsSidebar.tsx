@@ -359,10 +359,9 @@ export default function UnscheduledItemsSidebar({
     let skipped = 0
 
     try {
+      // STEP 1: Reassign campaigns within projects (big layer first)
       const campaignUpdates: Array<{ id: string; startDate: string; endDate: string }> = []
-      const taskUpdates: Array<{ id: string; startDate: string; dueDate: string }> = []
-
-      // Prepare all campaign updates
+      
       for (const campaign of scheduledCampaigns) {
         const project = projects.find(p => p.id === campaign.projectId)
         
@@ -381,26 +380,7 @@ export default function UnscheduledItemsSidebar({
         })
       }
 
-      // Prepare all task updates
-      for (const task of scheduledTasks) {
-        const campaign = campaigns.find(c => c.id === task.campaignId)
-        
-        if (!task.campaignId || !campaign || !campaign.startDate || !campaign.endDate) {
-          skipped++
-          continue
-        }
-
-        const startDate = new Date(campaign.startDate)
-        const dueDate = addDays(startDate, 1)
-
-        taskUpdates.push({
-          id: task.id,
-          startDate: startDate.toISOString(),
-          dueDate: dueDate.toISOString()
-        })
-      }
-
-      // Execute all updates
+      // Execute campaign updates
       for (const update of campaignUpdates) {
         try {
           await campaignsService.update(update.id, {
@@ -414,6 +394,59 @@ export default function UnscheduledItemsSidebar({
         }
       }
 
+      // Update campaign state immediately so tasks can use new dates
+      setCampaigns(prevCampaigns =>
+        prevCampaigns.map(c => {
+          const update = campaignUpdates.find(u => u.id === c.id)
+          return update ? { ...c, startDate: update.startDate, endDate: update.endDate } : c
+        })
+      )
+
+      // STEP 2: Reassign tasks within campaigns (using updated campaign dates)
+      // Get the updated campaigns to use their new dates
+      const updatedCampaignsMap = new Map(
+        campaignUpdates.map(u => [u.id, { startDate: u.startDate, endDate: u.endDate }])
+      )
+
+      const taskUpdates: Array<{ id: string; startDate: string; dueDate: string }> = []
+      
+      for (const task of scheduledTasks) {
+        if (!task.campaignId) {
+          skipped++
+          continue
+        }
+
+        // Use updated campaign dates if available, otherwise fall back to original
+        const campaignDates = updatedCampaignsMap.get(task.campaignId)
+        const campaign = campaigns.find(c => c.id === task.campaignId)
+        
+        let campaignStartDate: string | undefined
+        let campaignEndDate: string | undefined
+        
+        if (campaignDates) {
+          campaignStartDate = campaignDates.startDate
+          campaignEndDate = campaignDates.endDate
+        } else if (campaign) {
+          campaignStartDate = campaign.startDate
+          campaignEndDate = campaign.endDate
+        }
+        
+        if (!campaignStartDate || !campaignEndDate) {
+          skipped++
+          continue
+        }
+
+        const startDate = new Date(campaignStartDate)
+        const dueDate = addDays(startDate, 1)
+
+        taskUpdates.push({
+          id: task.id,
+          startDate: startDate.toISOString(),
+          dueDate: dueDate.toISOString()
+        })
+      }
+
+      // Execute task updates
       for (const update of taskUpdates) {
         try {
           await tasksService.update(update.id, {
@@ -427,7 +460,13 @@ export default function UnscheduledItemsSidebar({
         }
       }
 
-      // Batch update state once at the end
+      // Update task state
+      setTasks(prevTasks =>
+        prevTasks.map(t => {
+          const update = taskUpdates.find(u => u.id === t.id)
+          return update ? { ...t, startDate: update.startDate, dueDate: update.dueDate } : t
+        })
+      )
       if (campaignUpdates.length > 0) {
         setCampaigns(prevCampaigns =>
           prevCampaigns.map(c => {

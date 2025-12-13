@@ -314,12 +314,12 @@ export default function KanbanView({
                     {campaign.title}
                   </h3>
                 )}
-                {(campaign.launchDate || campaign.endDate) && (
+                {(campaign.startDate || campaign.endDate) && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                    {campaign.launchDate && (
+                    {campaign.startDate && (
                       <div className="flex items-center gap-1">
                         <CalendarBlank size={14} weight="duotone" />
-                        <span>Launch: {formatDate(campaign.launchDate)}</span>
+                        <span>Launch: {formatDate(campaign.startDate)}</span>
                       </div>
                     )}
                     {campaign.endDate && (
@@ -412,17 +412,17 @@ export default function KanbanView({
                 {activeCampaign.title}
               </h2>
             )}
-            {(activeCampaign.launchDate || activeCampaign.endDate || activeCampaign.description) && (
+            {(activeCampaign.startDate || activeCampaign.endDate || activeCampaign.description) && (
               <div className="space-y-2">
                 {activeCampaign.description && (
                   <p className="text-sm text-muted-foreground">{activeCampaign.description}</p>
                 )}
-                {(activeCampaign.launchDate || activeCampaign.endDate) && (
+                {(activeCampaign.startDate || activeCampaign.endDate) && (
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {activeCampaign.launchDate && (
+                    {activeCampaign.startDate && (
                       <div className="flex items-center gap-1.5">
                         <CalendarBlank size={14} weight="duotone" />
-                        <span>Launch: {formatDate(activeCampaign.launchDate)}</span>
+                        <span>Start: {formatDate(activeCampaign.startDate)}</span>
                       </div>
                     )}
                     {activeCampaign.endDate && (

@@ -28,6 +28,7 @@ export const tasksService = {
         createdAt: task.created_at,
         listId: task.list_id,
         campaignId: task.campaign_id,
+        startDate: task.start_date,
         dueDate: task.due_date,
         currentStage: task.current_stage,
         assignedTo: task.task_assignees?.map((a: any) => a.user_id) || [],
@@ -73,6 +74,7 @@ export const tasksService = {
         createdAt: task.created_at,
         listId: task.list_id,
         campaignId: task.campaign_id,
+        startDate: task.start_date,
         dueDate: task.due_date,
         currentStage: task.current_stage,
         assignedTo: task.task_assignees?.map((a: any) => a.user_id) || [],
@@ -117,6 +119,7 @@ export const tasksService = {
         createdAt: data.created_at,
         listId: data.list_id,
         campaignId: data.campaign_id,
+        startDate: data.start_date,
         dueDate: data.due_date,
         currentStage: data.current_stage,
         assignedTo: data.task_assignees?.map((a: any) => a.user_id) || [],
@@ -197,6 +200,7 @@ export const tasksService = {
       if (updates.order !== undefined) updateData.order = updates.order
       if (updates.listId !== undefined) updateData.list_id = updates.listId
       if (updates.campaignId !== undefined) updateData.campaign_id = updates.campaignId
+      if (updates.startDate !== undefined) updateData.start_date = updates.startDate
       if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate
       if (updates.currentStage !== undefined) updateData.current_stage = updates.currentStage
       if (updates.completed !== undefined) updateData.completed = updates.completed

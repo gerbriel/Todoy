@@ -213,11 +213,11 @@ export default function CalendarView({
         const cleanTitle = project.title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()
         
         // Project Active Phase (Start to Target End or Actual End)
-        if (project.startDate && (project.targetEndDate || project.actualEndDate)) {
+        if (project.startDate && (project.endDate || project.actualEndDate)) {
           const startDate = new Date(project.startDate)
           const endDate = project.actualEndDate 
             ? new Date(project.actualEndDate) 
-            : new Date(project.targetEndDate!)
+            : new Date(project.endDate!)
           
           if (isWithinInterval(date, { start: startDate, end: endDate })) {
             const isStart = isSameDay(date, startDate)
@@ -282,9 +282,9 @@ export default function CalendarView({
       const cleanTitle = campaign.title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()
       
       // Planning Phase (Planning Start to Launch)
-      if (campaign.planningStartDate && campaign.launchDate) {
-        const planningStart = new Date(campaign.planningStartDate)
-        const launchDate = new Date(campaign.launchDate)
+      if (campaign.startDate && campaign.startDate) {
+        const planningStart = new Date(campaign.startDate)
+        const launchDate = new Date(campaign.startDate)
         if (isWithinInterval(date, { start: planningStart, end: launchDate })) {
           const isStart = isSameDay(date, planningStart)
           const isEnd = isSameDay(date, launchDate)
@@ -298,7 +298,7 @@ export default function CalendarView({
             campaignId: campaign.id
           })
         }
-      } else if (campaign.planningStartDate && isSameDay(new Date(campaign.planningStartDate), date)) {
+      } else if (campaign.startDate && isSameDay(new Date(campaign.startDate), date)) {
         // Single planning start date (no launch date set)
         events.push({
           id: `campaign-planning-${campaign.id}`,
@@ -311,8 +311,8 @@ export default function CalendarView({
       }
       
       // Active Phase (Launch to End)
-      if (campaign.launchDate && campaign.endDate) {
-        const launchDate = new Date(campaign.launchDate)
+      if (campaign.startDate && campaign.endDate) {
+        const launchDate = new Date(campaign.startDate)
         const endDate = new Date(campaign.endDate)
         if (isWithinInterval(date, { start: launchDate, end: endDate })) {
           const isStart = isSameDay(date, launchDate)
@@ -327,7 +327,7 @@ export default function CalendarView({
             campaignId: campaign.id
           })
         }
-      } else if (campaign.launchDate && !campaign.endDate && isSameDay(new Date(campaign.launchDate), date)) {
+      } else if (campaign.startDate && !campaign.endDate && isSameDay(new Date(campaign.startDate), date)) {
         // Single launch date (no end date set)
         events.push({
           id: `campaign-launch-${campaign.id}`,
@@ -340,9 +340,9 @@ export default function CalendarView({
       }
       
       // Follow-up Phase (End to Follow-up)
-      if (campaign.endDate && campaign.followUpDate) {
+      if (campaign.endDate && campaign.endDate) {
         const endDate = new Date(campaign.endDate)
-        const followUpDate = new Date(campaign.followUpDate)
+        const followUpDate = new Date(campaign.endDate)
         if (isWithinInterval(date, { start: endDate, end: followUpDate })) {
           const isStart = isSameDay(date, endDate)
           const isEnd = isSameDay(date, followUpDate)
@@ -356,7 +356,7 @@ export default function CalendarView({
             campaignId: campaign.id
           })
         }
-      } else if (campaign.followUpDate && !campaign.endDate && isSameDay(new Date(campaign.followUpDate), date)) {
+      } else if (campaign.endDate && !campaign.endDate && isSameDay(new Date(campaign.endDate), date)) {
         // Single follow-up date
         events.push({
           id: `campaign-followup-${campaign.id}`,
@@ -370,8 +370,8 @@ export default function CalendarView({
       
       // Campaign creation date (if no other dates set)
       if (campaign.createdAt && 
-          !campaign.planningStartDate && 
-          !campaign.launchDate && 
+          !campaign.startDate && 
+          !campaign.startDate && 
           isSameDay(new Date(campaign.createdAt), date)) {
         events.push({
           id: `campaign-created-${campaign.id}`,

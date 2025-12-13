@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Project, Campaign } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
@@ -41,10 +41,23 @@ export default function ProjectEditDialog({
 }: ProjectEditDialogProps) {
   const [title, setTitle] = useState(project.title)
   const [description, setDescription] = useState(project.description)
-  const [startDate, setStartDate] = useState(project.startDate || '')
-  const [targetEndDate, setTargetEndDate] = useState(project.targetEndDate || '')
-  const [actualEndDate, setActualEndDate] = useState(project.actualEndDate || '')
+  const [startDate, setStartDate] = useState(
+    project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : ''
+  )
+  const [endDate, setEndDate] = useState(
+    project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : ''
+  )
   const [stageDates, setStageDates] = useState(project.stageDates || [])
+
+  // Update form when project prop changes (e.g., after drag-and-drop)
+  useEffect(() => {
+    setTitle(project.title)
+    setDescription(project.description)
+    // Convert ISO dates to YYYY-MM-DD format for date inputs
+    setStartDate(project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '')
+    setEndDate(project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '')
+    setStageDates(project.stageDates || [])
+  }, [project])
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -56,9 +69,8 @@ export default function ProjectEditDialog({
       await projectsService.update(project.id, {
         title: title.trim(),
         description: description.trim(),
-        startDate: startDate || undefined,
-        targetEndDate: targetEndDate || undefined,
-        actualEndDate: actualEndDate || undefined,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
         stageDates,
       })
       toast.success('Project updated')
@@ -74,8 +86,7 @@ export default function ProjectEditDialog({
     setTitle(project.title)
     setDescription(project.description)
     setStartDate(project.startDate || '')
-    setTargetEndDate(project.targetEndDate || '')
-    setActualEndDate(project.actualEndDate || '')
+    setEndDate(project.endDate || '')
     setStageDates(project.stageDates || [])
     onOpenChange(false)
   }
@@ -146,7 +157,7 @@ export default function ProjectEditDialog({
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="project-start-date">Start Date</Label>
                 <Input
@@ -158,26 +169,13 @@ export default function ProjectEditDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="project-target-end-date">Target End Date</Label>
+                <Label htmlFor="project-end-date">End Date</Label>
                 <Input
-                  id="project-target-end-date"
+                  id="project-end-date"
                   type="date"
-                  value={targetEndDate}
-                  onChange={(e) => setTargetEndDate(e.target.value)}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="project-actual-end-date">Actual End Date</Label>
-                <Input
-                  id="project-actual-end-date"
-                  type="date"
-                  value={actualEndDate}
-                  onChange={(e) => setActualEndDate(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Set when project is completed
-                </p>
               </div>
             </div>
           </div>

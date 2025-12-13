@@ -15,6 +15,7 @@ interface DateCellProps {
   onDragOver: (date: Date, e: React.DragEvent) => void
   onDrop: (date: Date, e: React.DragEvent) => void
   maxVisibleEvents?: number
+  isDragging?: boolean
   'data-calendar-cell'?: boolean
 }
 
@@ -27,7 +28,8 @@ export function DateCell({
   onEventClick,
   onDragOver,
   onDrop,
-  maxVisibleEvents = 3
+  maxVisibleEvents = 3,
+  isDragging = false
 }: DateCellProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [showPopover, setShowPopover] = useState(false)
@@ -61,7 +63,12 @@ export function DateCell({
           isToday && 'bg-accent/10',
           isDragOver && 'bg-accent/20 ring-2 ring-accent ring-inset'
         )}
-        onClick={() => onDateClick(date)}
+        onClick={() => {
+          // Don't trigger date click when dragging
+          if (!isDragging) {
+            onDateClick(date)
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault()
           setIsDragOver(true)

@@ -78,7 +78,12 @@ export function EventPopover({
                   <div className="text-xs text-muted-foreground">
                     {format(event.startDate, 'MMM d')} - {format(event.endDate, 'MMM d')}
                   </div>
-                  {event.metadata.description && (
+                  {event.type === 'task' && event.metadata.campaignName && (
+                    <div className="text-xs text-muted-foreground/80 truncate mt-0.5">
+                      Campaign: {event.metadata.campaignName}
+                    </div>
+                  )}
+                  {event.metadata.description && event.type !== 'task' && (
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
                       {event.metadata.description}
                     </div>

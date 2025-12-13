@@ -25,7 +25,7 @@ export const projectsService = {
         ...project,
         createdAt: project.created_at,
         startDate: project.start_date,
-        endDate: project.end_date,
+        targetEndDate: project.target_end_date,
         actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
@@ -65,7 +65,7 @@ export const projectsService = {
         ...project,
         createdAt: project.created_at,
         startDate: project.start_date,
-        endDate: project.end_date,
+        targetEndDate: project.target_end_date,
         actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
@@ -105,7 +105,7 @@ export const projectsService = {
         ...project,
         createdAt: project.created_at,
         startDate: project.start_date,
-        endDate: project.end_date,
+        targetEndDate: project.target_end_date,
         actualEndDate: project.actual_end_date,
         stageDates: (project.stage_dates || []).map((sd: any) => ({
           id: sd.id,
@@ -214,7 +214,7 @@ export const projectsService = {
       if (updates.description !== undefined) updateData.description = updates.description
       if (updates.order !== undefined) updateData.order = updates.order
       if (updates.startDate !== undefined) updateData.start_date = updates.startDate
-      if (updates.endDate !== undefined) updateData.end_date = updates.endDate
+      if (updates.targetEndDate !== undefined) updateData.target_end_date = updates.targetEndDate
       if (updates.actualEndDate !== undefined) updateData.actual_end_date = updates.actualEndDate
       if (updates.completed !== undefined) updateData.completed = updates.completed
       if (updates.archived !== undefined) updateData.archived = updates.archived

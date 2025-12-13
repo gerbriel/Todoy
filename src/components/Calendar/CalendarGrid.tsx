@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -14,18 +14,27 @@ import {
   isSameDay
 } from 'date-fns'
 import { Button } from '../ui/button'
-import { CaretLeft, CaretRight } from '@phosphor-icons/react'
+import { CaretLeft, CaretRight, Funnel } from '@phosphor-icons/react'
 import { CalendarEvent, DragState } from './types'
 import { DateCell } from './DateCell'
 import { EventBar } from './EventBar'
 import { calculateEventSegments, organizeSegmentsByRow } from './utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 interface CalendarGridProps {
   events: CalendarEvent[]
   onEventClick: (event: CalendarEvent) => void
-  onEventMove: (eventId: string, newStartDate: Date) => void
+  onEventMove: (eventId: string, newStartDate: Date, newEndDate: Date) => void
   onEventResize: (eventId: string, newStartDate: Date, newEndDate: Date) => void
   onDateClick?: (date: Date) => void
+  onSidebarItemDrop?: (item: any, date: Date) => void
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -35,7 +44,8 @@ export function CalendarGrid({
   onEventClick,
   onEventMove,
   onEventResize,
-  onDateClick
+  onDateClick,
+  onSidebarItemDrop
 }: CalendarGridProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [dragState, setDragState] = useState<DragState>({
@@ -48,10 +58,29 @@ export function CalendarGrid({
     originalStartDate: null,
     originalEndDate: null
   })
+  const dragStateRef = useRef(dragState)
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
+  const dragOverDateRef = useRef(dragOverDate)
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null)
   const [resizeStartX, setResizeStartX] = useState<number | null>(null)
   const [resizeCellWidth, setResizeCellWidth] = useState<number>(0)
+  
+  // Filter state
+  const [eventTypeFilters, setEventTypeFilters] = useState({
+    tasks: true,
+    campaigns: true,
+    projects: true,
+    stages: true
+  })
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    dragStateRef.current = dragState
+  }, [dragState])
+  
+  useEffect(() => {
+    dragOverDateRef.current = dragOverDate
+  }, [dragOverDate])
   
   // Store cell width for resize calculations
   useEffect(() => {
@@ -80,8 +109,17 @@ export function CalendarGrid({
     calendarDays.push(new Date(lastDay.getTime() + 24 * 60 * 60 * 1000))
   }
   
+  // Filter events based on selected types
+  const filteredEvents = events.filter(event => {
+    if (event.type === 'task') return eventTypeFilters.tasks
+    if (event.type === 'campaign') return eventTypeFilters.campaigns
+    if (event.type === 'project') return eventTypeFilters.projects
+    if (event.type === 'stage') return eventTypeFilters.stages
+    return true
+  })
+  
   // Calculate event segments
-  const allSegments = events.flatMap(event => 
+  const allSegments = filteredEvents.flatMap(event => 
     calculateEventSegments(event, calendarStart, calendarEnd)
   )
   
@@ -96,6 +134,24 @@ export function CalendarGrid({
         endDate: dragState.endDate
       }
       resizePreviewSegments = calculateEventSegments(previewEvent, calendarStart, calendarEnd)
+    }
+  }
+  
+  // If dragging, create a preview event at the new position
+  let dragPreviewSegments: ReturnType<typeof calculateEventSegments> = []
+  if (dragState.isDragging && dragState.eventId && dragOverDate && dragState.originalStartDate && dragState.originalEndDate) {
+    const originalEvent = events.find(e => e.id === dragState.eventId)
+    if (originalEvent) {
+      const durationMs = dragState.originalEndDate.getTime() - dragState.originalStartDate.getTime()
+      const newStartDate = startOfDay(dragOverDate)
+      const newEndDate = new Date(newStartDate.getTime() + durationMs)
+      
+      const previewEvent: CalendarEvent = {
+        ...originalEvent,
+        startDate: newStartDate,
+        endDate: newEndDate
+      }
+      dragPreviewSegments = calculateEventSegments(previewEvent, calendarStart, calendarEnd)
     }
   }
   
@@ -131,8 +187,18 @@ export function CalendarGrid({
     }
     
     const handleMouseUp = () => {
-      if (dragState.isDragging && dragState.eventId && dragOverDate) {
-        onEventMove(dragState.eventId, dragOverDate)
+      const currentDragState = dragStateRef.current
+      const currentDragOverDate = dragOverDateRef.current
+      
+      if (currentDragState.isDragging && currentDragState.eventId && currentDragOverDate && currentDragState.originalStartDate && currentDragState.originalEndDate) {
+        // Calculate the duration of the original event
+        const durationMs = currentDragState.originalEndDate.getTime() - currentDragState.originalStartDate.getTime()
+        
+        // Apply the same duration to the new position
+        const newStartDate = startOfDay(currentDragOverDate)
+        const newEndDate = new Date(newStartDate.getTime() + durationMs)
+        
+        onEventMove(currentDragState.eventId, newStartDate, newEndDate)
       }
       
       setDragState({
@@ -157,14 +223,40 @@ export function CalendarGrid({
   }
   
   const handleDragOver = (date: Date, e: React.DragEvent) => {
+    e.preventDefault() // Allow drop
     if (dragState.isDragging) {
       setDragOverDate(date)
     }
   }
   
   const handleDrop = (date: Date, e: React.DragEvent) => {
-    if (dragState.isDragging && dragState.eventId) {
-      onEventMove(dragState.eventId, date)
+    e.preventDefault()
+    const currentDragState = dragStateRef.current
+    
+    // Check if this is a drop from the sidebar
+    try {
+      const dataStr = e.dataTransfer.getData('application/json')
+      if (dataStr) {
+        const data = JSON.parse(dataStr)
+        if (data.fromSidebar && onSidebarItemDrop) {
+          onSidebarItemDrop(data, date)
+          return
+        }
+      }
+    } catch (err) {
+      // Not JSON data, continue with normal drop handling
+    }
+    
+    // Handle normal event move
+    if (currentDragState.isDragging && currentDragState.eventId && currentDragState.originalStartDate && currentDragState.originalEndDate) {
+      // Calculate the duration of the original event
+      const durationMs = currentDragState.originalEndDate.getTime() - currentDragState.originalStartDate.getTime()
+      
+      // Apply the same duration to the new position
+      const newStartDate = startOfDay(date)
+      const newEndDate = new Date(newStartDate.getTime() + durationMs)
+      
+      onEventMove(currentDragState.eventId, newStartDate, newEndDate)
       setDragState({
         eventId: null,
         isDragging: false,
@@ -198,30 +290,34 @@ export function CalendarGrid({
     
     // Add global mouse move and mouse up listeners
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!resizeCellWidth) return
+      // Find which date cell we're over
+      const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY)
+      const dateCell = elements.find(el => el.hasAttribute('data-calendar-cell'))
       
-      const deltaX = moveEvent.clientX - e.clientX
-      const daysDelta = Math.round(deltaX / resizeCellWidth)
+      if (!dateCell) return
       
-      if (daysDelta === 0) return
+      const dateStr = dateCell.getAttribute('data-date')
+      if (!dateStr) return
+      
+      const hoveredDate = startOfDay(new Date(dateStr))
       
       setDragState(prev => {
-        if (!prev.originalStartDate || !prev.originalEndDate) return prev
+        if (!prev.resizeHandle || !prev.originalStartDate || !prev.originalEndDate) return prev
         
         let newStartDate = prev.originalStartDate
         let newEndDate = prev.originalEndDate
         
-        if (handle === 'start') {
-          newStartDate = startOfDay(addDays(prev.originalStartDate, daysDelta))
-          // Prevent start from going past end
-          if (newStartDate >= prev.originalEndDate) {
-            newStartDate = startOfDay(addDays(prev.originalEndDate, -1))
+        if (prev.resizeHandle === 'start') {
+          newStartDate = hoveredDate
+          // Prevent start from going past end (allow same day for single-day events)
+          if (newStartDate > prev.originalEndDate) {
+            newStartDate = prev.originalEndDate
           }
         } else {
-          newEndDate = startOfDay(addDays(prev.originalEndDate, daysDelta))
-          // Prevent end from going before start
-          if (newEndDate <= prev.originalStartDate) {
-            newEndDate = startOfDay(addDays(prev.originalStartDate, 1))
+          newEndDate = hoveredDate
+          // Prevent end from going before start (allow same day for single-day events)
+          if (newEndDate < prev.originalStartDate) {
+            newEndDate = prev.originalStartDate
           }
         }
         
@@ -283,6 +379,49 @@ export function CalendarGrid({
               {format(currentDate, 'MMMM yyyy')}
             </h2>
           </div>
+          
+          {/* Filter Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Funnel size={16} weight="bold" />
+                Filter
+                {(Object.values(eventTypeFilters).filter(v => !v).length > 0) && (
+                  <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">
+                    {Object.values(eventTypeFilters).filter(v => v).length}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Event Types</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem
+                checked={eventTypeFilters.tasks}
+                onCheckedChange={(checked) => setEventTypeFilters(prev => ({ ...prev, tasks: checked }))}
+              >
+                Tasks
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={eventTypeFilters.campaigns}
+                onCheckedChange={(checked) => setEventTypeFilters(prev => ({ ...prev, campaigns: checked }))}
+              >
+                Campaigns
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={eventTypeFilters.projects}
+                onCheckedChange={(checked) => setEventTypeFilters(prev => ({ ...prev, projects: checked }))}
+              >
+                Projects
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={eventTypeFilters.stages}
+                onCheckedChange={(checked) => setEventTypeFilters(prev => ({ ...prev, stages: checked }))}
+              >
+                Stages
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
@@ -315,6 +454,7 @@ export function CalendarGrid({
                 onEventClick={onEventClick}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                isDragging={dragState.isDragging}
                 data-calendar-cell
               />
             ))}
@@ -328,8 +468,8 @@ export function CalendarGrid({
                   const isDraggingThis = dragState.isDragging && dragState.eventId === segment.event.id
                   const isResizingThis = dragState.isResizing && dragState.eventId === segment.event.id
                   
-                  // Don't render original if we're showing preview
-                  if (isResizingThis) return null
+                  // Don't render original if we're dragging or resizing (show preview instead)
+                  if (isDraggingThis || isResizingThis) return null
                   
                   return (
                     <div
@@ -338,8 +478,8 @@ export function CalendarGrid({
                       style={{
                         position: 'absolute',
                         top: `${row * 120}px`,
-                        left: 0,
-                        right: 0,
+                        left: `${(segment.startCol / 7) * 100}%`,
+                        width: `${(segment.span / 7) * 100}%`,
                         height: '120px'
                       }}
                     >
@@ -364,6 +504,32 @@ export function CalendarGrid({
                 {resizePreviewSegments.map((segment, index) => (
                   <div
                     key={`preview-${index}`}
+                    className="pointer-events-none"
+                    style={{
+                      position: 'absolute',
+                      top: `${segment.row * 120}px`,
+                      left: `${(segment.startCol / 7) * 100}%`,
+                      width: `${(segment.span / 7) * 100}%`,
+                      height: '24px',
+                      marginTop: '2.5rem',
+                      backgroundColor: `${events.find(e => e.id === dragState.eventId)?.color}40`,
+                      border: `2px dashed ${events.find(e => e.id === dragState.eventId)?.color}`,
+                      borderRadius: segment.isStart && segment.isEnd ? '0.375rem' : 
+                                   segment.isStart ? '0.375rem 0 0 0.375rem' :
+                                   segment.isEnd ? '0 0.375rem 0.375rem 0' : '0',
+                      zIndex: 50
+                    }}
+                  />
+                ))}
+              </>
+            )}
+            
+            {/* Drag preview overlay */}
+            {dragState.isDragging && dragPreviewSegments.length > 0 && (
+              <>
+                {dragPreviewSegments.map((segment, index) => (
+                  <div
+                    key={`drag-preview-${index}`}
                     className="pointer-events-none"
                     style={{
                       position: 'absolute',

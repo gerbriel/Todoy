@@ -30,7 +30,7 @@ export function EventBar({
   // Calculate positioning
   const left = `${(startCol / 7) * 100}%`
   const width = `${(span / 7) * 100}%`
-  const top = `${2.5 + layer * 1.75}rem` // Offset by date number + stack layers
+  const top = `${2.5 + layer * 2.25}rem` // Offset by date number + stack layers (increased spacing for h-8 bars)
   
   // Determine border radius
   const borderRadius = isStart && isEnd 
@@ -107,7 +107,7 @@ export function EventBar({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'absolute h-6 px-2 py-1 cursor-pointer select-none',
+        'absolute h-8 px-2 py-1.5 cursor-pointer select-none',
         'transition-all duration-150',
         'flex items-center gap-1',
         'border-t-2 border-b-2',
@@ -117,8 +117,8 @@ export function EventBar({
         isResizing && 'cursor-ew-resize'
       )}
       style={{
-        left,
-        width,
+        left: 0,
+        width: '100%',
         top,
         backgroundColor: `${event.color}20`,
         borderColor: event.color,
@@ -135,7 +135,7 @@ export function EventBar({
         <div
           data-resize-handle
           className={cn(
-            'absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
+            'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-20',
             'hover:bg-current hover:opacity-30 active:opacity-50',
             'transition-opacity'
           )}
@@ -148,28 +148,34 @@ export function EventBar({
         />
       )}
       
-      {/* Event content */}
-      {showFullTitle ? (
-        <span className="text-xs font-medium truncate flex-1">
-          {event.title}
-        </span>
-      ) : (
-        <span className="text-xs font-medium w-full text-center">
-          {event.title.substring(0, 3).toUpperCase()}
-        </span>
-      )}
-      
-      {/* Completion indicator */}
-      {event.metadata.completed && (
-        <span className="text-xs">✓</span>
-      )}
+      {/* Main clickable content area - positioned above event background */}
+      <div 
+        className="relative z-10 flex items-center gap-1 flex-1 min-w-0 px-1"
+        style={{ pointerEvents: 'auto' }}
+      >
+        {/* Event content */}
+        {showFullTitle ? (
+          <span className="text-sm font-medium truncate flex-1">
+            {event.title}
+          </span>
+        ) : (
+          <span className="text-sm font-medium w-full text-center">
+            {event.title.substring(0, 3).toUpperCase()}
+          </span>
+        )}
+        
+        {/* Completion indicator */}
+        {event.metadata.completed && (
+          <span className="text-sm">✓</span>
+        )}
+      </div>
       
       {/* End resize handle */}
       {isEnd && showHandle && (
         <div
           data-resize-handle
           className={cn(
-            'absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize z-10',
+            'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize z-20',
             'hover:bg-current hover:opacity-30 active:opacity-50',
             'transition-opacity'
           )}

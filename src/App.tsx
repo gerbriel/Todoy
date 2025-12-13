@@ -141,7 +141,9 @@ function MainApp() {
     const unsubCampaigns = campaignsService.subscribe(organization.id, setCampaigns)
     const unsubLists = listsService.subscribeAll(organization.id, setLists)
     const unsubLabels = labelsService.subscribe(organization.id, setLabels)
-    const unsubTasks = tasksService.subscribe(organization.id, setTasks)
+    // TEMPORARILY DISABLED for debugging
+    // const unsubTasks = tasksService.subscribe(organization.id, setTasks)
+    const unsubTasks = () => {} // No-op
     const unsubMembers = orgMembersService.subscribe(organization.id, setOrgMembers)
     const unsubInvites = orgInvitesService.subscribe(organization.id, setOrgInvites)
     const unsubStageTemplates = stageTemplatesService.subscribeToChanges(organization.id, () => {

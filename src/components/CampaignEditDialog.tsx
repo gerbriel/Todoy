@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Campaign, CampaignType, CampaignStage, Project, List, Task } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
@@ -75,12 +75,30 @@ export default function CampaignEditDialog({
   const [budget, setBudget] = useState(campaign.budget?.toString() || '')
   const [actualSpend, setActualSpend] = useState(campaign.actualSpend?.toString() || '')
   const [goals, setGoals] = useState(campaign.goals || '')
-  const [planningStartDate, setPlanningStartDate] = useState(campaign.planningStartDate || '')
-  const [launchDate, setLaunchDate] = useState(campaign.launchDate || '')
-  const [endDate, setEndDate] = useState(campaign.endDate || '')
-  const [followUpDate, setFollowUpDate] = useState(campaign.followUpDate || '')
+  const [startDate, setStartDate] = useState(
+    campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : ''
+  )
+  const [endDate, setEndDate] = useState(
+    campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : ''
+  )
   const [stageDates, setStageDates] = useState(campaign.stageDates || [])
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+
+  // Update form when campaign prop changes (e.g., after drag-and-drop)
+  useEffect(() => {
+    setTitle(campaign.title)
+    setDescription(campaign.description || '')
+    setProjectId(campaign.projectId || '')
+    setCampaignType(campaign.campaignType || '')
+    setCampaignStage(campaign.campaignStage || '')
+    setBudget(campaign.budget?.toString() || '')
+    setActualSpend(campaign.actualSpend?.toString() || '')
+    setGoals(campaign.goals || '')
+    // Convert ISO dates to YYYY-MM-DD format for date inputs
+    setStartDate(campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : '')
+    setEndDate(campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : '')
+    setStageDates(campaign.stageDates || [])
+  }, [campaign])
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -98,10 +116,8 @@ export default function CampaignEditDialog({
         budget: budget ? parseFloat(budget) : undefined,
         actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
         goals: goals.trim() || undefined,
-        planningStartDate: planningStartDate || undefined,
-        launchDate: launchDate || undefined,
-        endDate: endDate || undefined,
-        followUpDate: followUpDate || undefined,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
         stageDates,
       })
       toast.success('Campaign updated')
@@ -122,10 +138,8 @@ export default function CampaignEditDialog({
     setBudget(campaign.budget?.toString() || '')
     setActualSpend(campaign.actualSpend?.toString() || '')
     setGoals(campaign.goals || '')
-    setPlanningStartDate(campaign.planningStartDate || '')
-    setLaunchDate(campaign.launchDate || '')
+    setStartDate(campaign.startDate || '')
     setEndDate(campaign.endDate || '')
-    setFollowUpDate(campaign.followUpDate || '')
     setStageDates(campaign.stageDates || [])
     onOpenChange(false)
   }
@@ -318,29 +332,17 @@ export default function CampaignEditDialog({
           <Separator />
 
           <div className="space-y-3">
-            <Label>Key Dates</Label>
+            <Label>Campaign Timeline</Label>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="planning-start" className="text-sm font-normal">
-                  Planning Start Date
+                <Label htmlFor="start-date" className="text-sm font-normal">
+                  Start Date
                 </Label>
                 <Input
-                  id="planning-start"
+                  id="start-date"
                   type="date"
-                  value={planningStartDate}
-                  onChange={(e) => setPlanningStartDate(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="launch-date" className="text-sm font-normal">
-                  Launch Date
-                </Label>
-                <Input
-                  id="launch-date"
-                  type="date"
-                  value={launchDate}
-                  onChange={(e) => setLaunchDate(e.target.value)}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
 
@@ -353,18 +355,6 @@ export default function CampaignEditDialog({
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="followup-date" className="text-sm font-normal">
-                  Follow-up Date
-                </Label>
-                <Input
-                  id="followup-date"
-                  type="date"
-                  value={followUpDate}
-                  onChange={(e) => setFollowUpDate(e.target.value)}
                 />
               </div>
             </div>

@@ -5,29 +5,39 @@ import { startOfDay } from 'date-fns'
 /**
  * Convert tasks to calendar events
  */
-export function tasksToCalendarEvents(tasks: Task[]): CalendarEvent[] {
-  return tasks
-    .filter(task => task.dueDate)
-    .map(task => {
-      const dueDate = startOfDay(new Date(task.dueDate!))
-      // Tasks are single day events for now
+export function tasksToCalendarEvents(tasks: Task[], campaigns: Campaign[] = []): CalendarEvent[] {
+  const tasksWithDates = tasks.filter(t => t.dueDate)
+  
+  const events = tasksWithDates.map(task => {
+      // Use startDate if available, otherwise use dueDate for both start and end
+      const startDate = task.startDate 
+        ? startOfDay(new Date(task.startDate))
+        : startOfDay(new Date(task.dueDate!))
+      const endDate = startOfDay(new Date(task.dueDate!))
+      
+      // Find campaign name for this task
+      const campaign = campaigns.find(c => c.id === task.campaignId)
+      const campaignName = campaign ? ` (${campaign.title})` : ''
       
       return {
         id: `task-${task.id}`,
-        title: task.title,
-        startDate: dueDate,
-        endDate: dueDate,
+        title: task.title + campaignName,
+        startDate,
+        endDate,
         color: task.completed ? '#10b981' : '#3b82f6',
         type: 'task' as const,
         metadata: {
           taskId: task.id,
           campaignId: task.campaignId,
+          campaignName: campaign?.title,
           description: task.description,
           completed: task.completed,
           assignedTo: task.assignedTo
         }
       }
     })
+  
+  return events
 }
 
 /**
@@ -37,50 +47,18 @@ export function campaignsToCalendarEvents(campaigns: Campaign[]): CalendarEvent[
   const events: CalendarEvent[] = []
   
   campaigns.forEach(campaign => {
-    // Planning phase
-    if (campaign.planningStartDate && campaign.launchDate) {
+    // Main campaign event (startDate to endDate)
+    if (campaign.startDate && campaign.endDate) {
       events.push({
-        id: `campaign-planning-${campaign.id}`,
-        title: `${campaign.title} (Planning)`,
-        startDate: startOfDay(new Date(campaign.planningStartDate)),
-        endDate: startOfDay(new Date(campaign.launchDate)),
-        color: '#3b82f6',
-        type: 'campaign' as const,
-        metadata: {
-          campaignId: campaign.id,
-          description: `Planning phase for ${campaign.title}`
-        }
-      })
-    }
-    
-    // Active phase
-    if (campaign.launchDate && campaign.endDate) {
-      events.push({
-        id: `campaign-active-${campaign.id}`,
-        title: `${campaign.title} (Active)`,
-        startDate: startOfDay(new Date(campaign.launchDate)),
+        id: `campaign-${campaign.id}`,
+        title: campaign.title,
+        startDate: startOfDay(new Date(campaign.startDate)),
         endDate: startOfDay(new Date(campaign.endDate)),
         color: '#10b981',
         type: 'campaign' as const,
         metadata: {
           campaignId: campaign.id,
-          description: `Active phase for ${campaign.title}`
-        }
-      })
-    }
-    
-    // Follow-up phase
-    if (campaign.endDate && campaign.followUpDate) {
-      events.push({
-        id: `campaign-followup-${campaign.id}`,
-        title: `${campaign.title} (Follow-up)`,
-        startDate: startOfDay(new Date(campaign.endDate)),
-        endDate: startOfDay(new Date(campaign.followUpDate)),
-        color: '#8b5cf6',
-        type: 'campaign' as const,
-        metadata: {
-          campaignId: campaign.id,
-          description: `Follow-up phase for ${campaign.title}`
+          description: campaign.description
         }
       })
     }
@@ -113,9 +91,9 @@ export function projectsToCalendarEvents(projects: Project[]): CalendarEvent[] {
   const events: CalendarEvent[] = []
   
   projects.forEach(project => {
-    // Active phase
-    if (project.startDate && (project.targetEndDate || project.actualEndDate)) {
-      const endDate = project.actualEndDate || project.targetEndDate!
+    // Project event (startDate to endDate or actualEndDate)
+    if (project.startDate && (project.endDate || project.actualEndDate)) {
+      const endDate = project.actualEndDate || project.endDate!
       events.push({
         id: `project-${project.id}`,
         title: project.actualEndDate ? `${project.title} (Completed)` : `${project.title}`,
@@ -161,7 +139,7 @@ export function convertToCalendarEvents(
   projects: Project[]
 ): CalendarEvent[] {
   return [
-    ...tasksToCalendarEvents(tasks),
+    ...tasksToCalendarEvents(tasks, campaigns),
     ...campaignsToCalendarEvents(campaigns),
     ...projectsToCalendarEvents(projects)
   ]

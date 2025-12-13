@@ -127,6 +127,7 @@ export interface Task {
   listId: string
   campaignId: string
   labelIds: string[]
+  startDate?: string
   dueDate?: string
   order: number
   createdAt: string
@@ -161,10 +162,8 @@ export interface Campaign {
   budget?: number
   actualSpend?: number
   goals?: string
-  planningStartDate?: string
-  launchDate?: string
+  startDate?: string
   endDate?: string
-  followUpDate?: string
   stageDates?: StageDate[]
   completed?: boolean
   archived?: boolean
@@ -180,7 +179,7 @@ export interface Project {
   order: number
   createdAt: string
   startDate?: string
-  targetEndDate?: string
+  endDate?: string
   actualEndDate?: string
   stageDates?: StageDate[]
   completed?: boolean

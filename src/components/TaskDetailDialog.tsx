@@ -61,7 +61,13 @@ export default function TaskDetailDialog({
   const [description, setDescription] = useState(task.description)
   const [selectedCampaignId, setSelectedCampaignId] = useState(task.campaignId)
   const [selectedListId, setSelectedListId] = useState(task.listId)
-  const [dueDate, setDueDate] = useState(task.dueDate || '')
+  // Convert ISO date strings to YYYY-MM-DD format for date inputs
+  const [startDate, setStartDate] = useState(
+    task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : ''
+  )
+  const [dueDate, setDueDate] = useState(
+    task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
+  )
   const [stageDates, setStageDates] = useState(task.stageDates || [])
   const [comments, setComments] = useState<Comment[]>(task.comments || [])
   const [attachments, setAttachments] = useState<Attachment[]>(task.attachments || [])
@@ -92,7 +98,9 @@ export default function TaskDetailDialog({
         description: description.trim(),
         campaignId: selectedCampaignId,
         listId: selectedListId,
-        dueDate: dueDate || undefined,
+        // Convert YYYY-MM-DD to ISO strings if dates are provided
+        startDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
+        dueDate: dueDate ? new Date(dueDate + 'T00:00:00').toISOString() : undefined,
         stageDates,
         labelIds: selectedLabelIds,
       }
@@ -444,14 +452,26 @@ export default function TaskDetailDialog({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <UILabel htmlFor="task-due-date">Due Date</UILabel>
-                <Input
-                  id="task-due-date"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <UILabel htmlFor="task-start-date">Start Date</UILabel>
+                  <Input
+                    id="task-start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <UILabel htmlFor="task-due-date">Due Date</UILabel>
+                  <Input
+                    id="task-due-date"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                </div>
               </div>
 
               <Separator />

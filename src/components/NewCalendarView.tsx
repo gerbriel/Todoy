@@ -3,7 +3,7 @@ import { Campaign, Task, Project, Label, List, FilterState, User } from '@/lib/t
 import { CalendarGrid } from './Calendar/CalendarGrid'
 import { CalendarEvent } from './Calendar/types'
 import { convertToCalendarEvents } from './Calendar/converters'
-import { differenceInDays, addDays } from 'date-fns'
+import { differenceInDays, addDays, startOfDay } from 'date-fns'
 import { toast } from 'sonner'
 import { tasksService } from '@/services/tasks.service'
 import { campaignsService } from '@/services/campaigns.service'
@@ -11,6 +11,7 @@ import { projectsService } from '@/services/projects.service'
 import TaskDetailDialog from './TaskDetailDialog'
 import CampaignEditDialog from './CampaignEditDialog'
 import ProjectEditDialog from './ProjectEditDialog'
+import UnscheduledItemsSidebar from './Calendar/UnscheduledItemsSidebar'
 
 interface NewCalendarViewProps {
   campaigns: Campaign[]
@@ -55,6 +56,7 @@ export default function NewCalendarView({
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   
   // Convert data to calendar events
   const filteredTasks = activeCampaignId 
@@ -65,6 +67,8 @@ export default function NewCalendarView({
     ? campaigns.filter(c => c.id === activeCampaignId)
     : campaigns
   
+  console.log('[Calendar Render] Converting', filteredTasks.length, 'tasks to events')
+  
   const calendarEvents = convertToCalendarEvents(
     filteredTasks,
     filteredCampaigns,
@@ -72,7 +76,6 @@ export default function NewCalendarView({
   )
   
   const handleEventClick = (event: CalendarEvent) => {
-    console.log('Event clicked:', event)
     setSelectedEvent(event)
     
     // If it's a task, open the task detail dialog
@@ -91,37 +94,162 @@ export default function NewCalendarView({
     }
   }
   
-  const handleEventMove = async (eventId: string, newStartDate: Date) => {
-    console.log('Moving event:', eventId, 'to', newStartDate)
-    
-    // Find the original event
+  const handleEventMove = async (eventId: string, newStartDate: Date, newEndDate: Date) => {
     const event = calendarEvents.find(e => e.id === eventId)
     if (!event) return
     
-    // Calculate the duration
-    const duration = differenceInDays(event.endDate, event.startDate)
-    const newEndDate = addDays(newStartDate, duration)
+    console.log('🎯 Event Move:', { 
+      eventId, 
+      type: event.type, 
+      newStartDate: newStartDate.toISOString(), 
+      newEndDate: newEndDate.toISOString(),
+      hasCampaignId: !!event.metadata.campaignId,
+      hasProjectId: !!event.metadata.projectId,
+      hasSetCampaigns: !!setCampaigns,
+      hasSetProjects: !!setProjects
+    })
     
     try {
-      // Handle task moves
+      // Handle task moves - update both startDate and dueDate
       if (event.type === 'task' && event.metadata.taskId) {
         await tasksService.update(event.metadata.taskId, {
+          startDate: newStartDate.toISOString(),
           dueDate: newEndDate.toISOString()
         })
         
         setTasks(prevTasks => 
           prevTasks.map(t => 
             t.id === event.metadata.taskId 
-              ? { ...t, dueDate: newEndDate.toISOString() }
+              ? { ...t, startDate: newStartDate.toISOString(), dueDate: newEndDate.toISOString() }
               : t
           )
         )
         
-        toast.success('Task date updated')
+        toast.success('Task dates updated')
+        return
       }
       
-      // TODO: Handle campaign and project moves
-      // These would need corresponding service methods
+      // Handle campaign phase moves
+      if (event.type === 'campaign' && event.metadata.campaignId && setCampaigns) {
+        console.log('📅 Campaign Move Detected:', { eventId, campaignId: event.metadata.campaignId })
+        const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
+        if (!campaign) {
+          console.log('❌ Campaign not found in campaigns array')
+          return
+        }
+        console.log('✅ Campaign found:', campaign.title)
+        
+        const updates: Partial<Campaign> = {
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString()
+        }
+        
+        console.log(' Updating campaign with:', updates)
+        await campaignsService.update(event.metadata.campaignId, updates)
+        console.log('✅ Database updated')
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(c =>
+            c.id === event.metadata.campaignId ? { ...c, ...updates } : c
+          )
+        )
+        console.log('✅ State updated')
+        
+        toast.success('Campaign dates updated')
+        return
+      }
+      
+      // Handle project moves
+      if (event.type === 'project' && event.metadata.projectId && setProjects) {
+        await projectsService.update(event.metadata.projectId, {
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString()
+        })
+        
+        setProjects(prevProjects =>
+          prevProjects.map(p =>
+            p.id === event.metadata.projectId
+              ? { ...p, startDate: newStartDate.toISOString(), endDate: newEndDate.toISOString() }
+              : p
+          )
+        )
+        
+        toast.success('Project dates updated')
+        return
+      }
+      
+      // Handle stage moves (campaign stages shown on calendar)
+      if (event.type === 'stage' && event.metadata.stageId) {
+        console.log('📊 Stage Move Detected:', { stageId: event.metadata.stageId, campaignId: event.metadata.campaignId, projectId: event.metadata.projectId })
+        
+        // Handle campaign stage moves
+        if (event.metadata.campaignId) {
+          const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
+          if (!campaign || !campaign.stageDates) {
+            console.log('❌ Campaign or stageDates not found')
+            return
+          }
+          
+          const updatedStageDates = campaign.stageDates.map(stage => 
+            stage.id === event.metadata.stageId
+              ? { ...stage, startDate: newStartDate.toISOString(), endDate: newEndDate.toISOString() }
+              : stage
+          )
+          
+          console.log('💾 Updating campaign stage dates')
+          await campaignsService.update(event.metadata.campaignId, {
+            stageDates: updatedStageDates
+          })
+          
+          if (setCampaigns) {
+            setCampaigns(prevCampaigns =>
+              prevCampaigns.map(c =>
+                c.id === event.metadata.campaignId
+                  ? { ...c, stageDates: updatedStageDates }
+                  : c
+              )
+            )
+          }
+          
+          console.log('✅ Campaign stage updated')
+          toast.success('Stage dates updated')
+          return
+        }
+        
+        // Handle project stage moves
+        if (event.metadata.projectId && setProjects) {
+          const project = projects.find(p => p.id === event.metadata.projectId)
+          if (!project || !project.stageDates) {
+            console.log('❌ Project or stageDates not found')
+            return
+          }
+          
+          const updatedStageDates = project.stageDates.map(stage =>
+            stage.id === event.metadata.stageId
+              ? { ...stage, startDate: newStartDate.toISOString(), endDate: newEndDate.toISOString() }
+              : stage
+          )
+          
+          console.log('💾 Updating project stage dates')
+          await projectsService.update(event.metadata.projectId, {
+            stageDates: updatedStageDates
+          })
+          
+          setProjects(prevProjects =>
+            prevProjects.map(p =>
+              p.id === event.metadata.projectId
+                ? { ...p, stageDates: updatedStageDates }
+                : p
+            )
+          )
+          
+          console.log('✅ Project stage updated')
+          toast.success('Stage dates updated')
+          return
+        }
+        
+        console.log('❌ Stage has no campaignId or projectId')
+        return
+      }
       
     } catch (error) {
       console.error('Error moving event:', error)
@@ -130,36 +258,27 @@ export default function NewCalendarView({
   }
   
   const handleEventResize = async (eventId: string, newStartDate: Date, newEndDate: Date) => {
-    console.log('Resizing event:', eventId, newStartDate, newEndDate)
-    
     const event = calendarEvents.find(e => e.id === eventId)
-    if (!event) {
-      console.log('  -> Event not found!')
-      return
-    }
-    
-    console.log('  -> Event type:', event.type, 'metadata:', event.metadata)
+    if (!event) return
     
     try {
-      // Handle task resizes (just update due date since tasks don't have start dates)
+      // Handle task resizes - update both startDate and dueDate
       if (event.type === 'task' && event.metadata.taskId) {
-        console.log('  -> Updating task dueDate to:', newEndDate.toISOString())
-        
         await tasksService.update(event.metadata.taskId, {
+          startDate: newStartDate.toISOString(),
           dueDate: newEndDate.toISOString()
         })
         
-        console.log('  -> Task service update successful')
-        
-        setTasks(prevTasks => 
+        setTasks(prevTasks =>
           prevTasks.map(t => 
             t.id === event.metadata.taskId 
-              ? { ...t, dueDate: newEndDate.toISOString() }
+              ? { ...t, startDate: newStartDate.toISOString(), dueDate: newEndDate.toISOString() }
               : t
           )
         )
         
-        toast.success('Task date updated')
+        toast.success('Task dates updated')
+        return
       }
       
       // Handle campaign phase resizes
@@ -167,42 +286,31 @@ export default function NewCalendarView({
         const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
         if (!campaign) return
         
-        const updates: Partial<Campaign> = {}
-        
-        // Determine which phase based on event ID
-        if (eventId.includes('-planning-')) {
-          updates.planningStartDate = newStartDate.toISOString()
-          updates.launchDate = newEndDate.toISOString()
-        } else if (eventId.includes('-active-')) {
-          updates.launchDate = newStartDate.toISOString()
-          updates.endDate = newEndDate.toISOString()
-        } else if (eventId.includes('-followup-')) {
-          updates.endDate = newStartDate.toISOString()
-          updates.followUpDate = newEndDate.toISOString()
+        const updates: Partial<Campaign> = {
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString()
         }
         
-        if (Object.keys(updates).length > 0) {
-          await campaignsService.update(event.metadata.campaignId, updates)
-          
-          if (setCampaigns) {
-            setCampaigns(prevCampaigns =>
-              prevCampaigns.map(c =>
-                c.id === event.metadata.campaignId
-                  ? { ...c, ...updates }
-                  : c
-              )
+        await campaignsService.update(event.metadata.campaignId, updates)
+        
+        if (setCampaigns) {
+          setCampaigns(prevCampaigns =>
+            prevCampaigns.map(c =>
+              c.id === event.metadata.campaignId
+                ? { ...c, ...updates }
+                : c
             )
-          }
-          
-          toast.success('Campaign dates updated')
+          )
         }
+        
+        toast.success('Campaign dates updated')
       }
       
       // Handle project resizes
       if (event.type === 'project' && event.metadata.projectId) {
         await projectsService.update(event.metadata.projectId, {
           startDate: newStartDate.toISOString(),
-          targetEndDate: newEndDate.toISOString()
+          endDate: newEndDate.toISOString()
         })
         
         if (setProjects) {
@@ -212,7 +320,7 @@ export default function NewCalendarView({
                 ? { 
                     ...p, 
                     startDate: newStartDate.toISOString(),
-                    targetEndDate: newEndDate.toISOString()
+                    endDate: newEndDate.toISOString()
                   }
                 : p
             )
@@ -314,19 +422,142 @@ export default function NewCalendarView({
     // TODO: Could open a "create event" dialog
   }
   
+  const handleSidebarItemDrop = async (item: any, date: Date) => {
+    console.log('📦 Sidebar item dropped:', item, 'on date:', date)
+    
+    try {
+      const startDate = startOfDay(date)
+      // Default to 1 day duration for new items
+      const endDate = startOfDay(addDays(date, 1))
+      
+      if (item.type === 'task' && item.metadata.taskId) {
+        await tasksService.update(item.metadata.taskId, {
+          startDate: startDate.toISOString(),
+          dueDate: endDate.toISOString()
+        })
+        
+        setTasks(prevTasks =>
+          prevTasks.map(t =>
+            t.id === item.metadata.taskId
+              ? { ...t, startDate: startDate.toISOString(), dueDate: endDate.toISOString() }
+              : t
+          )
+        )
+        
+        toast.success('Task scheduled')
+      } else if (item.type === 'campaign' && item.metadata.campaignId && setCampaigns) {
+        await campaignsService.update(item.metadata.campaignId, {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        })
+        
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(c =>
+            c.id === item.metadata.campaignId
+              ? { ...c, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+              : c
+          )
+        )
+        
+        toast.success('Campaign scheduled')
+      } else if (item.type === 'project' && item.metadata.projectId && setProjects) {
+        await projectsService.update(item.metadata.projectId, {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        })
+        
+        setProjects(prevProjects =>
+          prevProjects.map(p =>
+            p.id === item.metadata.projectId
+              ? { ...p, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+              : p
+          )
+        )
+        
+        toast.success('Project scheduled')
+      } else if (item.type === 'stage' && item.metadata.stageId) {
+        // Handle stage scheduling
+        if (item.metadata.campaignId && setCampaigns) {
+          const campaign = campaigns.find(c => c.id === item.metadata.campaignId)
+          if (campaign) {
+            const updatedStageDates = (campaign.stageDates || []).map(stage =>
+              stage.id === item.metadata.stageId
+                ? { ...stage, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+                : stage
+            )
+            
+            await campaignsService.update(item.metadata.campaignId, {
+              stageDates: updatedStageDates
+            })
+            
+            setCampaigns(prevCampaigns =>
+              prevCampaigns.map(c =>
+                c.id === item.metadata.campaignId
+                  ? { ...c, stageDates: updatedStageDates }
+                  : c
+              )
+            )
+            
+            toast.success('Stage scheduled')
+          }
+        } else if (item.metadata.projectId && setProjects) {
+          const project = projects.find(p => p.id === item.metadata.projectId)
+          if (project) {
+            const updatedStageDates = (project.stageDates || []).map(stage =>
+              stage.id === item.metadata.stageId
+                ? { ...stage, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+                : stage
+            )
+            
+            await projectsService.update(item.metadata.projectId, {
+              stageDates: updatedStageDates
+            })
+            
+            setProjects(prevProjects =>
+              prevProjects.map(p =>
+                p.id === item.metadata.projectId
+                  ? { ...p, stageDates: updatedStageDates }
+                  : p
+              )
+            )
+            
+            toast.success('Stage scheduled')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error scheduling item:', error)
+      toast.error('Failed to schedule item')
+    }
+  }
+  
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : null
   const selectedCampaign = selectedCampaignId ? campaigns.find(c => c.id === selectedCampaignId) : null
   const selectedProject = selectedProjectId ? projects.find(p => p.id === selectedProjectId) : null
   
   return (
     <>
-      <CalendarGrid
-        events={calendarEvents}
-        onEventClick={handleEventClick}
-        onEventMove={handleEventMove}
-        onEventResize={handleEventResize}
-        onDateClick={handleDateClick}
-      />
+      <div className="flex h-full">
+        <div className="flex-1 overflow-auto">
+          <CalendarGrid
+            events={calendarEvents}
+            onEventClick={handleEventClick}
+            onEventMove={handleEventMove}
+            onEventResize={handleEventResize}
+            onDateClick={handleDateClick}
+            onSidebarItemDrop={handleSidebarItemDrop}
+          />
+        </div>
+        
+        <UnscheduledItemsSidebar
+          campaigns={filteredCampaigns}
+          projects={projects}
+          tasks={filteredTasks}
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          setTasks={setTasks}
+        />
+      </div>
       
       {selectedTask && (
         <TaskDetailDialog

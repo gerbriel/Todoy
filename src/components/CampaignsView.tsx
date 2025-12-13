@@ -108,11 +108,11 @@ export default function CampaignsView({
   const activeCampaigns = campaigns.filter(c => !c.archived)
   
   const sortedCampaigns = [...activeCampaigns].sort((a, b) => {
-    if (a.launchDate && b.launchDate) {
-      return new Date(a.launchDate).getTime() - new Date(b.launchDate).getTime()
+    if (a.startDate && b.startDate) {
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     }
-    if (a.launchDate) return -1
-    if (b.launchDate) return 1
+    if (a.startDate) return -1
+    if (b.startDate) return 1
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
@@ -201,10 +201,10 @@ export default function CampaignsView({
                       className="flex flex-wrap gap-2 text-xs text-muted-foreground cursor-pointer"
                       onClick={() => handleCardClick(campaign.id)}
                     >
-                      {campaign.launchDate && (
+                      {campaign.startDate && (
                         <div className="flex items-center gap-1">
                           <CalendarBlank size={14} weight="duotone" />
-                          {format(new Date(campaign.launchDate), 'MMM d, yyyy')}
+                          {format(new Date(campaign.startDate), 'MMM d, yyyy')}
                         </div>
                       )}
                       

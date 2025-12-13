@@ -569,10 +569,10 @@ export default function ProjectView({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 md:space-y-3">
-                      {campaign.launchDate && (
+                      {campaign.startDate && (
                         <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
                           <Calendar size={14} className="md:w-4 md:h-4 flex-shrink-0" weight="duotone" />
-                          <span className="truncate">Launch: {format(new Date(campaign.launchDate), 'MMM d, yyyy')}</span>
+                          <span className="truncate">Launch: {format(new Date(campaign.startDate), 'MMM d, yyyy')}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">

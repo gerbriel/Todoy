@@ -9,6 +9,7 @@ export interface CalendarEvent {
   metadata: {
     taskId?: string
     campaignId?: string
+    campaignName?: string
     projectId?: string
     stageId?: string
     description?: string

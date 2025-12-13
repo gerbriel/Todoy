@@ -104,6 +104,9 @@ export default function TaskCard({
   const subtasks = task.subtasks || []
   const completedSubtasks = subtasks.filter(t => t.completed).length
   const totalSubtasks = subtasks.length
+  
+  // Get campaign name for this task
+  const taskCampaign = campaigns.find(c => c.id === task.campaignId)
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
     e.stopPropagation()
@@ -182,6 +185,13 @@ export default function TaskCard({
             </h4>
           )}
         </div>
+
+        {/* Campaign name */}
+        {taskCampaign && (
+          <div className="text-xs text-muted-foreground mb-2 pl-6">
+            {taskCampaign.title}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-1.5 mb-2">
           {visibleLabels.map(label => (

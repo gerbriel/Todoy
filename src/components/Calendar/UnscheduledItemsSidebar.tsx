@@ -97,6 +97,7 @@ export default function UnscheduledItemsSidebar({
     scheduledTasks: false
   })
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
+  const [activeView, setActiveView] = useState<'unscheduled' | 'scheduled'>('unscheduled')
 
   // Filter items without dates
   const unscheduledCampaigns = campaigns.filter(c => !c.startDate && !c.endDate)
@@ -464,41 +465,64 @@ export default function UnscheduledItemsSidebar({
 
   return (
     <div className="border-l bg-background w-80 flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <CalendarIcon size={20} className="text-muted-foreground" />
-          <h3 className="font-semibold">Calendar Sidebar</h3>
-          {(totalUnscheduled > 0 || totalScheduled > 0) && (
-            <div className="flex gap-1">
-              {totalUnscheduled > 0 && (
-                <Badge variant="secondary">{totalUnscheduled} unscheduled</Badge>
-              )}
-              {totalScheduled > 0 && (
-                <Badge variant="outline">{totalScheduled} scheduled</Badge>
-              )}
-            </div>
-          )}
+      {/* Header with Toggle Buttons */}
+      <div className="p-4 border-b flex-shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Items</h3>
+          <Button variant="ghost" size="icon" onClick={onToggle}>
+            <CaretRight size={20} />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" onClick={onToggle}>
-          <CaretRight size={20} />
-        </Button>
+        
+        {/* View Toggle Buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant={activeView === 'unscheduled' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveView('unscheduled')}
+            className="flex-1"
+          >
+            Unscheduled
+            {totalUnscheduled > 0 && (
+              <Badge variant={activeView === 'unscheduled' ? 'secondary' : 'outline'} className="ml-2">
+                {totalUnscheduled}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeView === 'scheduled' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveView('scheduled')}
+            className="flex-1"
+          >
+            Scheduled
+            {totalScheduled > 0 && (
+              <Badge variant={activeView === 'scheduled' ? 'secondary' : 'outline'} className="ml-2">
+                {totalScheduled}
+              </Badge>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
-          {totalUnscheduled === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              <CalendarIcon size={32} className="mx-auto mb-2 opacity-50" />
-              <p>All items are scheduled</p>
-              <p className="text-xs mt-1">Items without dates will appear here</p>
-            </div>
-          ) : (
+          
+          {/* Unscheduled View */}
+          {activeView === 'unscheduled' && (
             <>
-              {/* Campaigns */}
-              {unscheduledCampaigns.length > 0 && (
+              {totalUnscheduled === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  <CalendarIcon size={32} className="mx-auto mb-2 opacity-50" />
+                  <p>All items are scheduled</p>
+                  <p className="text-xs mt-1">Items without dates will appear here</p>
+                </div>
+              ) : (
+                <>
+                  {/* Campaigns */}
+                  {unscheduledCampaigns.length > 0 && (
                 <div>
                   <button
                     onClick={() => toggleSection('campaigns')}
@@ -676,31 +700,41 @@ export default function UnscheduledItemsSidebar({
                   )}
                 </div>
               )}
+                </>
+              )}
             </>
           )}
 
-          {/* Scheduled Items Section */}
-          {(scheduledProjects.length > 0 || scheduledCampaigns.length > 0 || scheduledTasks.length > 0) && (
-            <div className="mt-8 pt-6 border-t">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <CalendarIcon size={16} />
-                  Scheduled Items
-                </h4>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleReassignAll}
-                  disabled={isAutoScheduling}
-                  className="h-7 text-xs"
-                  title="Reassign all items to optimal dates"
-                >
-                  {isAutoScheduling ? 'Reassigning...' : 'Reassign All'}
-                </Button>
-              </div>
+          {/* Scheduled View */}
+          {activeView === 'scheduled' && (
+            <>
+              {totalScheduled === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  <CalendarIcon size={32} className="mx-auto mb-2 opacity-50" />
+                  <p>No scheduled items yet</p>
+                  <p className="text-xs mt-1">Drag items to the calendar or use auto-schedule</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <CalendarIcon size={16} />
+                      Scheduled Items
+                    </h4>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleReassignAll}
+                      disabled={isAutoScheduling}
+                      className="h-7 text-xs"
+                      title="Reassign all items to optimal dates"
+                    >
+                      {isAutoScheduling ? 'Reassigning...' : 'Reassign All'}
+                    </Button>
+                  </div>
 
-              {/* Scheduled Projects */}
-              {scheduledProjects.length > 0 && (
+                  {/* Scheduled Projects */}
+                  {scheduledProjects.length > 0 && (
                 <div className="mb-4">
                   <button
                     onClick={() => toggleSection('scheduledProjects')}
@@ -790,14 +824,17 @@ export default function UnscheduledItemsSidebar({
                   )}
                 </div>
               )}
-            </div>
+                </>
+              )}
+            </>
           )}
+          
         </div>
       </ScrollArea>
       </div>
 
       {/* Footer hint */}
-      {totalUnscheduled > 0 && (
+      {activeView === 'unscheduled' && totalUnscheduled > 0 && (
         <div className="p-4 border-t bg-muted/30 flex-shrink-0">
           <p className="text-xs text-muted-foreground text-center break-words">
             💡 Drag items onto the calendar to assign dates

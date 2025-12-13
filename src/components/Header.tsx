@@ -446,6 +446,7 @@ export default function Header({
           lists={lists}
           setLists={setLists}
           setTasks={setTasks}
+          tasks={tasks}
           open={showEditCampaign}
           onOpenChange={setShowEditCampaign}
         />

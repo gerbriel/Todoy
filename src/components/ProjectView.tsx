@@ -643,6 +643,8 @@ export default function ProjectView({
         setProjects={setProjects}
         campaigns={campaigns}
         setCampaigns={setCampaigns}
+        tasks={tasks}
+        setTasks={setTasks}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
       />
@@ -656,6 +658,7 @@ export default function ProjectView({
           lists={lists}
           setLists={setLists}
           setTasks={setTasks}
+          tasks={tasks}
           open={showEditCampaignDialog}
           onOpenChange={setShowEditCampaignDialog}
         />

@@ -11,7 +11,8 @@ import {
   Folder,
   CheckSquare,
   Flag,
-  Lightning
+  Lightning,
+  ArrowsClockwise
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { tasksService } from '@/services/tasks.service'
@@ -245,6 +246,57 @@ export default function UnscheduledItemsSidebar({
     }
   }
 
+  const handleAutoScheduleCampaignTasks = async (campaign: Campaign) => {
+    if (!setTasks) {
+      toast.error('Auto-schedule function not available')
+      return
+    }
+
+    if (!campaign.startDate || !campaign.endDate) {
+      toast.error('Campaign must have start and end dates assigned first')
+      return
+    }
+
+    // Find all tasks belonging to this campaign that don't have dates
+    const campaignTasks = tasks.filter(t => 
+      t.campaignId === campaign.id && (!t.startDate || !t.dueDate)
+    )
+
+    if (campaignTasks.length === 0) {
+      toast.info('All tasks in this campaign are already scheduled')
+      return
+    }
+
+    try {
+      const startDate = new Date(campaign.startDate)
+      const dueDate = addDays(startDate, 1)
+      const startDateISO = startDate.toISOString()
+      const dueDateISO = dueDate.toISOString()
+
+      // Update all tasks in database
+      for (const task of campaignTasks) {
+        await tasksService.update(task.id, {
+          startDate: startDateISO,
+          dueDate: dueDateISO
+        })
+      }
+
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          campaignTasks.some(ct => ct.id === t.id)
+            ? { ...t, startDate: startDateISO, dueDate: dueDateISO }
+            : t
+        )
+      )
+
+      toast.success(`Auto-scheduled ${campaignTasks.length} task(s) to ${campaign.title}`)
+    } catch (error) {
+      console.error('Error auto-scheduling campaign tasks:', error)
+      toast.error('Failed to auto-schedule campaign tasks')
+    }
+  }
+
   const handleReassignTask = async (task: Task) => {
     if (!setTasks) {
       toast.error('Reassign function not available')
@@ -292,6 +344,57 @@ export default function UnscheduledItemsSidebar({
     } catch (error) {
       console.error('Error reassigning task:', error)
       toast.error('Failed to reassign task')
+    }
+  }
+
+  const handleReassignCampaignTasks = async (campaign: Campaign) => {
+    if (!setTasks) {
+      toast.error('Reassign function not available')
+      return
+    }
+
+    if (!campaign.startDate || !campaign.endDate) {
+      toast.error('Campaign must have start and end dates assigned first')
+      return
+    }
+
+    // Find all tasks belonging to this campaign that have dates
+    const campaignTasks = tasks.filter(t => 
+      t.campaignId === campaign.id && t.dueDate
+    )
+
+    if (campaignTasks.length === 0) {
+      toast.info('No scheduled tasks found in this campaign')
+      return
+    }
+
+    try {
+      const startDate = new Date(campaign.startDate)
+      const dueDate = addDays(startDate, 1)
+      const startDateISO = startDate.toISOString()
+      const dueDateISO = dueDate.toISOString()
+
+      // Update all tasks in database
+      for (const task of campaignTasks) {
+        await tasksService.update(task.id, {
+          startDate: startDateISO,
+          dueDate: dueDateISO
+        })
+      }
+
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          campaignTasks.some(ct => ct.id === t.id)
+            ? { ...t, startDate: startDateISO, dueDate: dueDateISO }
+            : t
+        )
+      )
+
+      toast.success(`Reassigned ${campaignTasks.length} task(s) to ${campaign.title} start date`)
+    } catch (error) {
+      console.error('Error reassigning campaign tasks:', error)
+      toast.error('Failed to reassign campaign tasks')
     }
   }
 
@@ -699,15 +802,7 @@ export default function UnscheduledItemsSidebar({
                             <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
                               <Folder size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                               <span className="text-xs font-medium flex-1 break-words leading-snug">{project.title}</span>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-5 w-5 flex-shrink-0"
-                                title="Projects cannot be auto-reassigned"
-                                disabled
-                              >
-                                <Lightning size={12} className="opacity-30" />
-                              </Button>
+                              {/* No auto functions for projects - manual only */}
                             </div>
                             
                             {/* Campaigns under this project */}
@@ -720,9 +815,15 @@ export default function UnscheduledItemsSidebar({
                                       <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
                                         <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                                         <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
-                                        <div className="h-5 w-5 flex-shrink-0" title="Campaigns must be manually scheduled">
-                                          {/* No auto-reassign for campaigns */}
-                                        </div>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-5 w-5 flex-shrink-0"
+                                          onClick={() => handleReassignCampaignTasks(campaign)}
+                                          title="Auto-schedule all unscheduled tasks in this campaign"
+                                        >
+                                          <ArrowsClockwise size={12} weight="bold" />
+                                        </Button>
                                       </div>
                                       
                                       {/* Tasks under this campaign */}

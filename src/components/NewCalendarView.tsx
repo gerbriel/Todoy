@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { tasksService } from '@/services/tasks.service'
 import { campaignsService } from '@/services/campaigns.service'
 import { projectsService } from '@/services/projects.service'
+import { shiftCampaignTasks, calculateShiftStats } from '@/lib/campaignDateShift'
 import TaskDetailDialog from './TaskDetailDialog'
 import CampaignEditDialog from './CampaignEditDialog'
 import ProjectEditDialog from './ProjectEditDialog'
@@ -145,6 +146,45 @@ export default function NewCalendarView({
         console.log(' Updating campaign with:', updates)
         await campaignsService.update(event.metadata.campaignId, updates)
         console.log('✅ Database updated')
+        
+        // Shift all child tasks if campaign had a previous start date
+        const oldStartDate = campaign.startDate
+        const newStartDateISO = newStartDate.toISOString()
+        const newEndDateISO = newEndDate.toISOString()
+        
+        if (oldStartDate) {
+          const stats = calculateShiftStats(tasks, campaign.id, oldStartDate, newStartDateISO)
+          
+          if (stats.tasksAffected > 0) {
+            console.log(`🔄 Shifting ${stats.tasksAffected} child task(s)...`)
+            
+            const updatedTasks = shiftCampaignTasks(
+              tasks,
+              campaign.id,
+              oldStartDate,
+              newStartDateISO,
+              newEndDateISO,
+              true // clamp tasks to campaign bounds
+            )
+            
+            // Update tasks in database
+            const tasksToUpdate = updatedTasks.filter(t => 
+              t.campaignId === campaign.id && t.dueDate
+            )
+            
+            for (const task of tasksToUpdate) {
+              await tasksService.update(task.id, {
+                startDate: task.startDate,
+                dueDate: task.dueDate
+              })
+            }
+            
+            // Update local task state
+            setTasks(() => updatedTasks)
+            console.log('✅ Tasks shifted and updated')
+          }
+        }
+        
         setCampaigns(prevCampaigns =>
           prevCampaigns.map(c =>
             c.id === event.metadata.campaignId ? { ...c, ...updates } : c
@@ -152,7 +192,18 @@ export default function NewCalendarView({
         )
         console.log('✅ State updated')
         
-        toast.success('Campaign dates updated')
+        const stats = oldStartDate 
+          ? calculateShiftStats(tasks, campaign.id, oldStartDate, newStartDateISO)
+          : null
+        
+        if (stats && stats.tasksAffected > 0) {
+          toast.success(
+            `Campaign moved. ${stats.tasksAffected} task(s) shifted ${Math.abs(stats.daysDifference)} day(s) ${stats.direction}`
+          )
+        } else {
+          toast.success('Campaign dates updated')
+        }
+        
         return
       }
       
@@ -584,6 +635,7 @@ export default function NewCalendarView({
           lists={lists}
           setLists={undefined}
           setTasks={setTasks}
+          tasks={tasks}
           open={!!selectedCampaignId}
           onOpenChange={(open) => !open && setSelectedCampaignId(null)}
         />
@@ -596,6 +648,8 @@ export default function NewCalendarView({
           setProjects={setProjects}
           campaigns={campaigns}
           setCampaigns={setCampaigns}
+          tasks={tasks}
+          setTasks={setTasks}
           open={!!selectedProjectId}
           onOpenChange={(open) => !open && setSelectedProjectId(null)}
         />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Project, Campaign } from '@/lib/types'
+import { Project, Campaign, Task } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -10,6 +10,7 @@ import { Separator } from './ui/separator'
 import { Archive, DotsThree } from '@phosphor-icons/react'
 import { projectsService } from '@/services/projects.service'
 import { campaignsService } from '@/services/campaigns.service'
+import { tasksService } from '@/services/tasks.service'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,8 @@ interface ProjectEditDialogProps {
   setProjects: (updater: (projects: Project[]) => Project[]) => void
   campaigns: Campaign[]
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
+  tasks?: Task[]
+  setTasks?: (updater: (tasks: Task[]) => Task[]) => void
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -36,6 +39,8 @@ export default function ProjectEditDialog({
   setProjects,
   campaigns,
   setCampaigns,
+  tasks,
+  setTasks,
   open,
   onOpenChange,
 }: ProjectEditDialogProps) {
@@ -66,14 +71,81 @@ export default function ProjectEditDialog({
     }
 
     try {
-      await projectsService.update(project.id, {
+      const hadDates = !!(project.startDate && project.endDate)
+      const nowHasDates = !!(startDate && endDate)
+      const datesRemoved = hadDates && !nowHasDates
+      
+      const updates = {
         title: title.trim(),
         description: description.trim(),
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         stageDates,
-      })
-      toast.success('Project updated')
+      }
+      
+      await projectsService.update(project.id, updates)
+      
+      // Update local project state immediately
+      setProjects(prev => prev.map(p =>
+        p.id === project.id
+          ? { ...p, ...updates }
+          : p
+      ))
+      
+      // If dates were removed, cascade removal to campaigns and tasks
+      if (datesRemoved) {
+        const projectCampaigns = campaigns.filter(c => c.projectId === project.id)
+        
+        if (projectCampaigns.length > 0) {
+          // Remove dates from all campaigns in this project
+          for (const campaign of projectCampaigns) {
+            await campaignsService.update(campaign.id, {
+              startDate: undefined,
+              endDate: undefined
+            })
+          }
+          
+          // Update campaign state
+          setCampaigns(prev => prev.map(c =>
+            c.projectId === project.id
+              ? { ...c, startDate: undefined, endDate: undefined }
+              : c
+          ))
+          
+          // Remove dates from all tasks in those campaigns
+          if (tasks && setTasks) {
+            const campaignIds = projectCampaigns.map(c => c.id)
+            const affectedTasks = tasks.filter(t => t.campaignId && campaignIds.includes(t.campaignId))
+            
+            if (affectedTasks.length > 0) {
+              for (const task of affectedTasks) {
+                await tasksService.update(task.id, {
+                  startDate: undefined,
+                  dueDate: undefined
+                })
+              }
+              
+              // Update task state
+              setTasks(prev => prev.map(t =>
+                t.campaignId && campaignIds.includes(t.campaignId)
+                  ? { ...t, startDate: undefined, dueDate: undefined }
+                  : t
+              ))
+              
+              toast.success(`Project updated. Removed dates from ${projectCampaigns.length} campaign(s) and ${affectedTasks.length} task(s)`)
+            } else {
+              toast.success(`Project updated. Removed dates from ${projectCampaigns.length} campaign(s)`)
+            }
+          } else {
+            toast.success(`Project updated. Removed dates from ${projectCampaigns.length} campaign(s)`)
+          }
+        } else {
+          toast.success('Project updated')
+        }
+      } else {
+        toast.success('Project updated')
+      }
+      
       onOpenChange(false)
     } catch (error) {
       console.error('Error updating project:', error)

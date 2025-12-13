@@ -541,6 +541,8 @@ export default function ProjectsView({
           setProjects={setProjects}
           campaigns={campaigns}
           setCampaigns={setCampaigns}
+          tasks={tasks}
+          setTasks={setTasks}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
         />

@@ -446,6 +446,8 @@ export default function MasterView({
           setProjects={setProjects}
           campaigns={campaigns}
           setCampaigns={setCampaigns}
+          tasks={tasks}
+          setTasks={setTasks}
           open={!!editingProjectId}
           onOpenChange={(open) => {
             if (!open) setEditingProjectId(null)
@@ -462,6 +464,7 @@ export default function MasterView({
           lists={lists}
           setLists={setLists}
           setTasks={setTasks}
+          tasks={tasks}
           open={!!editingCampaignId}
           onOpenChange={(open) => {
             if (!open) setEditingCampaignId(null)

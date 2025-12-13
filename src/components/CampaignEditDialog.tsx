@@ -32,6 +32,7 @@ interface CampaignEditDialogProps {
   setCampaigns: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   projects: Project[]
   lists: List[]
+  tasks?: Task[]
   setLists?: (updater: (lists: List[]) => List[]) => void
   setTasks?: (updater: (tasks: Task[]) => Task[]) => void
   open: boolean
@@ -62,6 +63,7 @@ export default function CampaignEditDialog({
   setCampaigns,
   projects,
   lists,
+  tasks,
   setLists,
   setTasks,
   open,
@@ -107,7 +109,11 @@ export default function CampaignEditDialog({
     }
 
     try {
-      await campaignsService.update(campaign.id, {
+      const hadDates = !!(campaign.startDate && campaign.endDate)
+      const nowHasDates = !!(startDate && endDate)
+      const datesRemoved = hadDates && !nowHasDates
+      
+      const updates = {
         title: title.trim(),
         description: description.trim(),
         projectId: projectId || undefined,
@@ -119,8 +125,45 @@ export default function CampaignEditDialog({
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         stageDates,
-      })
-      toast.success('Campaign updated')
+      }
+      
+      await campaignsService.update(campaign.id, updates)
+      
+      // Update local campaign state immediately
+      setCampaigns(prev => prev.map(c =>
+        c.id === campaign.id
+          ? { ...c, ...updates }
+          : c
+      ))
+      
+      // If dates were removed, cascade removal to tasks
+      if (datesRemoved && tasks && setTasks) {
+        const campaignTasks = tasks.filter(t => t.campaignId === campaign.id)
+        
+        if (campaignTasks.length > 0) {
+          // Remove dates from all tasks in this campaign
+          for (const task of campaignTasks) {
+            await tasksService.update(task.id, {
+              startDate: undefined,
+              dueDate: undefined
+            })
+          }
+          
+          // Update task state
+          setTasks(prev => prev.map(t =>
+            t.campaignId === campaign.id
+              ? { ...t, startDate: undefined, dueDate: undefined }
+              : t
+          ))
+          
+          toast.success(`Campaign updated. Removed dates from ${campaignTasks.length} task(s)`)
+        } else {
+          toast.success('Campaign updated')
+        }
+      } else {
+        toast.success('Campaign updated')
+      }
+      
       onOpenChange(false)
     } catch (error) {
       console.error('Error updating campaign:', error)

@@ -359,7 +359,10 @@ export default function UnscheduledItemsSidebar({
     let skipped = 0
 
     try {
-      // Reassign all campaigns to their project start dates
+      const campaignUpdates: Array<{ id: string; startDate: string; endDate: string }> = []
+      const taskUpdates: Array<{ id: string; startDate: string; dueDate: string }> = []
+
+      // Prepare all campaign updates
       for (const campaign of scheduledCampaigns) {
         const project = projects.find(p => p.id === campaign.projectId)
         
@@ -371,23 +374,14 @@ export default function UnscheduledItemsSidebar({
         const startDate = new Date(project.startDate)
         const endDate = addDays(startDate, 1)
 
-        await campaignsService.update(campaign.id, {
+        campaignUpdates.push({
+          id: campaign.id,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString()
         })
-
-        setCampaigns(prevCampaigns =>
-          prevCampaigns.map(c =>
-            c.id === campaign.id
-              ? { ...c, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
-              : c
-          )
-        )
-
-        campaignsReassigned++
       }
 
-      // Reassign all tasks to their campaign start dates
+      // Prepare all task updates
       for (const task of scheduledTasks) {
         const campaign = campaigns.find(c => c.id === task.campaignId)
         
@@ -399,27 +393,64 @@ export default function UnscheduledItemsSidebar({
         const startDate = new Date(campaign.startDate)
         const dueDate = addDays(startDate, 1)
 
-        await tasksService.update(task.id, {
+        taskUpdates.push({
+          id: task.id,
           startDate: startDate.toISOString(),
           dueDate: dueDate.toISOString()
         })
+      }
 
-        setTasks(prevTasks =>
-          prevTasks.map(t =>
-            t.id === task.id
-              ? { ...t, startDate: startDate.toISOString(), dueDate: dueDate.toISOString() }
-              : t
-          )
+      // Execute all updates
+      for (const update of campaignUpdates) {
+        try {
+          await campaignsService.update(update.id, {
+            startDate: update.startDate,
+            endDate: update.endDate
+          })
+          campaignsReassigned++
+        } catch (error) {
+          console.error('Error updating campaign:', error)
+          skipped++
+        }
+      }
+
+      for (const update of taskUpdates) {
+        try {
+          await tasksService.update(update.id, {
+            startDate: update.startDate,
+            dueDate: update.dueDate
+          })
+          tasksReassigned++
+        } catch (error) {
+          console.error('Error updating task:', error)
+          skipped++
+        }
+      }
+
+      // Batch update state once at the end
+      if (campaignUpdates.length > 0) {
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(c => {
+            const update = campaignUpdates.find(u => u.id === c.id)
+            return update ? { ...c, startDate: update.startDate, endDate: update.endDate } : c
+          })
         )
+      }
 
-        tasksReassigned++
+      if (taskUpdates.length > 0) {
+        setTasks(prevTasks =>
+          prevTasks.map(t => {
+            const update = taskUpdates.find(u => u.id === t.id)
+            return update ? { ...t, startDate: update.startDate, dueDate: update.dueDate } : t
+          })
+        )
       }
 
       if (campaignsReassigned > 0 || tasksReassigned > 0) {
         toast.success(`Reassigned ${campaignsReassigned} campaign(s) and ${tasksReassigned} task(s)`)
       }
       if (skipped > 0) {
-        toast.warning(`Skipped ${skipped} item(s) (missing parent dates)`)
+        toast.warning(`Skipped ${skipped} item(s) (missing parent dates or errors)`)
       }
     } catch (error) {
       console.error('Error reassigning items:', error)
@@ -757,13 +788,13 @@ export default function UnscheduledItemsSidebar({
                         const projectCampaigns = scheduledCampaigns.filter(c => c.projectId === project.id)
                         return (
                           <div key={project.id} className="space-y-1">
-                            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
-                              <Folder size={14} className="text-muted-foreground flex-shrink-0" />
-                              <span className="text-xs font-medium flex-1 break-words">{project.title}</span>
+                            <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
+                              <Folder size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <span className="text-xs font-medium flex-1 break-words leading-snug">{project.title}</span>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-5 w-5"
+                                className="h-5 w-5 flex-shrink-0"
                                 title="Projects cannot be auto-reassigned"
                                 disabled
                               >
@@ -778,13 +809,13 @@ export default function UnscheduledItemsSidebar({
                                   const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
                                   return (
                                     <div key={campaign.id} className="space-y-1">
-                                      <div className="flex items-center gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
-                                        <Target size={12} className="text-muted-foreground flex-shrink-0" />
-                                        <span className="text-xs flex-1 break-words">{campaign.title}</span>
+                                      <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                        <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                        <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
                                         <Button
                                           size="icon"
                                           variant="ghost"
-                                          className="h-5 w-5"
+                                          className="h-5 w-5 flex-shrink-0"
                                           onClick={() => handleReassignCampaign(campaign)}
                                           title="Reassign campaign to project start date"
                                         >
@@ -796,13 +827,13 @@ export default function UnscheduledItemsSidebar({
                                       {campaignTasks.length > 0 && (
                                         <div className="ml-4 space-y-1">
                                           {campaignTasks.map(task => (
-                                            <div key={task.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
-                                              <CheckSquare size={10} className="text-muted-foreground flex-shrink-0" />
-                                              <span className="text-xs flex-1 break-words truncate">{task.title}</span>
+                                            <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
+                                              <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                              <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
                                               <Button
                                                 size="icon"
                                                 variant="ghost"
-                                                className="h-4 w-4"
+                                                className="h-4 w-4 flex-shrink-0"
                                                 onClick={() => handleReassignTask(task)}
                                                 title="Reassign task to campaign start date"
                                               >

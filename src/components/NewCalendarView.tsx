@@ -67,8 +67,6 @@ export default function NewCalendarView({
     ? campaigns.filter(c => c.id === activeCampaignId)
     : campaigns
   
-  console.log('[Calendar Render] Converting', filteredTasks.length, 'tasks to events')
-  
   const calendarEvents = convertToCalendarEvents(
     filteredTasks,
     filteredCampaigns,

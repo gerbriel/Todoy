@@ -556,6 +556,8 @@ export default function NewCalendarView({
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           setTasks={setTasks}
+          setCampaigns={setCampaigns}
+          setProjects={setProjects}
         />
       </div>
       

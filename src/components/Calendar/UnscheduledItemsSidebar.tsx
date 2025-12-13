@@ -10,10 +10,13 @@ import {
   Target,
   Folder,
   CheckSquare,
-  Flag
+  Flag,
+  Lightning
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { tasksService } from '@/services/tasks.service'
+import { campaignsService } from '@/services/campaigns.service'
+import { projectsService } from '@/services/projects.service'
 import { toast } from 'sonner'
 import { addDays } from 'date-fns'
 
@@ -24,6 +27,8 @@ interface UnscheduledItemsSidebarProps {
   isCollapsed: boolean
   onToggle: () => void
   setTasks?: (tasks: Task[] | ((prev: Task[]) => Task[])) => void
+  setCampaigns?: (campaigns: Campaign[] | ((prev: Campaign[]) => Campaign[])) => void
+  setProjects?: (projects: Project[] | ((prev: Project[]) => Project[])) => void
 }
 
 interface DraggableItemProps {
@@ -33,9 +38,10 @@ interface DraggableItemProps {
   icon: React.ReactNode
   color?: string
   metadata?: any
+  actionButton?: React.ReactNode
 }
 
-const DraggableItem = ({ id, type, title, icon, color, metadata }: DraggableItemProps) => {
+const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }: DraggableItemProps) => {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('application/json', JSON.stringify({
@@ -62,6 +68,11 @@ const DraggableItem = ({ id, type, title, icon, color, metadata }: DraggableItem
         {icon}
       </div>
       <span className="text-sm flex-1 break-words leading-snug">{title}</span>
+      {actionButton && (
+        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {actionButton}
+        </div>
+      )}
     </div>
   )
 }
@@ -72,13 +83,18 @@ export default function UnscheduledItemsSidebar({
   tasks,
   isCollapsed,
   onToggle,
-  setTasks
+  setTasks,
+  setCampaigns,
+  setProjects
 }: UnscheduledItemsSidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
     campaigns: true,
     projects: true,
     tasks: true,
-    stages: true
+    stages: true,
+    scheduledProjects: false,
+    scheduledCampaigns: false,
+    scheduledTasks: false
   })
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
 
@@ -86,6 +102,11 @@ export default function UnscheduledItemsSidebar({
   const unscheduledCampaigns = campaigns.filter(c => !c.startDate && !c.endDate)
   const unscheduledProjects = projects.filter(p => !p.startDate && !p.endDate)
   const unscheduledTasks = tasks.filter(t => !t.startDate && !t.dueDate)
+  
+  // Filter items WITH dates (scheduled)
+  const scheduledProjects = projects.filter(p => p.startDate && p.endDate)
+  const scheduledCampaigns = campaigns.filter(c => c.startDate && c.endDate)
+  const scheduledTasks = tasks.filter(t => t.startDate && t.dueDate)
   
   // Collect unscheduled stages from both campaigns and projects
   const unscheduledStages: Array<StageDate & { parentType: 'campaign' | 'project', parentTitle: string, parentId: string }> = []
@@ -175,11 +196,248 @@ export default function UnscheduledItemsSidebar({
     }
   }
 
+  const handleAutoScheduleTask = async (task: Task) => {
+    if (!setTasks) {
+      toast.error('Auto-schedule function not available')
+      return
+    }
+
+    // Find the campaign this task belongs to
+    const campaign = campaigns.find(c => c.id === task.campaignId)
+    
+    if (!task.campaignId) {
+      toast.error('Task must be assigned to a campaign to auto-schedule')
+      return
+    }
+    
+    if (!campaign) {
+      toast.error('Campaign not found')
+      return
+    }
+    
+    if (!campaign.startDate || !campaign.endDate) {
+      toast.error('Campaign must have start and end dates assigned first')
+      return
+    }
+
+    try {
+      // Schedule task at the start of the campaign with 1 day duration
+      const startDate = new Date(campaign.startDate)
+      const dueDate = addDays(startDate, 1)
+
+      await tasksService.update(task.id, {
+        startDate: startDate.toISOString(),
+        dueDate: dueDate.toISOString()
+      })
+
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === task.id
+            ? { ...t, startDate: startDate.toISOString(), dueDate: dueDate.toISOString() }
+            : t
+        )
+      )
+
+      toast.success(`Task scheduled to ${campaign.title}`)
+    } catch (error) {
+      console.error('Error auto-scheduling task:', error)
+      toast.error('Failed to auto-schedule task')
+    }
+  }
+
+  const handleReassignCampaign = async (campaign: Campaign) => {
+    if (!setCampaigns) {
+      toast.error('Reassign function not available')
+      return
+    }
+
+    // Find the project this campaign belongs to
+    const project = projects.find(p => p.id === campaign.projectId)
+    
+    if (!campaign.projectId) {
+      toast.error('Campaign must be assigned to a project to reassign')
+      return
+    }
+    
+    if (!project) {
+      toast.error('Project not found')
+      return
+    }
+    
+    if (!project.startDate || !project.endDate) {
+      toast.error('Project must have start and end dates assigned first')
+      return
+    }
+
+    try {
+      // Reassign campaign to the start of the project with 1 day duration
+      const startDate = new Date(project.startDate)
+      const endDate = addDays(startDate, 1)
+
+      await campaignsService.update(campaign.id, {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      })
+
+      // Update local state
+      setCampaigns(prevCampaigns =>
+        prevCampaigns.map(c =>
+          c.id === campaign.id
+            ? { ...c, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+            : c
+        )
+      )
+
+      toast.success(`Campaign reassigned to ${project.title} start date`)
+    } catch (error) {
+      console.error('Error reassigning campaign:', error)
+      toast.error('Failed to reassign campaign')
+    }
+  }
+
+  const handleReassignTask = async (task: Task) => {
+    if (!setTasks) {
+      toast.error('Reassign function not available')
+      return
+    }
+
+    // Find the campaign this task belongs to
+    const campaign = campaigns.find(c => c.id === task.campaignId)
+    
+    if (!task.campaignId) {
+      toast.error('Task must be assigned to a campaign to reassign')
+      return
+    }
+    
+    if (!campaign) {
+      toast.error('Campaign not found')
+      return
+    }
+    
+    if (!campaign.startDate || !campaign.endDate) {
+      toast.error('Campaign must have start and end dates assigned first')
+      return
+    }
+
+    try {
+      // Reassign task to the start of the campaign with 1 day duration
+      const startDate = new Date(campaign.startDate)
+      const dueDate = addDays(startDate, 1)
+
+      await tasksService.update(task.id, {
+        startDate: startDate.toISOString(),
+        dueDate: dueDate.toISOString()
+      })
+
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === task.id
+            ? { ...t, startDate: startDate.toISOString(), dueDate: dueDate.toISOString() }
+            : t
+        )
+      )
+
+      toast.success(`Task reassigned to ${campaign.title} start date`)
+    } catch (error) {
+      console.error('Error reassigning task:', error)
+      toast.error('Failed to reassign task')
+    }
+  }
+
+  const handleReassignAll = async () => {
+    if (!setCampaigns || !setTasks) {
+      toast.error('Reassign function not available')
+      return
+    }
+
+    setIsAutoScheduling(true)
+    let campaignsReassigned = 0
+    let tasksReassigned = 0
+    let skipped = 0
+
+    try {
+      // Reassign all campaigns to their project start dates
+      for (const campaign of scheduledCampaigns) {
+        const project = projects.find(p => p.id === campaign.projectId)
+        
+        if (!campaign.projectId || !project || !project.startDate || !project.endDate) {
+          skipped++
+          continue
+        }
+
+        const startDate = new Date(project.startDate)
+        const endDate = addDays(startDate, 1)
+
+        await campaignsService.update(campaign.id, {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        })
+
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(c =>
+            c.id === campaign.id
+              ? { ...c, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
+              : c
+          )
+        )
+
+        campaignsReassigned++
+      }
+
+      // Reassign all tasks to their campaign start dates
+      for (const task of scheduledTasks) {
+        const campaign = campaigns.find(c => c.id === task.campaignId)
+        
+        if (!task.campaignId || !campaign || !campaign.startDate || !campaign.endDate) {
+          skipped++
+          continue
+        }
+
+        const startDate = new Date(campaign.startDate)
+        const dueDate = addDays(startDate, 1)
+
+        await tasksService.update(task.id, {
+          startDate: startDate.toISOString(),
+          dueDate: dueDate.toISOString()
+        })
+
+        setTasks(prevTasks =>
+          prevTasks.map(t =>
+            t.id === task.id
+              ? { ...t, startDate: startDate.toISOString(), dueDate: dueDate.toISOString() }
+              : t
+          )
+        )
+
+        tasksReassigned++
+      }
+
+      if (campaignsReassigned > 0 || tasksReassigned > 0) {
+        toast.success(`Reassigned ${campaignsReassigned} campaign(s) and ${tasksReassigned} task(s)`)
+      }
+      if (skipped > 0) {
+        toast.warning(`Skipped ${skipped} item(s) (missing parent dates)`)
+      }
+    } catch (error) {
+      console.error('Error reassigning items:', error)
+      toast.error('Failed to reassign items')
+    } finally {
+      setIsAutoScheduling(false)
+    }
+  }
+
   const totalUnscheduled = 
     unscheduledCampaigns.length + 
     unscheduledProjects.length + 
     unscheduledTasks.length + 
     unscheduledStages.length
+  
+  const totalScheduled =
+    scheduledProjects.length +
+    scheduledCampaigns.length +
+    scheduledTasks.length
 
   if (isCollapsed) {
     return (
@@ -210,9 +468,16 @@ export default function UnscheduledItemsSidebar({
       <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <CalendarIcon size={20} className="text-muted-foreground" />
-          <h3 className="font-semibold">Unscheduled Items</h3>
-          {totalUnscheduled > 0 && (
-            <Badge variant="secondary">{totalUnscheduled}</Badge>
+          <h3 className="font-semibold">Calendar Sidebar</h3>
+          {(totalUnscheduled > 0 || totalScheduled > 0) && (
+            <div className="flex gap-1">
+              {totalUnscheduled > 0 && (
+                <Badge variant="secondary">{totalUnscheduled} unscheduled</Badge>
+              )}
+              {totalScheduled > 0 && (
+                <Badge variant="outline">{totalScheduled} scheduled</Badge>
+              )}
+            </div>
           )}
         </div>
         <Button variant="ghost" size="icon" onClick={onToggle}>
@@ -391,6 +656,19 @@ export default function UnscheduledItemsSidebar({
                             title={titleWithCampaign}
                             icon={<CheckSquare size={16} />}
                             metadata={{ taskId: task.id }}
+                            actionButton={
+                              setTasks && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => handleAutoScheduleTask(task)}
+                                  title="Auto-schedule this task to campaign start date"
+                                >
+                                  <Lightning size={14} weight="fill" />
+                                </Button>
+                              )
+                            }
                           />
                         )
                       })}
@@ -399,6 +677,120 @@ export default function UnscheduledItemsSidebar({
                 </div>
               )}
             </>
+          )}
+
+          {/* Scheduled Items Section */}
+          {(scheduledProjects.length > 0 || scheduledCampaigns.length > 0 || scheduledTasks.length > 0) && (
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <CalendarIcon size={16} />
+                  Scheduled Items
+                </h4>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleReassignAll}
+                  disabled={isAutoScheduling}
+                  className="h-7 text-xs"
+                  title="Reassign all items to optimal dates"
+                >
+                  {isAutoScheduling ? 'Reassigning...' : 'Reassign All'}
+                </Button>
+              </div>
+
+              {/* Scheduled Projects */}
+              {scheduledProjects.length > 0 && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => toggleSection('scheduledProjects')}
+                    className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                  >
+                    {expandedSections.scheduledProjects ? (
+                      <CaretDown size={16} />
+                    ) : (
+                      <CaretRight size={16} />
+                    )}
+                    <Folder size={16} />
+                    <span>Projects</span>
+                    <Badge variant="secondary" className="ml-auto">
+                      {scheduledProjects.length}
+                    </Badge>
+                  </button>
+                  {expandedSections.scheduledProjects && (
+                    <div className="space-y-2 ml-6">
+                      {scheduledProjects.map(project => {
+                        const projectCampaigns = scheduledCampaigns.filter(c => c.projectId === project.id)
+                        return (
+                          <div key={project.id} className="space-y-1">
+                            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
+                              <Folder size={14} className="text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs font-medium flex-1 break-words">{project.title}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5"
+                                title="Projects cannot be auto-reassigned"
+                                disabled
+                              >
+                                <Lightning size={12} className="opacity-30" />
+                              </Button>
+                            </div>
+                            
+                            {/* Campaigns under this project */}
+                            {projectCampaigns.length > 0 && (
+                              <div className="ml-4 space-y-1">
+                                {projectCampaigns.map(campaign => {
+                                  const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
+                                  return (
+                                    <div key={campaign.id} className="space-y-1">
+                                      <div className="flex items-center gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                        <Target size={12} className="text-muted-foreground flex-shrink-0" />
+                                        <span className="text-xs flex-1 break-words">{campaign.title}</span>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-5 w-5"
+                                          onClick={() => handleReassignCampaign(campaign)}
+                                          title="Reassign campaign to project start date"
+                                        >
+                                          <Lightning size={12} weight="fill" />
+                                        </Button>
+                                      </div>
+                                      
+                                      {/* Tasks under this campaign */}
+                                      {campaignTasks.length > 0 && (
+                                        <div className="ml-4 space-y-1">
+                                          {campaignTasks.map(task => (
+                                            <div key={task.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
+                                              <CheckSquare size={10} className="text-muted-foreground flex-shrink-0" />
+                                              <span className="text-xs flex-1 break-words truncate">{task.title}</span>
+                                              <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-4 w-4"
+                                                onClick={() => handleReassignTask(task)}
+                                                title="Reassign task to campaign start date"
+                                              >
+                                                <Lightning size={10} weight="fill" />
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </ScrollArea>

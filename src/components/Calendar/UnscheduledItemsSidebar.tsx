@@ -15,8 +15,6 @@ import {
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { tasksService } from '@/services/tasks.service'
-import { campaignsService } from '@/services/campaigns.service'
-import { projectsService } from '@/services/projects.service'
 import { toast } from 'sonner'
 import { addDays } from 'date-fns'
 
@@ -247,56 +245,6 @@ export default function UnscheduledItemsSidebar({
     }
   }
 
-  const handleReassignCampaign = async (campaign: Campaign) => {
-    if (!setCampaigns) {
-      toast.error('Reassign function not available')
-      return
-    }
-
-    // Find the project this campaign belongs to
-    const project = projects.find(p => p.id === campaign.projectId)
-    
-    if (!campaign.projectId) {
-      toast.error('Campaign must be assigned to a project to reassign')
-      return
-    }
-    
-    if (!project) {
-      toast.error('Project not found')
-      return
-    }
-    
-    if (!project.startDate || !project.endDate) {
-      toast.error('Project must have start and end dates assigned first')
-      return
-    }
-
-    try {
-      // Reassign campaign to the start of the project with 1 day duration
-      const startDate = new Date(project.startDate)
-      const endDate = addDays(startDate, 1)
-
-      await campaignsService.update(campaign.id, {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      })
-
-      // Update local state
-      setCampaigns(prevCampaigns =>
-        prevCampaigns.map(c =>
-          c.id === campaign.id
-            ? { ...c, startDate: startDate.toISOString(), endDate: endDate.toISOString() }
-            : c
-        )
-      )
-
-      toast.success(`Campaign reassigned to ${project.title} start date`)
-    } catch (error) {
-      console.error('Error reassigning campaign:', error)
-      toast.error('Failed to reassign campaign')
-    }
-  }
-
   const handleReassignTask = async (task: Task) => {
     if (!setTasks) {
       toast.error('Reassign function not available')
@@ -348,66 +296,17 @@ export default function UnscheduledItemsSidebar({
   }
 
   const handleReassignAll = async () => {
-    if (!setCampaigns || !setTasks) {
+    if (!setTasks) {
       toast.error('Reassign function not available')
       return
     }
 
     setIsAutoScheduling(true)
-    let campaignsReassigned = 0
     let tasksReassigned = 0
     let skipped = 0
 
     try {
-      // STEP 1: Reassign campaigns within projects (big layer first)
-      const campaignUpdates: Array<{ id: string; startDate: string; endDate: string }> = []
-      
-      for (const campaign of scheduledCampaigns) {
-        const project = projects.find(p => p.id === campaign.projectId)
-        
-        if (!campaign.projectId || !project || !project.startDate || !project.endDate) {
-          skipped++
-          continue
-        }
-
-        const startDate = new Date(project.startDate)
-        const endDate = addDays(startDate, 1)
-
-        campaignUpdates.push({
-          id: campaign.id,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
-        })
-      }
-
-      // Execute campaign updates
-      for (const update of campaignUpdates) {
-        try {
-          await campaignsService.update(update.id, {
-            startDate: update.startDate,
-            endDate: update.endDate
-          })
-          campaignsReassigned++
-        } catch (error) {
-          console.error('Error updating campaign:', error)
-          skipped++
-        }
-      }
-
-      // Update campaign state immediately so tasks can use new dates
-      setCampaigns(prevCampaigns =>
-        prevCampaigns.map(c => {
-          const update = campaignUpdates.find(u => u.id === c.id)
-          return update ? { ...c, startDate: update.startDate, endDate: update.endDate } : c
-        })
-      )
-
-      // STEP 2: Reassign tasks within campaigns (using updated campaign dates)
-      // Get the updated campaigns to use their new dates
-      const updatedCampaignsMap = new Map(
-        campaignUpdates.map(u => [u.id, { startDate: u.startDate, endDate: u.endDate }])
-      )
-
+      // Reassign tasks to their campaign start dates
       const taskUpdates: Array<{ id: string; startDate: string; dueDate: string }> = []
       
       for (const task of scheduledTasks) {
@@ -416,27 +315,14 @@ export default function UnscheduledItemsSidebar({
           continue
         }
 
-        // Use updated campaign dates if available, otherwise fall back to original
-        const campaignDates = updatedCampaignsMap.get(task.campaignId)
         const campaign = campaigns.find(c => c.id === task.campaignId)
         
-        let campaignStartDate: string | undefined
-        let campaignEndDate: string | undefined
-        
-        if (campaignDates) {
-          campaignStartDate = campaignDates.startDate
-          campaignEndDate = campaignDates.endDate
-        } else if (campaign) {
-          campaignStartDate = campaign.startDate
-          campaignEndDate = campaign.endDate
-        }
-        
-        if (!campaignStartDate || !campaignEndDate) {
+        if (!campaign || !campaign.startDate || !campaign.endDate) {
           skipped++
           continue
         }
 
-        const startDate = new Date(campaignStartDate)
+        const startDate = new Date(campaign.startDate)
         const dueDate = addDays(startDate, 1)
 
         taskUpdates.push({
@@ -467,33 +353,16 @@ export default function UnscheduledItemsSidebar({
           return update ? { ...t, startDate: update.startDate, dueDate: update.dueDate } : t
         })
       )
-      if (campaignUpdates.length > 0) {
-        setCampaigns(prevCampaigns =>
-          prevCampaigns.map(c => {
-            const update = campaignUpdates.find(u => u.id === c.id)
-            return update ? { ...c, startDate: update.startDate, endDate: update.endDate } : c
-          })
-        )
-      }
 
-      if (taskUpdates.length > 0) {
-        setTasks(prevTasks =>
-          prevTasks.map(t => {
-            const update = taskUpdates.find(u => u.id === t.id)
-            return update ? { ...t, startDate: update.startDate, dueDate: update.dueDate } : t
-          })
-        )
-      }
-
-      if (campaignsReassigned > 0 || tasksReassigned > 0) {
-        toast.success(`Reassigned ${campaignsReassigned} campaign(s) and ${tasksReassigned} task(s)`)
+      if (tasksReassigned > 0) {
+        toast.success(`Reassigned ${tasksReassigned} task(s) to campaign start dates`)
       }
       if (skipped > 0) {
-        toast.warning(`Skipped ${skipped} item(s) (missing parent dates or errors)`)
+        toast.warning(`Skipped ${skipped} task(s) (missing campaign or campaign dates)`)
       }
     } catch (error) {
-      console.error('Error reassigning items:', error)
-      toast.error('Failed to reassign items')
+      console.error('Error reassigning tasks:', error)
+      toast.error('Failed to reassign tasks')
     } finally {
       setIsAutoScheduling(false)
     }
@@ -851,15 +720,9 @@ export default function UnscheduledItemsSidebar({
                                       <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
                                         <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                                         <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-5 w-5 flex-shrink-0"
-                                          onClick={() => handleReassignCampaign(campaign)}
-                                          title="Reassign campaign to project start date"
-                                        >
-                                          <Lightning size={12} weight="fill" />
-                                        </Button>
+                                        <div className="h-5 w-5 flex-shrink-0" title="Campaigns must be manually scheduled">
+                                          {/* No auto-reassign for campaigns */}
+                                        </div>
                                       </div>
                                       
                                       {/* Tasks under this campaign */}

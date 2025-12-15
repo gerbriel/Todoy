@@ -85,6 +85,29 @@ export const orgInvitesService = {
     }
   },
 
+  async getByCode(code: string): Promise<OrgInvite | null> {
+    const { data, error } = await supabase
+      .from('org_invites')
+      .select('*')
+      .eq('invite_code', code)
+      .eq('status', 'pending')
+      .single()
+
+    if (error || !data) return null
+
+    return {
+      id: data.id,
+      orgId: data.org_id,
+      email: data.email,
+      role: data.role as 'owner' | 'admin' | 'member',
+      invitedBy: data.invited_by,
+      invitedAt: data.invited_at,
+      status: data.status as 'pending' | 'accepted' | 'declined' | 'expired',
+      expiresAt: data.expires_at,
+      inviteCode: data.invite_code,
+    }
+  },
+
   async accept(id: string): Promise<void> {
     const { error } = await supabase
       .from('org_invites')

@@ -254,8 +254,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(memberError.message)
       }
     } else if (organizationData.option === 'join') {
-      // TODO: Implement join organization logic with invite code
-      throw new Error('Join organization feature coming soon')
+      // Join organization using invite code
+      if (!organizationData.inviteCode) {
+        throw new Error('Invite code is required')
+      }
+
+      // Find the invite by code
+      const { data: inviteData, error: inviteError } = await supabase
+        .from('org_invites')
+        .select('*')
+        .eq('invite_code', organizationData.inviteCode)
+        .eq('status', 'pending')
+        .single()
+
+      if (inviteError || !inviteData) {
+        throw new Error('Invalid or expired invite code')
+      }
+
+      // Check if invite is expired
+      if (new Date(inviteData.expires_at) < new Date()) {
+        throw new Error('This invite code has expired')
+      }
+
+      // Check if the invite email matches (if specified)
+      if (inviteData.email && authData.user.email !== inviteData.email) {
+        throw new Error(`This invite is for ${inviteData.email}. Please sign up with that email.`)
+      }
+
+      // Add user as organization member
+      const { error: memberError } = await supabase
+        .from('org_members')
+        .insert({
+          user_id: authData.user.id,
+          org_id: inviteData.org_id,
+          role: inviteData.role,
+          joined_at: new Date().toISOString(),
+        })
+
+      if (memberError) {
+        throw new Error(memberError.message)
+      }
+
+      // Mark invite as accepted
+      await supabase
+        .from('org_invites')
+        .update({ status: 'accepted' })
+        .eq('id', inviteData.id)
     }
 
     // Load user data

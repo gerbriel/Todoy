@@ -1125,16 +1125,6 @@ export default function UnscheduledItemsSidebar({
                       <CalendarIcon size={16} />
                       Scheduled Items
                     </h4>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleReassignAll}
-                      disabled={isAutoScheduling}
-                      className="h-7 text-xs"
-                      title="Reassign all items to optimal dates"
-                    >
-                      {isAutoScheduling ? 'Reassigning...' : 'Reassign All'}
-                    </Button>
                   </div>
 
                   {/* Scheduled Projects - show based on filter mode */}

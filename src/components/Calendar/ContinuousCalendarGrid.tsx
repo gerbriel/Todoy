@@ -42,7 +42,7 @@ interface ContinuousCalendarGridProps {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MAX_VISIBLE_LAYERS = 4
-const MONTHS_TO_RENDER = 6 // Render 6 months total (2 before, current, 3 after)
+const MONTHS_TO_RENDER = 12 // Render 12 months total (6 before, current, 5 after)
 
 export function ContinuousCalendarGrid({
   events,
@@ -57,6 +57,7 @@ export function ContinuousCalendarGrid({
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const isScrollingProgrammatically = useRef(false)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const [dragState, setDragState] = useState<DragState>({
     eventId: null,
@@ -86,7 +87,7 @@ export function ContinuousCalendarGrid({
   
   // Generate array of months to render
   const monthsToRender = Array.from({ length: MONTHS_TO_RENDER }, (_, i) => {
-    return addMonths(currentMonth, i - 2) // 2 months before, current, 3 after
+    return addMonths(currentMonth, i - 6) // 6 months before, current, 5 after
   })
   
   // Keep refs in sync with state
@@ -134,25 +135,51 @@ export function ContinuousCalendarGrid({
     const handleScroll = () => {
       if (isScrollingProgrammatically.current) return
       
-      const containerRect = container.getBoundingClientRect()
-      const containerCenter = containerRect.top + containerRect.height / 3 // Use top third as reference
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
       
-      // Find which month is in view
-      for (const [monthKey, monthElement] of monthRefs.current.entries()) {
-        const rect = monthElement.getBoundingClientRect()
-        if (rect.top <= containerCenter && rect.bottom >= containerCenter) {
-          const [year, month] = monthKey.split('-')
+      // Debounce the month update to avoid rapid changes
+      scrollTimeoutRef.current = setTimeout(() => {
+        const containerRect = container.getBoundingClientRect()
+        const containerCenter = containerRect.top + containerRect.height / 2 // Use center as reference
+        
+        // Find which month has the most visible area near the center
+        let bestMatch: { monthKey: string; distance: number } | null = null
+        
+        for (const [monthKey, monthElement] of monthRefs.current.entries()) {
+          const rect = monthElement.getBoundingClientRect()
+          
+          // Calculate distance from month center to container center
+          const monthCenter = rect.top + rect.height / 2
+          const distance = Math.abs(monthCenter - containerCenter)
+          
+          // Only consider months that are at least partially visible
+          if (rect.bottom > containerRect.top && rect.top < containerRect.bottom) {
+            if (!bestMatch || distance < bestMatch.distance) {
+              bestMatch = { monthKey, distance }
+            }
+          }
+        }
+        
+        if (bestMatch) {
+          const [year, month] = bestMatch.monthKey.split('-')
           const newMonth = new Date(parseInt(year), parseInt(month) - 1)
           if (!isSameMonth(newMonth, currentMonth)) {
             setCurrentMonth(newMonth)
           }
-          break
         }
-      }
+      }, 150) // 150ms debounce
     }
     
     container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
   }, [currentMonth])
   
   const handleToday = () => {

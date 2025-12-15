@@ -90,6 +90,12 @@ export function ContinuousCalendarGrid({
     return addMonths(currentMonth, i - 6) // 6 months before, current, 5 after
   })
   
+  // Log when currentMonth changes
+  useEffect(() => {
+    console.log('[ContinuousCalendar] currentMonth changed to:', format(currentMonth, 'MMM yyyy'))
+    console.log('[ContinuousCalendar] Rendering months:', monthsToRender.map(m => format(m, 'MMM yyyy')).join(', '))
+  }, [currentMonth])
+  
   // Keep refs in sync with state
   useEffect(() => {
     dragStateRef.current = dragState
@@ -118,14 +124,21 @@ export function ContinuousCalendarGrid({
     const monthKey = format(currentMonth, 'yyyy-MM')
     const monthElement = monthRefs.current.get(monthKey)
     
+    console.log('[ContinuousCalendar] Mount - currentMonth:', format(currentMonth, 'MMM yyyy'), 'monthKey:', monthKey)
+    console.log('[ContinuousCalendar] Mount - monthElement found:', !!monthElement)
+    console.log('[ContinuousCalendar] Mount - Available months in refs:', Array.from(monthRefs.current.keys()))
+    
     if (monthElement && scrollContainerRef.current) {
+      console.log('[ContinuousCalendar] Mount - Scrolling to month')
       isScrollingProgrammatically.current = true
       monthElement.scrollIntoView({ block: 'start' })
       // Give enough time for scroll to complete before allowing user scroll detection
       setTimeout(() => {
+        console.log('[ContinuousCalendar] Mount - Clearing programmatic scroll flag')
         isScrollingProgrammatically.current = false
       }, 300)
     } else {
+      console.log('[ContinuousCalendar] Mount - Month element not found, clearing flag')
       // If element not found, still clear the flag
       setTimeout(() => {
         isScrollingProgrammatically.current = false
@@ -139,7 +152,10 @@ export function ContinuousCalendarGrid({
     if (!container) return
     
     const handleScroll = () => {
-      if (isScrollingProgrammatically.current) return
+      if (isScrollingProgrammatically.current) {
+        console.log('[ContinuousCalendar] Scroll - Ignoring (programmatic scroll in progress)')
+        return
+      }
       
       // Clear existing timeout
       if (scrollTimeoutRef.current) {
@@ -148,6 +164,7 @@ export function ContinuousCalendarGrid({
       
       // Debounce the month update to avoid rapid changes
       scrollTimeoutRef.current = setTimeout(() => {
+        console.log('[ContinuousCalendar] Scroll - Detecting month...')
         const containerRect = container.getBoundingClientRect()
         const containerCenter = containerRect.top + containerRect.height / 2 // Use center as reference
         
@@ -170,15 +187,20 @@ export function ContinuousCalendarGrid({
         }
         
         if (bestMatch) {
+          console.log('[ContinuousCalendar] Scroll - Best match:', bestMatch.monthKey, 'distance:', bestMatch.distance.toFixed(2))
           const [year, month] = bestMatch.monthKey.split('-')
           const newMonth = new Date(parseInt(year), parseInt(month) - 1)
           // Use a callback to avoid dependency on currentMonth
           setCurrentMonth(prevMonth => {
             if (!isSameMonth(newMonth, prevMonth)) {
+              console.log('[ContinuousCalendar] Scroll - Month changed from', format(prevMonth, 'MMM yyyy'), 'to', format(newMonth, 'MMM yyyy'))
               return newMonth
             }
+            console.log('[ContinuousCalendar] Scroll - Month unchanged:', format(prevMonth, 'MMM yyyy'))
             return prevMonth
           })
+        } else {
+          console.log('[ContinuousCalendar] Scroll - No best match found')
         }
       }, 150) // 150ms debounce
     }
@@ -194,6 +216,7 @@ export function ContinuousCalendarGrid({
   
   const handleToday = () => {
     const today = new Date()
+    console.log('[ContinuousCalendar] Today button clicked - Setting to:', format(today, 'MMM yyyy'))
     setCurrentMonth(today)
     
     // Scroll to today's month - need longer timeout to ensure monthRefs are populated
@@ -201,16 +224,24 @@ export function ContinuousCalendarGrid({
       const monthKey = format(today, 'yyyy-MM')
       const monthElement = monthRefs.current.get(monthKey)
       
+      console.log('[ContinuousCalendar] Today - Looking for monthKey:', monthKey)
+      console.log('[ContinuousCalendar] Today - Available months:', Array.from(monthRefs.current.keys()))
+      console.log('[ContinuousCalendar] Today - Month element found:', !!monthElement)
+      
       if (monthElement && scrollContainerRef.current) {
+        console.log('[ContinuousCalendar] Today - Scrolling to month element')
         isScrollingProgrammatically.current = true
         monthElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
         setTimeout(() => {
+          console.log('[ContinuousCalendar] Today - Clearing programmatic scroll flag')
           isScrollingProgrammatically.current = false
         }, 1000) // Increased timeout to ensure smooth scroll completes
       } else {
+        console.log('[ContinuousCalendar] Today - Month element not found, trying again in 100ms')
         // If element not found, try again after a longer delay
         setTimeout(() => {
           const monthElement = monthRefs.current.get(monthKey)
+          console.log('[ContinuousCalendar] Today - Retry: Month element found:', !!monthElement)
           if (monthElement && scrollContainerRef.current) {
             isScrollingProgrammatically.current = true
             monthElement.scrollIntoView({ behavior: 'smooth', block: 'start' })

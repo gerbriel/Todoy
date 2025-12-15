@@ -481,7 +481,7 @@ function MainApp() {
               ) : (
                 <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
-                  tasks={tasks || []}
+                  tasks={[]}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}

@@ -8,6 +8,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <script>
+        // GitHub Pages SPA redirect handling
+        // Check if we were redirected from 404.html
+        (function() {
+            var redirect = sessionStorage.redirect;
+            delete sessionStorage.redirect;
+            if (redirect && redirect != location.href) {
+                history.replaceState(null, null, redirect);
+            }
+        })();
+        
+        // Store the redirect path if coming from 404.html
+        (function() {
+            var query = window.location.search;
+            if (query) {
+                var match = query.match(/[?&]p=([^&]+)/);
+                if (match) {
+                    var redirect = window.location.pathname + match[1].replace(/~/g, '/');
+                    sessionStorage.redirect = redirect;
+                }
+            }
+        })();
+    </script>
 </head>
 
 <body>

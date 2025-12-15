@@ -144,7 +144,11 @@ export default function OrganizationView({
       })
 
       // Send invitation email
-      const inviteLink = `https://gerbriel.github.io/Todoy/invite/${newInvite.id}`
+      // Use production URL in production, localhost in development
+      const baseUrl = import.meta.env.PROD 
+        ? 'https://gerbriel.github.io/Todoy' 
+        : window.location.origin + '/Todoy'
+      const inviteLink = `${baseUrl}/invite/${newInvite.id}`
       const currentUser = users.find(u => u.id === currentUserId)
       
       const { error: emailError } = await supabase.functions.invoke('send-invite-email', {
@@ -177,7 +181,11 @@ export default function OrganizationView({
 
   const handleResendInvite = async (invite: OrgInvite) => {
     try {
-      const inviteLink = `https://gerbriel.github.io/Todoy/invite/${invite.id}`
+      // Use production URL in production, localhost in development
+      const baseUrl = import.meta.env.PROD 
+        ? 'https://gerbriel.github.io/Todoy' 
+        : window.location.origin + '/Todoy'
+      const inviteLink = `${baseUrl}/invite/${invite.id}`
       
       // Get the current user's name
       const currentUser = users.find(u => u.id === currentUserId)

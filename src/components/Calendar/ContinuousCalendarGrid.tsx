@@ -121,6 +121,12 @@ export function ContinuousCalendarGrid({
     if (monthElement && scrollContainerRef.current) {
       isScrollingProgrammatically.current = true
       monthElement.scrollIntoView({ block: 'start' })
+      // Give enough time for scroll to complete before allowing user scroll detection
+      setTimeout(() => {
+        isScrollingProgrammatically.current = false
+      }, 300)
+    } else {
+      // If element not found, still clear the flag
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 100)
@@ -166,9 +172,13 @@ export function ContinuousCalendarGrid({
         if (bestMatch) {
           const [year, month] = bestMatch.monthKey.split('-')
           const newMonth = new Date(parseInt(year), parseInt(month) - 1)
-          if (!isSameMonth(newMonth, currentMonth)) {
-            setCurrentMonth(newMonth)
-          }
+          // Use a callback to avoid dependency on currentMonth
+          setCurrentMonth(prevMonth => {
+            if (!isSameMonth(newMonth, prevMonth)) {
+              return newMonth
+            }
+            return prevMonth
+          })
         }
       }, 150) // 150ms debounce
     }
@@ -180,7 +190,7 @@ export function ContinuousCalendarGrid({
         clearTimeout(scrollTimeoutRef.current)
       }
     }
-  }, [currentMonth])
+  }, []) // Remove currentMonth dependency to avoid re-registering listener
   
   const handleToday = () => {
     const today = new Date()

@@ -302,6 +302,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', inviteData.id)
     }
 
+    // Check for pending invite from session storage (after invite link → signup flow)
+    const pendingInviteId = sessionStorage.getItem('pendingInviteId')
+    if (pendingInviteId) {
+      sessionStorage.removeItem('pendingInviteId')
+      
+      try {
+        // Get the invite
+        const { data: inviteData, error: inviteError } = await supabase
+          .from('org_invites')
+          .select('*')
+          .eq('id', pendingInviteId)
+          .eq('status', 'pending')
+          .single()
+
+        if (!inviteError && inviteData) {
+          // Check if expired
+          if (new Date(inviteData.expires_at) > new Date()) {
+            // Add user to organization
+            await supabase
+              .from('org_members')
+              .insert({
+                user_id: authData.user.id,
+                org_id: inviteData.org_id,
+                role: inviteData.role,
+                joined_at: new Date().toISOString(),
+              })
+
+            // Mark invite as accepted
+            await supabase
+              .from('org_invites')
+              .update({ status: 'accepted' })
+              .eq('id', inviteData.id)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing pending invite:', error)
+      }
+    }
+
     // Load user data
     await loadUserData(authData.user.id)
   }

@@ -61,9 +61,9 @@ export default function InviteAcceptance({ inviteId, onAccepted }: InviteAccepta
         return
       }
 
-      // Check if the invite email matches the logged in user
+      // Check if the invite email matches the logged in user (if logged in)
       if (user && user.email !== inviteData.email) {
-        setError(`This invitation is for ${inviteData.email}. Please log in with that email address.`)
+        setError(`This invitation is for ${inviteData.email}. Please log out and sign in with that email address.`)
         setLoading(false)
         return
       }
@@ -83,7 +83,15 @@ export default function InviteAcceptance({ inviteId, onAccepted }: InviteAccepta
   }
 
   const handleAccept = async () => {
-    if (!invite || !user) return
+    if (!invite) return
+
+    // If user is not logged in, redirect to signup with invite context
+    if (!user) {
+      // Store invite ID in session storage so we can process it after signup
+      sessionStorage.setItem('pendingInviteId', invite.id)
+      window.location.href = window.location.origin + '/Todoy/'
+      return
+    }
 
     try {
       setProcessing(true)
@@ -201,10 +209,10 @@ export default function InviteAcceptance({ inviteId, onAccepted }: InviteAccepta
               {processing ? (
                 <>
                   <CircleNotch size={16} className="animate-spin mr-2" />
-                  Accepting...
+                  {user ? 'Accepting...' : 'Redirecting...'}
                 </>
               ) : (
-                'Accept Invitation'
+                user ? 'Accept Invitation' : 'Sign Up & Accept'
               )}
             </Button>
             <Button 
@@ -216,6 +224,12 @@ export default function InviteAcceptance({ inviteId, onAccepted }: InviteAccepta
               Decline
             </Button>
           </div>
+
+          {!user && (
+            <p className="text-xs text-center text-muted-foreground bg-blue-50 p-3 rounded-md border border-blue-200">
+              💡 You'll be redirected to create an account. After signing up, you'll automatically join this organization.
+            </p>
+          )}
 
           <p className="text-xs text-center text-muted-foreground">
             This invitation will expire on{' '}

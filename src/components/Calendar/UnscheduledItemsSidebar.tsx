@@ -33,6 +33,7 @@ interface UnscheduledItemsSidebarProps {
   setTasks?: (tasks: Task[] | ((prev: Task[]) => Task[])) => void
   setCampaigns?: (campaigns: Campaign[] | ((prev: Campaign[]) => Campaign[])) => void
   setProjects?: (projects: Project[] | ((prev: Project[]) => Project[])) => void
+  onNavigateToDate?: (date: Date) => void
 }
 
 interface DraggableItemProps {
@@ -43,9 +44,10 @@ interface DraggableItemProps {
   color?: string
   metadata?: any
   actionButton?: React.ReactNode
+  onClick?: () => void
 }
 
-const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }: DraggableItemProps) => {
+const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton, onClick }: DraggableItemProps) => {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('application/json', JSON.stringify({
@@ -57,14 +59,24 @@ const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }:
     }))
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick && !actionButton) {
+      e.preventDefault()
+      e.stopPropagation()
+      onClick()
+    }
+  }
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
+      onClick={handleClick}
       className={cn(
-        "flex items-center gap-1.5 p-3 rounded-md cursor-move min-h-[64px]",
+        "flex items-center gap-1.5 p-3 rounded-md min-h-[64px]",
         "hover:bg-accent transition-colors",
-        "border border-transparent hover:border-border"
+        "border border-transparent hover:border-border",
+        onClick && !actionButton ? "cursor-pointer" : "cursor-move"
       )}
       style={{ borderLeftColor: color, borderLeftWidth: color ? 3 : 1 }}
     >
@@ -90,7 +102,8 @@ export default function UnscheduledItemsSidebar({
   onToggle,
   setTasks,
   setCampaigns,
-  setProjects
+  setProjects,
+  onNavigateToDate
 }: UnscheduledItemsSidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
     campaigns: true,
@@ -1150,10 +1163,21 @@ export default function UnscheduledItemsSidebar({
                         
                         return (
                           <div key={project.id} className="space-y-1">
-                            <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
+                            <div 
+                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-pointer hover:bg-muted/50 transition-colors" 
+                              style={{ borderLeftColor: '#8b5cf6' }}
+                              onClick={() => {
+                                if (onNavigateToDate && project.startDate) {
+                                  onNavigateToDate(new Date(project.startDate))
+                                }
+                              }}
+                            >
                               {projectCampaigns.length > 0 && (
                                 <button
-                                  onClick={() => toggleProject(project.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    toggleProject(project.id)
+                                  }}
                                   className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                                 >
                                   {isProjectExpanded ? (
@@ -1170,7 +1194,10 @@ export default function UnscheduledItemsSidebar({
                                 size="icon"
                                 variant="ghost"
                                 className="h-5 w-5 flex-shrink-0"
-                                onClick={() => handleAutoScheduleProjectCampaigns(project)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleAutoScheduleProjectCampaigns(project)
+                                }}
                                 title="Sync all campaigns to project dates"
                               >
                                 <CalendarCheck size={12} weight="bold" />
@@ -1186,10 +1213,21 @@ export default function UnscheduledItemsSidebar({
                                   
                                   return (
                                     <div key={campaign.id} className="space-y-1">
-                                      <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                      <div 
+                                        className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2 cursor-pointer hover:bg-muted/40 transition-colors" 
+                                        style={{ borderLeftColor: '#10b981' }}
+                                        onClick={() => {
+                                          if (onNavigateToDate && campaign.startDate) {
+                                            onNavigateToDate(new Date(campaign.startDate))
+                                          }
+                                        }}
+                                      >
                                         {campaignTasks.length > 0 && (
                                           <button
-                                            onClick={() => toggleCampaign(campaign.id)}
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              toggleCampaign(campaign.id)
+                                            }}
                                             className="w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                                           >
                                             {isCampaignExpanded ? (
@@ -1206,7 +1244,10 @@ export default function UnscheduledItemsSidebar({
                                           size="icon"
                                           variant="ghost"
                                           className="h-5 w-5 flex-shrink-0"
-                                          onClick={() => handleReassignCampaignTasks(campaign)}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleReassignCampaignTasks(campaign)
+                                          }}
                                           title="Auto-schedule all unscheduled tasks in this campaign"
                                         >
                                           <ArrowsClockwise size={12} weight="bold" />
@@ -1217,14 +1258,25 @@ export default function UnscheduledItemsSidebar({
                                       {isCampaignExpanded && campaignTasks.length > 0 && (
                                         <div className="ml-5 space-y-1">
                                           {campaignTasks.map(task => (
-                                            <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
+                                            <div 
+                                              key={task.id} 
+                                              className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-pointer"
+                                              onClick={() => {
+                                                if (onNavigateToDate && task.startDate) {
+                                                  onNavigateToDate(new Date(task.startDate))
+                                                }
+                                              }}
+                                            >
                                               <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                                               <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
                                               <Button
                                                 size="icon"
                                                 variant="ghost"
                                                 className="h-4 w-4 flex-shrink-0"
-                                                onClick={() => handleReassignTask(task)}
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  handleReassignTask(task)
+                                                }}
                                                 title="Reassign task to campaign start date"
                                               >
                                                 <Lightning size={10} weight="fill" />
@@ -1272,10 +1324,21 @@ export default function UnscheduledItemsSidebar({
                             
                             return (
                               <div key={campaign.id} className="space-y-1">
-                                <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                <div 
+                                  className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-pointer hover:bg-muted/50 transition-colors" 
+                                  style={{ borderLeftColor: '#10b981' }}
+                                  onClick={() => {
+                                    if (onNavigateToDate && campaign.startDate) {
+                                      onNavigateToDate(new Date(campaign.startDate))
+                                    }
+                                  }}
+                                >
                                   {campaignTasks.length > 0 && (
                                     <button
-                                      onClick={() => toggleCampaign(campaign.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleCampaign(campaign.id)
+                                      }}
                                       className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                                     >
                                       {isCampaignExpanded ? (
@@ -1292,7 +1355,10 @@ export default function UnscheduledItemsSidebar({
                                     size="icon"
                                     variant="ghost"
                                     className="h-5 w-5 flex-shrink-0"
-                                    onClick={() => handleReassignCampaignTasks(campaign)}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleReassignCampaignTasks(campaign)
+                                    }}
                                     title="Auto-schedule all unscheduled tasks in this campaign"
                                   >
                                     <ArrowsClockwise size={12} weight="bold" />
@@ -1303,14 +1369,25 @@ export default function UnscheduledItemsSidebar({
                                 {isCampaignExpanded && campaignTasks.length > 0 && (
                                   <div className="ml-6 space-y-1">
                                     {campaignTasks.map(task => (
-                                      <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
+                                      <div 
+                                        key={task.id} 
+                                        className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-pointer"
+                                        onClick={() => {
+                                          if (onNavigateToDate && task.startDate) {
+                                            onNavigateToDate(new Date(task.startDate))
+                                          }
+                                        }}
+                                      >
                                         <CheckSquare size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                                         <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
                                         <Button
                                           size="icon"
                                           variant="ghost"
                                           className="h-5 w-5 flex-shrink-0"
-                                          onClick={() => handleReassignTask(task)}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleReassignTask(task)
+                                          }}
                                           title="Reassign task to campaign start date"
                                         >
                                           <Lightning size={10} weight="fill" />
@@ -1348,14 +1425,25 @@ export default function UnscheduledItemsSidebar({
                       {expandedSections.scheduledTasks && (
                         <div className="space-y-2 ml-6">
                           {scheduledTasks.map(task => (
-                            <div key={task.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors border-blue-500">
+                            <div 
+                              key={task.id} 
+                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors border-blue-500 cursor-pointer"
+                              onClick={() => {
+                                if (onNavigateToDate && task.startDate) {
+                                  onNavigateToDate(new Date(task.startDate))
+                                }
+                              }}
+                            >
                               <CheckSquare size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                               <span className="text-xs font-medium flex-1 break-words leading-snug">{task.title}</span>
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="h-5 w-5 flex-shrink-0"
-                                onClick={() => handleReassignTask(task)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleReassignTask(task)
+                                }}
                                 title="Reassign task"
                               >
                                 <Lightning size={12} weight="bold" />

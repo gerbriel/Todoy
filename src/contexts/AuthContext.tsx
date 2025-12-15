@@ -88,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load user profile and organization data
   const loadUserData = async (userId: string) => {
     try {
+      console.log('[AuthContext] Loading user data for:', userId)
+      
       // Create a timeout promise
       const timeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Query timeout')), 5000)
@@ -105,7 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         timeout
       ]) as any
 
+      console.log('[AuthContext] Profile result:', { profile, profileError })
+
       if (profileError) {
+        console.error('[AuthContext] Profile error:', profileError)
         // Don't sign out on errors - just show login screen
         setUser(null)
         setOrganization(null)
@@ -121,23 +126,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           createdAt: profile.created_at,
         }
         setUser(userData)
+        console.log('[AuthContext] User data set:', userData)
 
         // Load user's organization memberships (without JOIN to avoid RLS recursion)
-        const { data: memberships } = await supabase
+        const { data: memberships, error: memberError } = await supabase
           .from('org_members')
           .select('*')
           .eq('user_id', userId)
 
+        console.log('[AuthContext] Memberships result:', { memberships, memberError })
+
         if (memberships && memberships.length > 0) {
           // Use first org for now (TODO: support multiple orgs)
           const firstMembership = memberships[0]
+          console.log('[AuthContext] First membership:', firstMembership)
           
           // Load organization separately to avoid RLS recursion issues
-          const { data: orgData } = await supabase
+          const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('*')
             .eq('id', firstMembership.org_id)
             .single()
+
+          console.log('[AuthContext] Organization result:', { orgData, orgError })
 
           if (orgData) {
             const org: Organization = {
@@ -148,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ownerId: orgData.owner_id,
             }
             setOrganization(org)
+            console.log('[AuthContext] Organization set:', org)
 
             // Load all org members using RPC function to bypass RLS
             const { data: allMembers } = await supabase
@@ -168,7 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      // Silently handle errors
+      // Log errors for debugging
+      console.error('[AuthContext] Error in loadUserData:', error)
       setUser(null)
       setOrganization(null)
     } finally {
@@ -187,12 +200,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.user) {
+      // Check for pending invites for this email and auto-accept them
+      console.log('[AuthContext] Checking for pending/accepted invites after login')
+      
+      const { data: pendingInvites } = await supabase
+        .from('org_invites')
+        .select('*')
+        .eq('email', data.user.email)
+        .in('status', ['pending', 'accepted'])  // Include already accepted invites
+        .gt('expires_at', new Date().toISOString())
+      
+      if (pendingInvites && pendingInvites.length > 0) {
+        console.log('[AuthContext] Found invites to process:', pendingInvites)
+        
+        for (const invite of pendingInvites) {
+          try {
+            // Check if user is already a member
+            const { data: existing } = await supabase
+              .from('org_members')
+              .select('id')
+              .eq('user_id', data.user.id)
+              .eq('org_id', invite.org_id)
+              .single()
+            
+            if (!existing) {
+              // Add user to organization
+              await supabase
+                .from('org_members')
+                .insert({
+                  user_id: data.user.id,
+                  org_id: invite.org_id,
+                  role: invite.role,
+                  joined_at: new Date().toISOString(),
+                })
+              
+              console.log('[AuthContext] Added user to org:', invite.org_id)
+            }
+            
+            // Mark invite as accepted if it wasn't already
+            if (invite.status === 'pending') {
+              await supabase
+                .from('org_invites')
+                .update({ status: 'accepted' })
+                .eq('id', invite.id)
+              
+              console.log('[AuthContext] Invite marked as accepted:', invite.id)
+            }
+          } catch (err) {
+            console.error('[AuthContext] Error processing invite:', err)
+          }
+        }
+      }
+      
       await loadUserData(data.user.id)
     }
   }
 
   const signup = async (email: string, password: string, name: string, organizationData: OrganizationData) => {
     // Sign up the user
+    const redirectUrl = import.meta.env.PROD 
+      ? 'https://gerbriel.github.io/Todoy' 
+      : `${window.location.origin}/`
+    
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -200,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           name,
         },
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: redirectUrl,
       },
     })
 
@@ -304,10 +373,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for pending invite from session storage (after invite link → signup flow)
     const pendingInviteId = sessionStorage.getItem('pendingInviteId')
+    console.log('[AuthContext] Checking for pending invite:', { pendingInviteId })
+    
     if (pendingInviteId) {
       sessionStorage.removeItem('pendingInviteId')
+      sessionStorage.removeItem('pendingInviteEmail')
       
       try {
+        console.log('[AuthContext] Processing pending invite:', pendingInviteId)
+        
         // Get the invite
         const { data: inviteData, error: inviteError } = await supabase
           .from('org_invites')
@@ -316,11 +390,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('status', 'pending')
           .single()
 
+        console.log('[AuthContext] Invite lookup result:', { inviteData, inviteError })
+
         if (!inviteError && inviteData) {
           // Check if expired
           if (new Date(inviteData.expires_at) > new Date()) {
+            console.log('[AuthContext] Adding user to organization:', {
+              userId: authData.user.id,
+              orgId: inviteData.org_id,
+              role: inviteData.role
+            })
+            
             // Add user to organization
-            await supabase
+            const { error: memberError } = await supabase
               .from('org_members')
               .insert({
                 user_id: authData.user.id,
@@ -329,15 +411,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 joined_at: new Date().toISOString(),
               })
 
+            if (memberError) {
+              console.error('[AuthContext] Error adding to org_members:', memberError)
+            } else {
+              console.log('[AuthContext] Successfully added to organization')
+            }
+
             // Mark invite as accepted
-            await supabase
+            const { error: updateError } = await supabase
               .from('org_invites')
               .update({ status: 'accepted' })
               .eq('id', inviteData.id)
+
+            if (updateError) {
+              console.error('[AuthContext] Error updating invite status:', updateError)
+            } else {
+              console.log('[AuthContext] Invite marked as accepted')
+            }
+          } else {
+            console.warn('[AuthContext] Invite has expired')
           }
         }
       } catch (error) {
-        console.error('Error processing pending invite:', error)
+        console.error('[AuthContext] Error processing pending invite:', error)
       }
     }
 

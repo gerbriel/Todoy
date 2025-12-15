@@ -66,6 +66,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showMobileItemsPanel, setShowMobileItemsPanel] = useState(false)
+  const [goToDateFn, setGoToDateFn] = useState<((date: Date) => void) | null>(null)
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -856,6 +857,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             onEventResize={handleEventResize}
             onDateClick={handleDateClick}
             onSidebarItemDrop={handleSidebarItemDrop}
+            onGoToDate={(fn) => setGoToDateFn(() => fn)}
           />
         </div>
         
@@ -871,6 +873,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             setTasks={setTasks}
             setCampaigns={setCampaigns}
             setProjects={setProjects}
+            onNavigateToDate={goToDateFn || undefined}
           />
         </div>
       </div>
@@ -909,6 +912,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
                 setTasks={setTasks}
                 setCampaigns={setCampaigns}
                 setProjects={setProjects}
+                onNavigateToDate={goToDateFn || undefined}
               />
             </div>
           </div>

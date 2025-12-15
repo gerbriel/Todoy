@@ -206,7 +206,18 @@ export default function MasterView({
                           const projectCampaigns = campaigns.filter(c => c.projectId === project.id)
                           return (
                             <TableRow key={project.id}>
-                              <TableCell className="font-medium">{project.title}</TableCell>
+                              <TableCell 
+                                className="font-medium cursor-pointer hover:text-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  console.log('Project clicked:', project.id, 'Handler exists:', !!onNavigateToProject)
+                                  if (onNavigateToProject) {
+                                    onNavigateToProject(project.id)
+                                  }
+                                }}
+                              >
+                                {project.title}
+                              </TableCell>
                               <TableCell className="text-muted-foreground">
                                 {project.description || '-'}
                               </TableCell>
@@ -272,8 +283,30 @@ export default function MasterView({
                           const campaignTasks = tasks.filter(t => t.campaignId === campaign.id)
                           return (
                             <TableRow key={campaign.id}>
-                              <TableCell className="font-medium">{campaign.title}</TableCell>
-                              <TableCell className="text-muted-foreground text-sm">
+                              <TableCell 
+                                className="font-medium cursor-pointer hover:text-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  console.log('Campaign clicked:', campaign.id, 'Handler exists:', !!onNavigateToCampaign)
+                                  if (onNavigateToCampaign) {
+                                    onNavigateToCampaign(campaign.id)
+                                  }
+                                }}
+                              >
+                                {campaign.title}
+                              </TableCell>
+                              <TableCell 
+                                className={`text-muted-foreground text-sm ${campaignProject ? 'cursor-pointer hover:text-primary' : ''}`}
+                                onClick={(e) => {
+                                  if (campaignProject) {
+                                    e.stopPropagation()
+                                    console.log('Campaign->Project clicked:', campaignProject.id, 'Handler exists:', !!onNavigateToProject)
+                                    if (onNavigateToProject) {
+                                      onNavigateToProject(campaignProject.id)
+                                    }
+                                  }
+                                }}
+                              >
                                 {campaignProject?.title || '-'}
                               </TableCell>
                               <TableCell>
@@ -354,11 +387,25 @@ export default function MasterView({
                           return (
                             <TableRow
                               key={task.id}
-                              className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => setSelectedTaskId(task.id)}
                             >
-                              <TableCell className="font-medium">{task.title}</TableCell>
-                              <TableCell className="text-muted-foreground text-sm">
+                              <TableCell 
+                                className="font-medium cursor-pointer hover:text-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedTaskId(task.id)
+                                }}
+                              >
+                                {task.title}
+                              </TableCell>
+                              <TableCell 
+                                className={`text-muted-foreground text-sm ${taskCampaign ? 'cursor-pointer hover:text-primary' : ''}`}
+                                onClick={(e) => {
+                                  if (taskCampaign) {
+                                    e.stopPropagation()
+                                    onNavigateToCampaign?.(taskCampaign.id)
+                                  }
+                                }}
+                              >
                                 {taskCampaign?.title || '-'}
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">

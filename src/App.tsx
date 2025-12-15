@@ -233,6 +233,24 @@ function MainApp() {
     localStorage.setItem('viewMode', viewMode)
   }, [viewMode])
 
+  // Auto-switch to master view when in calendar mode with no specific selection
+  useEffect(() => {
+    if (viewMode === 'calendar' && !activeProjectId && !activeCampaignId) {
+      // If we're in calendar mode but not in a specific view (project/campaign/master),
+      // automatically switch to master view to show everything
+      if (navigationView !== 'master' && 
+          navigationView !== 'all-projects' && 
+          navigationView !== 'all-campaigns' && 
+          navigationView !== 'all-tasks' &&
+          navigationView !== 'recently-completed' &&
+          navigationView !== 'archive' &&
+          navigationView !== 'organization' &&
+          navigationView !== 'labels') {
+        setNavigationView('master')
+      }
+    }
+  }, [viewMode, activeProjectId, activeCampaignId, navigationView])
+
   const activeProject = projects?.find(p => p.id === activeProjectId) || archivedProject
   const activeCampaign = campaigns?.find(c => c.id === activeCampaignId) || archivedCampaign
   const campaignProject = activeCampaign?.projectId 

@@ -85,11 +85,34 @@ export default function InviteAcceptance({ inviteId, onAccepted }: InviteAccepta
   const handleAccept = async () => {
     if (!invite) return
 
-    // If user is not logged in, redirect to signup with invite context
+    // Mark invite as accepted immediately (shows admin that user clicked the link)
+    try {
+      await orgInvitesService.accept(invite.id)
+      console.log('[InviteAcceptance] Invite marked as accepted immediately')
+    } catch (err) {
+      console.error('[InviteAcceptance] Error marking invite as accepted:', err)
+    }
+
+    // If user is not logged in, redirect to login/signup with invite context
     if (!user) {
-      // Store invite ID in session storage so we can process it after signup
+      console.log('[InviteAcceptance] No user logged in, storing invite and redirecting:', {
+        inviteId: invite.id,
+        inviteEmail: invite.email
+      })
+      
+      // Store invite ID and email in session storage
       sessionStorage.setItem('pendingInviteId', invite.id)
-      window.location.href = window.location.origin + '/Todoy/'
+      sessionStorage.setItem('pendingInviteEmail', invite.email)
+      
+      console.log('[InviteAcceptance] Session storage set:', {
+        pendingInviteId: sessionStorage.getItem('pendingInviteId'),
+        pendingInviteEmail: sessionStorage.getItem('pendingInviteEmail')
+      })
+      
+      // Redirect to login page (which will show signup for new users)
+      const redirectUrl = window.location.origin + '/Todoy/#signup'
+      console.log('[InviteAcceptance] Redirecting to:', redirectUrl)
+      window.location.href = redirectUrl
       return
     }
 

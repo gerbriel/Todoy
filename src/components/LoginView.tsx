@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -24,6 +24,37 @@ export default function LoginView() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
+  const [hasPendingInvite, setHasPendingInvite] = useState(false)
+
+  // Check for pending invite on component mount
+  useEffect(() => {
+    const pendingInviteId = sessionStorage.getItem('pendingInviteId')
+    const pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail')
+    
+    console.log('[LoginView] Checking for pending invite:', {
+      pendingInviteId,
+      pendingInviteEmail,
+      hash: window.location.hash
+    })
+    
+    if (pendingInviteId) {
+      console.log('[LoginView] Found pending invite, configuring signup mode')
+      setHasPendingInvite(true)
+      setIsSignup(true)
+      
+      // Pre-fill email if available
+      if (pendingInviteEmail) {
+        setEmail(pendingInviteEmail)
+        console.log('[LoginView] Pre-filled email:', pendingInviteEmail)
+      }
+    }
+    
+    // Check URL hash for signup intent
+    if (window.location.hash === '#signup') {
+      console.log('[LoginView] Hash indicates signup mode')
+      setIsSignup(true)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -170,7 +201,9 @@ export default function LoginView() {
             <CardDescription>
               {isSignup 
                 ? signupStep === 1 
-                  ? 'Enter your details to get started' 
+                  ? hasPendingInvite
+                    ? 'Create your account to accept the organization invite'
+                    : 'Enter your details to get started'
                   : signupStep === 2
                   ? 'Choose how you want to work'
                   : 'Complete your workspace setup'
@@ -179,6 +212,14 @@ export default function LoginView() {
           </CardHeader>
           
           <CardContent>
+          {hasPendingInvite && isSignup && signupStep === 1 && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-900 dark:text-blue-100">
+              <p className="font-medium">📧 Organization Invite Pending</p>
+              <p className="mt-1 text-blue-700 dark:text-blue-300">
+                You'll be added to the organization after creating your account
+              </p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Step 1: Basic Information */}
             {isSignup && signupStep === 1 && (
@@ -203,8 +244,14 @@ export default function LoginView() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={hasPendingInvite}
                     required
                   />
+                  {hasPendingInvite && (
+                    <p className="text-xs text-muted-foreground">
+                      Email from organization invite
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">

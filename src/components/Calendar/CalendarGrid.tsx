@@ -42,6 +42,7 @@ interface CalendarGridProps {
   onEventResize: (eventId: string, newStartDate: Date, newEndDate: Date) => void
   onDateClick?: (date: Date) => void
   onSidebarItemDrop?: (item: any, date: Date) => void
+  onGoToDate?: (goToDate: (date: Date) => void) => void
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -55,7 +56,8 @@ export function CalendarGrid({
   onEventMove,
   onEventResize,
   onDateClick,
-  onSidebarItemDrop
+  onSidebarItemDrop,
+  onGoToDate
 }: CalendarGridProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month') // Default to month view
@@ -72,6 +74,23 @@ export function CalendarGrid({
     setCurrentDate(today)
     setVisibleMonths([today])
   }, [])
+  
+  // Expose goToDate function to parent
+  useEffect(() => {
+    if (onGoToDate) {
+      onGoToDate((date: Date) => {
+        setCurrentDate(date)
+        // Scroll to the date in month view
+        if (viewMode === 'month') {
+          const monthKey = format(date, 'yyyy-MM')
+          const monthElement = monthRefs.current.get(monthKey)
+          if (monthElement && scrollContainerRef.current) {
+            monthElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }
+      })
+    }
+  }, [onGoToDate, viewMode])
   const [dragState, setDragState] = useState<DragState>({
     eventId: null,
     isDragging: false,

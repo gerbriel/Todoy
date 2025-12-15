@@ -20,54 +20,11 @@ DROP POLICY IF EXISTS "Admins and owners can remove members" ON org_members;
 DROP POLICY IF EXISTS "Admins and owners can add members" ON org_members;
 
 -- ============================================
--- STEP 2: Enable RLS on tables
+-- STEP 2: Create security definer functions FIRST
 -- ============================================
 
--- Enable RLS on org_invites table
-ALTER TABLE org_invites ENABLE ROW LEVEL SECURITY;
-
--- Enable RLS on org_members table
-ALTER TABLE org_members ENABLE ROW LEVEL SECURITY;
-
--- ============================================
--- STEP 3: Create policies for org_invites
--- ============================================
-
--- Policy: Allow users to view invites for organizations they are members of
--- Uses security definer function to avoid any potential recursion issues
-CREATE POLICY "Users can view invites for their organizations"
-ON org_invites FOR SELECT
-USING (
-  is_org_member(org_id, auth.uid())
-);
-
--- Policy: Allow admins and owners to create invites
-CREATE POLICY "Admins and owners can create invites"
-ON org_invites FOR INSERT
-WITH CHECK (
-  is_org_admin(org_id, auth.uid())
-);
-
--- Policy: Allow admins and owners to delete invites
-CREATE POLICY "Admins and owners can delete invites"
-ON org_invites FOR DELETE
-USING (
-  is_org_admin(org_id, auth.uid())
-);
-
--- Policy: Allow admins and owners to update invites
-CREATE POLICY "Admins and owners can update invites"
-ON org_invites FOR UPDATE
-USING (
-  is_org_admin(org_id, auth.uid())
-);
-
--- ============================================
--- STEP 4: Create policies for org_members
--- ============================================
-
--- IMPORTANT: To avoid infinite recursion, we use a security definer function
--- that bypasses RLS when checking membership
+-- IMPORTANT: Create these functions BEFORE enabling RLS
+-- These functions bypass RLS to avoid infinite recursion
 
 -- Create a function to check if a user is a member of an org
 CREATE OR REPLACE FUNCTION is_org_member(check_org_id uuid, check_user_id uuid)
@@ -101,6 +58,53 @@ BEGIN
   );
 END;
 $$;
+
+-- ============================================
+-- STEP 3: Enable RLS on tables
+-- ============================================
+
+-- Enable RLS on org_invites table
+ALTER TABLE org_invites ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on org_members table
+ALTER TABLE org_members ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- STEP 4: Create policies for org_invites
+-- ============================================
+
+-- Policy: Allow users to view invites for organizations they are members of
+-- Uses security definer function to avoid any potential recursion issues
+CREATE POLICY "Users can view invites for their organizations"
+ON org_invites FOR SELECT
+USING (
+  is_org_member(org_id, auth.uid())
+);
+
+-- Policy: Allow admins and owners to create invites
+CREATE POLICY "Admins and owners can create invites"
+ON org_invites FOR INSERT
+WITH CHECK (
+  is_org_admin(org_id, auth.uid())
+);
+
+-- Policy: Allow admins and owners to delete invites
+CREATE POLICY "Admins and owners can delete invites"
+ON org_invites FOR DELETE
+USING (
+  is_org_admin(org_id, auth.uid())
+);
+
+-- Policy: Allow admins and owners to update invites
+CREATE POLICY "Admins and owners can update invites"
+ON org_invites FOR UPDATE
+USING (
+  is_org_admin(org_id, auth.uid())
+);
+
+-- ============================================
+-- STEP 5: Create policies for org_members
+-- ============================================
 
 -- Policy: Allow users to view their own membership AND other members in their orgs
 -- Uses security definer function to avoid infinite recursion

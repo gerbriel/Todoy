@@ -249,9 +249,9 @@ export default function OrganizationView({
                            orgTasks.reduce((sum, t) => sum + (t.actualSpend || 0), 0)
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b bg-background p-4 sm:p-6">
+      <div className="border-b bg-background p-4 sm:p-6 flex-shrink-0">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-3">

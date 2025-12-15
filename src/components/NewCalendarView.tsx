@@ -192,20 +192,25 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
           return
         }
         
-        // Validate: If campaign has a project, must be within project dates
-        if (campaign.projectId) {
+        // Validate: If campaign has a project AND we have access to projects, validate dates
+        // (In campaign-level view, projects array may be empty)
+        if (campaign.projectId && projects.length > 0) {
           const project = projects.find(p => p.id === campaign.projectId)
-          if (!project || !project.startDate || !project.endDate) {
-            toast.error('Project must have dates assigned')
-            return
-          }
           
-          const projectStart = startOfDay(new Date(project.startDate))
-          const projectEnd = startOfDay(new Date(project.endDate))
-          
-          if (newStartDate < projectStart || newEndDate > projectEnd) {
-            toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
-            return
+          // Only validate if project is found (it may not be in campaign-level view)
+          if (project) {
+            if (!project.startDate || !project.endDate) {
+              toast.error('Project must have dates assigned')
+              return
+            }
+            
+            const projectStart = startOfDay(new Date(project.startDate))
+            const projectEnd = startOfDay(new Date(project.endDate))
+            
+            if (newStartDate < projectStart || newEndDate > projectEnd) {
+              toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+              return
+            }
           }
         }
         
@@ -488,20 +493,25 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
         const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
         if (!campaign) return
         
-        // Validate: If campaign has a project, must be within project dates
-        if (campaign.projectId) {
+        // Validate: If campaign has a project AND we have access to projects, validate dates
+        // (In campaign-level view, projects array may be empty)
+        if (campaign.projectId && projects.length > 0) {
           const project = projects.find(p => p.id === campaign.projectId)
-          if (!project || !project.startDate || !project.endDate) {
-            toast.error('Project must have dates assigned')
-            return
-          }
           
-          const projectStart = startOfDay(new Date(project.startDate))
-          const projectEnd = startOfDay(new Date(project.endDate))
-          
-          if (newStartDate < projectStart || newEndDate > projectEnd) {
-            toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
-            return
+          // Only validate if project is found (it may not be in campaign-level view)
+          if (project) {
+            if (!project.startDate || !project.endDate) {
+              toast.error('Project must have dates assigned')
+              return
+            }
+            
+            const projectStart = startOfDay(new Date(project.startDate))
+            const projectEnd = startOfDay(new Date(project.endDate))
+            
+            if (newStartDate < projectStart || newEndDate > projectEnd) {
+              toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+              return
+            }
           }
         }
         
@@ -690,26 +700,27 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
           return
         }
         
-        if (campaign.projectId) {
-          // Campaign has a project - validate project has dates
+        // Only validate project dates if we have access to projects data
+        // (In campaign-level view, projects array may be empty)
+        if (campaign.projectId && projects.length > 0) {
+          // Campaign has a project - validate project has dates if project is available
           const project = projects.find(p => p.id === campaign.projectId)
-          if (!project) {
-            toast.error('Project not found')
-            return
-          }
           
-          if (!project.startDate || !project.endDate) {
-            toast.error('Project must have dates assigned before scheduling campaigns')
-            return
-          }
-          
-          // Validate: Campaign dates must be within project dates
-          const projectStart = startOfDay(new Date(project.startDate))
-          const projectEnd = startOfDay(new Date(project.endDate))
-          
-          if (startDate < projectStart || endDate > projectEnd) {
-            toast.error(`Campaign must be scheduled within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
-            return
+          // Only validate if project is found (it may not be in campaign-level view)
+          if (project) {
+            if (!project.startDate || !project.endDate) {
+              toast.error('Project must have dates assigned before scheduling campaigns')
+              return
+            }
+            
+            // Validate: Campaign dates must be within project dates
+            const projectStart = startOfDay(new Date(project.startDate))
+            const projectEnd = startOfDay(new Date(project.endDate))
+            
+            if (startDate < projectStart || endDate > projectEnd) {
+              toast.error(`Campaign must be scheduled within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+              return
+            }
           }
         }
         

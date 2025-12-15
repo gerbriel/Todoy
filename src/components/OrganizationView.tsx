@@ -231,6 +231,15 @@ export default function OrganizationView({
 
   const memberUsers = members.map(m => users.find(u => u.id === m.userId)).filter(Boolean) as User[]
 
+  // Calculate budget totals
+  const totalBudget = orgProjects.reduce((sum, p) => sum + (p.budget || 0), 0) +
+                      orgCampaigns.reduce((sum, c) => sum + (c.budget || 0), 0) +
+                      orgTasks.reduce((sum, t) => sum + (t.budget || 0), 0)
+  
+  const totalActualSpend = orgProjects.reduce((sum, p) => sum + (p.actualSpend || 0), 0) +
+                           orgCampaigns.reduce((sum, c) => sum + (c.actualSpend || 0), 0) +
+                           orgTasks.reduce((sum, t) => sum + (t.actualSpend || 0), 0)
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
@@ -254,7 +263,7 @@ export default function OrganizationView({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-4 sm:mt-6">
           <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
             <div className="text-xl sm:text-2xl font-bold">{members.length}</div>
             <div className="text-xs sm:text-sm text-muted-foreground">Members</div>
@@ -270,6 +279,14 @@ export default function OrganizationView({
           <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
             <div className="text-xl sm:text-2xl font-bold">{orgTasks.length}</div>
             <div className="text-xs sm:text-sm text-muted-foreground">Tasks</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">${totalBudget.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Total Budget</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">${totalActualSpend.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Actual Spend</div>
           </div>
         </div>
       </div>

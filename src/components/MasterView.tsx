@@ -60,6 +60,15 @@ export default function MasterView({
     t.subtasks && t.subtasks.length > 0 && t.subtasks.every(st => st.completed)
   ).length
 
+  // Calculate budget totals
+  const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0) +
+                      campaigns.reduce((sum, c) => sum + (c.budget || 0), 0) +
+                      tasks.reduce((sum, t) => sum + (t.budget || 0), 0)
+  
+  const totalActualSpend = projects.reduce((sum, p) => sum + (p.actualSpend || 0), 0) +
+                           campaigns.reduce((sum, c) => sum + (c.actualSpend || 0), 0) +
+                           tasks.reduce((sum, t) => sum + (t.actualSpend || 0), 0)
+
   // Filter data based on search
   const filteredProjects = projects.filter(p =>
     p.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -91,7 +100,7 @@ export default function MasterView({
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <Folder size={16} weight="duotone" />
@@ -121,6 +130,20 @@ export default function MasterView({
                 <p className="text-2xl font-bold">
                   {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%
                 </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <ChartBar size={16} weight="duotone" />
+                  <span className="text-xs font-medium">Total Budget</span>
+                </div>
+                <p className="text-2xl font-bold">${totalBudget.toLocaleString()}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <ChartBar size={16} weight="duotone" />
+                  <span className="text-xs font-medium">Actual Spend</span>
+                </div>
+                <p className="text-2xl font-bold">${totalActualSpend.toLocaleString()}</p>
               </div>
             </div>
 

@@ -140,6 +140,8 @@ export interface Task {
   comments?: Comment[]
   attachments?: Attachment[]
   customFields?: Record<string, string>
+  budget?: number
+  actualSpend?: number
 }
 
 export interface List {
@@ -190,6 +192,8 @@ export interface Project {
   visibility?: ProjectVisibility
   sharedWith?: string[]
   collaborators?: Array<{ userId: string; role: UserRole }>
+  budget?: number
+  actualSpend?: number
 }
 
 export type ViewMode = 'kanban' | 'calendar'

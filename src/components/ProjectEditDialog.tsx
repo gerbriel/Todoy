@@ -346,12 +346,19 @@ export default function ProjectEditDialog({
                 onClick={async () => {
                   if (!setCampaigns) return
                   
-                  if (!startDate || !endDate) {
+                  console.log('Sync Campaign Dates clicked - startDate:', startDate, 'endDate:', endDate)
+                  console.log('Project dates:', project.startDate, project.endDate)
+                  
+                  // Check if dates are actually set (not empty strings)
+                  if (!startDate?.trim() || !endDate?.trim()) {
+                    console.log('Validation failed - missing dates')
                     toast.error('Project must have dates assigned first')
                     return
                   }
                   
                   const projectCampaigns = campaigns.filter(c => c.projectId === project.id)
+                  
+                  console.log('Found campaigns:', projectCampaigns.length)
                   
                   if (projectCampaigns.length === 0) {
                     toast.info('No campaigns found in this project')
@@ -361,6 +368,8 @@ export default function ProjectEditDialog({
                   try {
                     const startDateISO = new Date(startDate).toISOString()
                     const endDateISO = new Date(endDate).toISOString()
+                    
+                    console.log('Syncing campaigns to dates:', startDateISO, endDateISO)
                     
                     for (const campaign of projectCampaigns) {
                       await campaignsService.update(campaign.id, {

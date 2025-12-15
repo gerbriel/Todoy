@@ -196,7 +196,7 @@ export function ContinuousCalendarGrid({
     const today = new Date()
     setCurrentMonth(today)
     
-    // Scroll to today's month
+    // Scroll to today's month - need longer timeout to ensure monthRefs are populated
     setTimeout(() => {
       const monthKey = format(today, 'yyyy-MM')
       const monthElement = monthRefs.current.get(monthKey)
@@ -206,9 +206,21 @@ export function ContinuousCalendarGrid({
         monthElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
         setTimeout(() => {
           isScrollingProgrammatically.current = false
-        }, 500)
+        }, 1000) // Increased timeout to ensure smooth scroll completes
+      } else {
+        // If element not found, try again after a longer delay
+        setTimeout(() => {
+          const monthElement = monthRefs.current.get(monthKey)
+          if (monthElement && scrollContainerRef.current) {
+            isScrollingProgrammatically.current = true
+            monthElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setTimeout(() => {
+              isScrollingProgrammatically.current = false
+            }, 1000)
+          }
+        }, 100)
       }
-    }, 0)
+    }, 50) // Small delay to allow React to render
   }
   
   // Filter events based on selected types

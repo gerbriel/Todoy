@@ -149,7 +149,7 @@ export default function Header({
 
   return (
     <>
-      <header className="border-b border-border bg-card px-6 py-4">
+      <header className="border-b border-border bg-card px-6 py-1">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Back button for project and campaign views */}

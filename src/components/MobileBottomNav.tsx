@@ -55,7 +55,7 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
     <>
       {/* Bottom Navigation Bar - Mobile Only */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-[60]">
-        <div className="grid grid-cols-3 gap-2 px-4 py-3">
+        <div className="grid grid-cols-3 gap-2 px-4 py-1">
           {/* Projects */}
           <button
             onClick={() => openSlide('projects', 'left')}

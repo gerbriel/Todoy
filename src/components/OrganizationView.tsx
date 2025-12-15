@@ -301,8 +301,8 @@ export default function OrganizationView({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <div className="border-b px-4 sm:px-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div className="border-b px-4 sm:px-6 flex-shrink-0">
           <TabsList className="h-12">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="members">
@@ -321,9 +321,10 @@ export default function OrganizationView({
           </TabsList>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-4 sm:p-6">
-            <TabsContent value="overview" className="mt-0 space-y-6">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4 sm:p-6">
+              <TabsContent value="overview" className="mt-0 space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Organization Details</h3>
                 <div className="space-y-3 bg-muted/30 rounded-lg p-3 sm:p-4">
@@ -976,6 +977,7 @@ export default function OrganizationView({
             </TabsContent>
           </div>
         </ScrollArea>
+        </div>
       </Tabs>
 
       {/* Edit Organization Dialog */}

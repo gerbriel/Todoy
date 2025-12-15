@@ -33,6 +33,7 @@ import {
 import { organizationsService } from '@/services/organizations.service'
 import { orgMembersService } from '@/services/orgMembers.service'
 import { orgInvitesService } from '@/services/orgInvites.service'
+import { supabase } from '@/lib/supabase'
 
 interface OrganizationViewProps {
   organization: Organization | null
@@ -142,8 +143,29 @@ export default function OrganizationView({
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
       })
 
+      // Send invitation email
+      const inviteLink = `${window.location.origin}/Todoy/invite/${newInvite.id}`
+      const currentUser = users.find(u => u.id === currentUserId)
+      
+      const { error: emailError } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          inviteId: newInvite.id,
+          recipientEmail: inviteEmail.trim(),
+          inviterName: currentUser?.name || 'Someone',
+          orgName: organization.name,
+          inviteLink: inviteLink,
+        },
+      })
+
+      if (emailError) {
+        console.error('Error sending invite email:', emailError)
+        // Still add to UI even if email fails
+        toast.warning(`Invite created but email failed to send. Use the Resend button to try again.`)
+      } else {
+        toast.success(`Invitation email sent to ${inviteEmail}`)
+      }
+
       setInvites(prev => [...prev, newInvite])
-      toast.success(`Invite sent to ${inviteEmail}`)
       setInviteEmail('')
       setInviteRole('member')
       setInviteDialogOpen(false)
@@ -155,24 +177,31 @@ export default function OrganizationView({
 
   const handleResendInvite = async (invite: OrgInvite) => {
     try {
-      // Update the invite with a new expiration date
-      const updatedInvite = {
-        ...invite,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        invitedAt: new Date().toISOString(),
+      const inviteLink = `${window.location.origin}/Todoy/invite/${invite.id}`
+      
+      // Get the current user's name
+      const currentUser = users.find(u => u.id === currentUserId)
+      
+      // Call the Edge Function to send email
+      const { data, error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          inviteId: invite.id,
+          recipientEmail: invite.email,
+          inviterName: currentUser?.name || 'Someone',
+          orgName: organization.name,
+          inviteLink: inviteLink,
+        },
+      })
+
+      if (error) {
+        console.error('Error sending invite email:', error)
+        throw error
       }
-      
-      // In a real app, you'd call an API to resend the email
-      // For now, we'll just show a success message with the invite link
-      const inviteLink = `${window.location.origin}/invite/${invite.id}`
-      
-      // Copy to clipboard
-      await navigator.clipboard.writeText(inviteLink)
-      
-      toast.success(`Invite link copied to clipboard! Send it to ${invite.email}`)
+
+      toast.success(`Invitation email sent to ${invite.email}`)
     } catch (error) {
-      toast.error('Failed to resend invite')
-      console.error(error)
+      console.error('Failed to send invite:', error)
+      toast.error('Failed to send invitation email. Please try again.')
     }
   }
 

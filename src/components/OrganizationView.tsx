@@ -25,7 +25,11 @@ import {
   XCircle,
   Folder,
   Target,
-  ListChecks
+  ListChecks,
+  ChartBar,
+  ChartLine,
+  Calendar,
+  CurrencyDollar
 } from '@phosphor-icons/react'
 import { organizationsService } from '@/services/organizations.service'
 import { orgMembersService } from '@/services/orgMembers.service'
@@ -74,6 +78,10 @@ export default function OrganizationView({
   // Invite state
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin' | 'owner'>('member')
+
+  // Reports state
+  const [reportStartDate, setReportStartDate] = useState('')
+  const [reportEndDate, setReportEndDate] = useState('')
 
   if (!organization) {
     return (
@@ -306,6 +314,10 @@ export default function OrganizationView({
               <Badge variant="secondary" className="ml-2">{invites.filter(i => i.status === 'pending').length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="reports">
+              <ChartBar size={16} className="mr-2" />
+              Reports
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -669,6 +681,297 @@ export default function OrganizationView({
                     })}
                   </div>
                 )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="reports" className="mt-0 space-y-6">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <ChartBar size={20} weight="duotone" />
+                    Reports & Analytics
+                  </h3>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="bg-muted/30 rounded-lg p-4 mb-6">
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Calendar size={18} />
+                    Date Range Filter
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="report-start-date">Start Date</Label>
+                      <Input
+                        id="report-start-date"
+                        type="date"
+                        value={reportStartDate}
+                        onChange={(e) => setReportStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="report-end-date">End Date</Label>
+                      <Input
+                        id="report-end-date"
+                        type="date"
+                        value={reportEndDate}
+                        onChange={(e) => setReportEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      const today = new Date()
+                      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+                      setReportStartDate(thirtyDaysAgo.toISOString().split('T')[0])
+                      setReportEndDate(today.toISOString().split('T')[0])
+                    }}
+                  >
+                    Last 30 Days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 ml-2"
+                    onClick={() => {
+                      const today = new Date()
+                      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+                      setReportStartDate(startOfMonth.toISOString().split('T')[0])
+                      setReportEndDate(today.toISOString().split('T')[0])
+                    }}
+                  >
+                    This Month
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 ml-2"
+                    onClick={() => {
+                      setReportStartDate('')
+                      setReportEndDate('')
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+
+                {/* Summary Stats */}
+                {(() => {
+                  const filterByDate = (items: any[], dateField: 'startDate' | 'endDate' | 'createdAt') => {
+                    return items.filter(item => {
+                      const itemDate = item[dateField]
+                      if (!itemDate) return false
+                      if (reportStartDate && itemDate < reportStartDate) return false
+                      if (reportEndDate && itemDate > reportEndDate) return false
+                      return true
+                    })
+                  }
+
+                  const filteredReportProjects = reportStartDate || reportEndDate 
+                    ? filterByDate(orgProjects, 'startDate')
+                    : orgProjects
+                  const filteredReportCampaigns = reportStartDate || reportEndDate
+                    ? filterByDate(orgCampaigns, 'startDate')
+                    : orgCampaigns
+                  const filteredReportTasks = reportStartDate || reportEndDate
+                    ? filterByDate(orgTasks, 'createdAt')
+                    : orgTasks
+
+                  const reportBudget = filteredReportProjects.reduce((sum, p) => sum + (p.budget || 0), 0) +
+                                       filteredReportCampaigns.reduce((sum, c) => sum + (c.budget || 0), 0) +
+                                       filteredReportTasks.reduce((sum, t) => sum + (t.budget || 0), 0)
+                  
+                  const reportSpend = filteredReportProjects.reduce((sum, p) => sum + (p.actualSpend || 0), 0) +
+                                      filteredReportCampaigns.reduce((sum, c) => sum + (c.actualSpend || 0), 0) +
+                                      filteredReportTasks.reduce((sum, t) => sum + (t.actualSpend || 0), 0)
+
+                  const completedProjects = filteredReportProjects.filter(p => p.completed).length
+                  const completedCampaigns = filteredReportCampaigns.filter(c => c.completed).length
+                  const completedTasks = filteredReportTasks.filter(t => t.completed).length
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-blue-700">{filteredReportProjects.length}</div>
+                          <div className="text-sm text-blue-600">Projects</div>
+                          <div className="text-xs text-blue-500 mt-1">{completedProjects} completed</div>
+                        </div>
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-green-700">{filteredReportCampaigns.length}</div>
+                          <div className="text-sm text-green-600">Campaigns</div>
+                          <div className="text-xs text-green-500 mt-1">{completedCampaigns} completed</div>
+                        </div>
+                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-purple-700">{filteredReportTasks.length}</div>
+                          <div className="text-sm text-purple-600">Tasks</div>
+                          <div className="text-xs text-purple-500 mt-1">{completedTasks} completed</div>
+                        </div>
+                        <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-orange-700">
+                            {filteredReportProjects.length + filteredReportCampaigns.length + filteredReportTasks.length}
+                          </div>
+                          <div className="text-sm text-orange-600">Total Items</div>
+                          <div className="text-xs text-orange-500 mt-1">
+                            {completedProjects + completedCampaigns + completedTasks} completed
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Budget Overview */}
+                      <div className="bg-muted/30 rounded-lg p-4 mb-6">
+                        <h4 className="font-semibold mb-4 flex items-center gap-2">
+                          <CurrencyDollar size={18} weight="duotone" />
+                          Budget Overview
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="space-y-1">
+                            <div className="text-sm text-muted-foreground">Total Budget</div>
+                            <div className="text-2xl font-bold">${reportBudget.toLocaleString()}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-sm text-muted-foreground">Actual Spend</div>
+                            <div className="text-2xl font-bold">${reportSpend.toLocaleString()}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-sm text-muted-foreground">Remaining</div>
+                            <div className={`text-2xl font-bold ${reportBudget - reportSpend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ${(reportBudget - reportSpend).toLocaleString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {reportBudget > 0 ? `${Math.round((reportSpend / reportBudget) * 100)}% spent` : 'No budget set'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Budget Progress Bar */}
+                        {reportBudget > 0 && (
+                          <div className="mt-4">
+                            <div className="h-3 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all ${reportSpend > reportBudget ? 'bg-red-500' : 'bg-green-500'}`}
+                                style={{ width: `${Math.min((reportSpend / reportBudget) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Breakdown by Type */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-muted/30 rounded-lg p-4">
+                          <h5 className="font-medium mb-3 flex items-center gap-2">
+                            <Folder size={16} />
+                            Projects Budget
+                          </h5>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Budget:</span>
+                              <span className="font-medium">${filteredReportProjects.reduce((sum, p) => sum + (p.budget || 0), 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Spent:</span>
+                              <span className="font-medium">${filteredReportProjects.reduce((sum, p) => sum + (p.actualSpend || 0), 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-4">
+                          <h5 className="font-medium mb-3 flex items-center gap-2">
+                            <Target size={16} />
+                            Campaigns Budget
+                          </h5>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Budget:</span>
+                              <span className="font-medium">${filteredReportCampaigns.reduce((sum, c) => sum + (c.budget || 0), 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Spent:</span>
+                              <span className="font-medium">${filteredReportCampaigns.reduce((sum, c) => sum + (c.actualSpend || 0), 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-4">
+                          <h5 className="font-medium mb-3 flex items-center gap-2">
+                            <ListChecks size={16} />
+                            Tasks Budget
+                          </h5>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Budget:</span>
+                              <span className="font-medium">${filteredReportTasks.reduce((sum, t) => sum + (t.budget || 0), 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Spent:</span>
+                              <span className="font-medium">${filteredReportTasks.reduce((sum, t) => sum + (t.actualSpend || 0), 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Completion Rates */}
+                      <div className="bg-muted/30 rounded-lg p-4 mt-6">
+                        <h4 className="font-semibold mb-4 flex items-center gap-2">
+                          <CheckCircle size={18} weight="duotone" />
+                          Completion Rates
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Projects</span>
+                              <span className="font-medium">
+                                {filteredReportProjects.length > 0 
+                                  ? Math.round((completedProjects / filteredReportProjects.length) * 100) 
+                                  : 0}%
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500 transition-all"
+                                style={{ width: `${filteredReportProjects.length > 0 ? (completedProjects / filteredReportProjects.length) * 100 : 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Campaigns</span>
+                              <span className="font-medium">
+                                {filteredReportCampaigns.length > 0 
+                                  ? Math.round((completedCampaigns / filteredReportCampaigns.length) * 100) 
+                                  : 0}%
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-green-500 transition-all"
+                                style={{ width: `${filteredReportCampaigns.length > 0 ? (completedCampaigns / filteredReportCampaigns.length) * 100 : 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Tasks</span>
+                              <span className="font-medium">
+                                {filteredReportTasks.length > 0 
+                                  ? Math.round((completedTasks / filteredReportTasks.length) * 100) 
+                                  : 0}%
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-purple-500 transition-all"
+                                style={{ width: `${filteredReportTasks.length > 0 ? (completedTasks / filteredReportTasks.length) * 100 : 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             </TabsContent>
           </div>

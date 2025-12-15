@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle } from 'react'
+import { useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { Campaign, Task, Project, Label, List, FilterState, User } from '@/lib/types'
 import { CalendarGrid } from './Calendar/CalendarGrid'
 import { CalendarEvent } from './Calendar/types'
@@ -842,6 +842,11 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
     }
   }
   
+  // Memoize the onGoToDate callback to prevent infinite re-renders
+  const handleGoToDate = useCallback((fn: (date: Date) => void) => {
+    setGoToDateFn(() => fn)
+  }, [])
+  
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : null
   const selectedCampaign = selectedCampaignId ? campaigns.find(c => c.id === selectedCampaignId) : null
   const selectedProject = selectedProjectId ? projects.find(p => p.id === selectedProjectId) : null
@@ -857,7 +862,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             onEventResize={handleEventResize}
             onDateClick={handleDateClick}
             onSidebarItemDrop={handleSidebarItemDrop}
-            onGoToDate={(fn) => setGoToDateFn(() => fn)}
+            onGoToDate={handleGoToDate}
           />
         </div>
         

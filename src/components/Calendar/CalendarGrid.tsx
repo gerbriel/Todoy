@@ -71,9 +71,17 @@ export function CalendarGrid({
   // Generate initial months based on view mode
   useEffect(() => {
     const today = new Date()
+    console.log('[CalendarGrid] Initial mount - Setting to today:', format(today, 'MMM d, yyyy'))
     setCurrentDate(today)
     setVisibleMonths([today])
   }, [])
+  
+  // Log when visibleMonths changes
+  useEffect(() => {
+    console.log('[CalendarGrid] visibleMonths changed:', visibleMonths.map(m => format(m, 'MMM yyyy')).join(', '))
+    console.log('[CalendarGrid] currentDate:', format(currentDate, 'MMM d, yyyy'))
+    console.log('[CalendarGrid] viewMode:', viewMode)
+  }, [visibleMonths, currentDate, viewMode])
   
   // Expose goToDate function to parent
   useEffect(() => {
@@ -525,12 +533,17 @@ export function CalendarGrid({
   }
   
   const handleToday = () => {
+    console.log('[CalendarGrid] Today button clicked')
     
     // Disable scroll updates during navigation
     allowScrollUpdates.current = false
     
     const today = new Date()
     const todayMonth = startOfMonth(today)
+    
+    console.log('[CalendarGrid] Today - Setting to:', format(today, 'MMM d, yyyy'))
+    console.log('[CalendarGrid] Today - Month:', format(todayMonth, 'MMM yyyy'))
+    console.log('[CalendarGrid] Today - Current viewMode:', viewMode)
     
     // Reset to today's month
     setVisibleMonths([todayMonth])
@@ -575,37 +588,51 @@ export function CalendarGrid({
   
   // Scroll to a specific month
   const scrollToMonth = (date: Date, retryCount: number = 0) => {
+    console.log('[CalendarGrid] scrollToMonth called with date:', format(date, 'MMM yyyy'), 'retry:', retryCount)
+    
     if (!scrollContainerRef.current) {
+      console.log('[CalendarGrid] scrollToMonth - No scroll container ref')
       return
     }
     
     // Stop after 5 retries
     if (retryCount > 5) {
+      console.log('[CalendarGrid] scrollToMonth - Max retries reached')
       return
     }
     
     const monthKey = format(date, 'yyyy-MM')
     const monthElement = monthRefs.current.get(monthKey)
     
+    console.log('[CalendarGrid] scrollToMonth - Looking for monthKey:', monthKey)
+    console.log('[CalendarGrid] scrollToMonth - Available months:', Array.from(monthRefs.current.keys()))
+    console.log('[CalendarGrid] scrollToMonth - Month element found:', !!monthElement)
+    
     if (monthElement) {
+      console.log('[CalendarGrid] scrollToMonth - Scrolling to month element')
       const container = scrollContainerRef.current
       const containerRect = container.getBoundingClientRect()
       const elementRect = monthElement.getBoundingClientRect()
       const scrollTop = elementRect.top - containerRect.top + container.scrollTop - 100 // 100px offset for header
+      
+      console.log('[CalendarGrid] scrollToMonth - Scroll position:', scrollTop)
       
       container.scrollTo({
         top: scrollTop,
         behavior: 'smooth'
       })
     } else {
+      console.log('[CalendarGrid] scrollToMonth - Month element not found, trying fallback')
       // Fallback: try to find the month row by data attribute
       const container = scrollContainerRef.current
       const weekStart = startOfWeek(startOfMonth(date))
       const dateStr = format(weekStart, 'yyyy-MM-dd')
       
+      console.log('[CalendarGrid] scrollToMonth - Looking for week element with dateStr:', dateStr)
       const weekElement = container.querySelector(`[data-week-start="${dateStr}"]`)
       
       if (weekElement) {
+        console.log('[CalendarGrid] scrollToMonth - Found week element, scrolling')
         const containerRect = container.getBoundingClientRect()
         const elementRect = weekElement.getBoundingClientRect()
         const scrollTop = elementRect.top - containerRect.top + container.scrollTop - 100
@@ -615,6 +642,7 @@ export function CalendarGrid({
           behavior: 'smooth'
         })
       } else {
+        console.log('[CalendarGrid] scrollToMonth - Week element not found, retrying in 100ms')
         // Retry after a short delay if element not found
         setTimeout(() => scrollToMonth(date, retryCount + 1), 100)
       }
@@ -630,11 +658,14 @@ export function CalendarGrid({
     const scrollHeight = container.scrollHeight
     const clientHeight = container.clientHeight
     
+    console.log('[CalendarGrid] handleScroll - scrollTop:', scrollTop, 'allowScrollUpdates:', allowScrollUpdates.current)
+    
     // Only load additional months if scroll updates are enabled
     // This prevents loading months during navigation
     if (allowScrollUpdates.current) {
       // Load previous months when scrolling near top
       if (scrollTop < 500 && visibleMonths.length > 0) {
+        console.log('[CalendarGrid] handleScroll - Near top, loading previous month')
         const firstMonth = visibleMonths[0]
         const prevMonth = subMonths(firstMonth, 1)
         const monthKey = format(prevMonth, 'yyyy-MM')
@@ -651,6 +682,7 @@ export function CalendarGrid({
       
       // Load next months when scrolling near bottom
       if (scrollHeight - scrollTop - clientHeight < 500 && visibleMonths.length > 0) {
+        console.log('[CalendarGrid] handleScroll - Near bottom, loading next month')
         const lastMonth = visibleMonths[visibleMonths.length - 1]
         const nextMonth = addMonths(lastMonth, 1)
         const monthKey = format(nextMonth, 'yyyy-MM')
@@ -680,6 +712,7 @@ export function CalendarGrid({
           
           if (viewportCenter >= elementTop && viewportCenter <= elementBottom) {
             if (format(currentDate, 'yyyy-MM') !== monthKey) {
+              console.log('[CalendarGrid] handleScroll - Changing currentDate to:', format(month, 'MMM yyyy'))
               setCurrentDate(month)
             }
             break

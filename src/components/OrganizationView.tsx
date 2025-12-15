@@ -465,7 +465,18 @@ export default function OrganizationView({
                   {invites
                     .filter(i => i.status === 'pending')
                     .map(invite => {
-                      const inviter = users.find(u => u.id === invite.invitedBy)
+                      // Find inviter from members, then get their user info
+                      const inviterMember = members.find(m => m.userId === invite.invitedBy)
+                      const inviter = users.find(u => u.id === inviterMember?.userId)
+                      
+                      // Format the date properly
+                      const invitedDate = invite.invitedAt 
+                        ? new Date(invite.invitedAt).toLocaleDateString(undefined, { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })
+                        : 'Recently'
 
                       return (
                         <div
@@ -477,7 +488,7 @@ export default function OrganizationView({
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{invite.email}</div>
                               <div className="text-sm text-muted-foreground">
-                                Invited by {inviter?.name || 'Unknown'} • {new Date(invite.invitedAt).toLocaleDateString()}
+                                Invited by {inviter?.name || 'You'} • {invitedDate}
                               </div>
                             </div>
                           </div>

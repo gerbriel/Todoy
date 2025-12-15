@@ -92,18 +92,13 @@ USING (
 -- STEP 4: Create policies for org_members
 -- ============================================
 
--- Policy: Allow users to view their own org_members record
--- This is simpler and avoids circular dependency
-CREATE POLICY "Users can view their own membership"
-ON org_members FOR SELECT
-USING (user_id = auth.uid());
-
--- Policy: Allow users to view other members in same organization
--- Only after they can see their own membership
+-- Policy: Allow users to view their own membership AND other members in their orgs
+-- Combined into one policy to avoid conflicts
 CREATE POLICY "Users can view org members"
 ON org_members FOR SELECT
 USING (
-  org_id IN (
+  user_id = auth.uid()  -- Can see own record
+  OR org_id IN (         -- OR can see others in same org
     SELECT org_id FROM org_members 
     WHERE user_id = auth.uid()
   )

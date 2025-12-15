@@ -82,9 +82,31 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
     : campaigns
   
   // Apply filterMode to what's displayed on the calendar
-  const calendarProjects = filterMode === 'campaigns' || filterMode === 'tasks' ? [] : projects
-  const calendarCampaigns = filterMode === 'projects' || filterMode === 'tasks' ? [] : filteredCampaigns
-  const calendarTasks = filterMode === 'projects' || filterMode === 'campaigns' ? [] : filteredTasks
+  let calendarProjects: typeof projects = []
+  let calendarCampaigns: typeof filteredCampaigns = []
+  let calendarTasks: typeof filteredTasks = []
+  
+  if (filterMode === 'all') {
+    // Master View: Show everything
+    calendarProjects = projects
+    calendarCampaigns = filteredCampaigns
+    calendarTasks = filteredTasks
+  } else if (filterMode === 'projects') {
+    // All Projects: Show ONLY projects (no campaigns or tasks)
+    calendarProjects = projects
+    calendarCampaigns = []
+    calendarTasks = []
+  } else if (filterMode === 'campaigns') {
+    // All Campaigns: Show ONLY campaigns (no projects or tasks)
+    calendarProjects = []
+    calendarCampaigns = filteredCampaigns
+    calendarTasks = []
+  } else if (filterMode === 'tasks') {
+    // All Tasks: Show ONLY tasks (no projects or campaigns)
+    calendarProjects = []
+    calendarCampaigns = []
+    calendarTasks = filteredTasks
+  }
   
   const calendarEvents = convertToCalendarEvents(
     calendarTasks,

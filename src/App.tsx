@@ -676,15 +676,19 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={campaigns || []}
-                  tasks={tasks || []}
+                  campaigns={(campaigns || []).filter(c => c.projectId === activeProjectId)}
+                  tasks={(tasks || []).filter(t => {
+                    // Include tasks from campaigns that belong to this project
+                    const campaign = campaigns?.find(c => c.id === t.campaignId)
+                    return campaign?.projectId === activeProjectId
+                  })}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={{...filters, projectId: activeProjectId}}
-                  projects={projects || []}
+                  projects={(projects || []).filter(p => p.id === activeProjectId)}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="project"
@@ -692,6 +696,7 @@ function MainApp() {
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
+                  filterMode="all"
                 />
               )}
             </>
@@ -717,15 +722,15 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={campaigns || []}
-                  tasks={tasks || []}
+                  campaigns={(campaigns || []).filter(c => c.id === activeCampaignId)}
+                  tasks={(tasks || []).filter(t => t.campaignId === activeCampaignId)}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
                   lists={lists || []}
                   activeCampaignId={activeCampaignId}
                   filters={filters}
-                  projects={projects || []}
+                  projects={[]}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="campaign"
@@ -734,6 +739,7 @@ function MainApp() {
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
                   onNavigateBack={activeProject ? () => handleNavigateToProject(activeProject.id) : handleNavigateToAllProjects}
+                  filterMode="all"
                 />
               )}
             </>

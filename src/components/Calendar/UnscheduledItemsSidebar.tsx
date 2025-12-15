@@ -124,7 +124,8 @@ export default function UnscheduledItemsSidebar({
   }
   // filterMode === 'all' shows everything (no additional filtering needed)
   
-  // Filter items WITH dates (scheduled) - NO FILTERING, always show all
+  // Filter items WITH dates (scheduled) - NO FILTERING, show all scheduled items
+  // The UI will decide which sections to show based on filterMode
   const scheduledProjects = projects.filter(p => p.startDate && p.endDate)
   const scheduledCampaigns = campaigns.filter(c => c.startDate && c.endDate)
   const scheduledTasks = tasks.filter(t => t.startDate && t.dueDate)
@@ -734,10 +735,19 @@ export default function UnscheduledItemsSidebar({
     unscheduledTasks.length + 
     unscheduledStages.length
   
-  const totalScheduled =
-    scheduledProjects.length +
-    scheduledCampaigns.length +
-    scheduledTasks.length
+  // Count only what will be displayed based on filterMode
+  const totalScheduled = (() => {
+    if (filterMode === 'projects') {
+      return scheduledProjects.length
+    } else if (filterMode === 'campaigns') {
+      return scheduledCampaigns.length
+    } else if (filterMode === 'tasks') {
+      return scheduledTasks.length
+    } else {
+      // 'all' - count everything
+      return scheduledProjects.length + scheduledCampaigns.length + scheduledTasks.length
+    }
+  })()
 
   if (isCollapsed) {
     return (
@@ -1114,8 +1124,8 @@ export default function UnscheduledItemsSidebar({
                     </Button>
                   </div>
 
-                  {/* Scheduled Projects */}
-                  {scheduledProjects.length > 0 && (
+                  {/* Scheduled Projects - show based on filter mode */}
+                  {(filterMode === 'projects' || filterMode === 'all') && scheduledProjects.length > 0 && (
                 <div className="mb-4">
                   <button
                     onClick={() => toggleSection('scheduledProjects')}
@@ -1235,6 +1245,127 @@ export default function UnscheduledItemsSidebar({
                   )}
                 </div>
               )}
+
+                  {/* Scheduled Campaigns - show based on filter mode */}
+                  {(filterMode === 'campaigns' || filterMode === 'all') && scheduledCampaigns.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSection('scheduledCampaigns')}
+                        className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {expandedSections.scheduledCampaigns ? (
+                          <CaretDown size={16} />
+                        ) : (
+                          <CaretRight size={16} />
+                        )}
+                        <Target size={16} />
+                        <span>Campaigns</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {scheduledCampaigns.length}
+                        </Badge>
+                      </button>
+                      {expandedSections.scheduledCampaigns && (
+                        <div className="space-y-2 ml-6">
+                          {scheduledCampaigns.map(campaign => {
+                            const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
+                            const isCampaignExpanded = expandedCampaigns.has(campaign.id)
+                            
+                            return (
+                              <div key={campaign.id} className="space-y-1">
+                                <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                  {campaignTasks.length > 0 && (
+                                    <button
+                                      onClick={() => toggleCampaign(campaign.id)}
+                                      className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                    >
+                                      {isCampaignExpanded ? (
+                                        <CaretDown size={14} weight="bold" />
+                                      ) : (
+                                        <CaretRight size={14} weight="bold" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {campaignTasks.length === 0 && <div className="w-6 flex-shrink-0" />}
+                                  <Target size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                  <span className="text-xs font-medium flex-1 break-words leading-snug">{campaign.title}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-5 w-5 flex-shrink-0"
+                                    onClick={() => handleReassignCampaignTasks(campaign)}
+                                    title="Auto-schedule all unscheduled tasks in this campaign"
+                                  >
+                                    <ArrowsClockwise size={12} weight="bold" />
+                                  </Button>
+                                </div>
+                                
+                                {/* Tasks under this campaign */}
+                                {isCampaignExpanded && campaignTasks.length > 0 && (
+                                  <div className="ml-6 space-y-1">
+                                    {campaignTasks.map(task => (
+                                      <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
+                                        <CheckSquare size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                        <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-5 w-5 flex-shrink-0"
+                                          onClick={() => handleReassignTask(task)}
+                                          title="Reassign task to campaign start date"
+                                        >
+                                          <Lightning size={10} weight="fill" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Scheduled Tasks - show based on filter mode */}
+                  {(filterMode === 'tasks' || filterMode === 'all') && scheduledTasks.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSection('scheduledTasks')}
+                        className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {expandedSections.scheduledTasks ? (
+                          <CaretDown size={16} />
+                        ) : (
+                          <CaretRight size={16} />
+                        )}
+                        <CheckSquare size={16} />
+                        <span>Tasks</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {scheduledTasks.length}
+                        </Badge>
+                      </button>
+                      {expandedSections.scheduledTasks && (
+                        <div className="space-y-2 ml-6">
+                          {scheduledTasks.map(task => (
+                            <div key={task.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors border-blue-500">
+                              <CheckSquare size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <span className="text-xs font-medium flex-1 break-words leading-snug">{task.title}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5 flex-shrink-0"
+                                onClick={() => handleReassignTask(task)}
+                                title="Reassign task"
+                              >
+                                <Lightning size={12} weight="bold" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </>
@@ -1257,8 +1388,8 @@ export default function UnscheduledItemsSidebar({
                     </h4>
                   </div>
 
-                  {/* Unassign Projects */}
-                  {scheduledProjects.length > 0 && (
+                  {/* Unassign Projects - show only if filterMode is 'all' or 'projects' */}
+                  {(filterMode === 'all' || filterMode === 'projects') && scheduledProjects.length > 0 && (
                     <div className="mb-4">
                       <button
                         onClick={() => toggleSection('scheduledProjects')}
@@ -1386,8 +1517,8 @@ export default function UnscheduledItemsSidebar({
                     </div>
                   )}
 
-                  {/* Unassign Campaigns */}
-                  {scheduledCampaigns.length > 0 && (
+                  {/* Unassign Campaigns - show only if filterMode is 'all' or 'campaigns' */}
+                  {(filterMode === 'all' || filterMode === 'campaigns') && scheduledCampaigns.length > 0 && (
                     <div className="mb-4">
                       <button
                         onClick={() => toggleSection('scheduledCampaigns')}
@@ -1474,8 +1605,8 @@ export default function UnscheduledItemsSidebar({
                     </div>
                   )}
 
-                  {/* Unassign Tasks */}
-                  {scheduledTasks.length > 0 && (
+                  {/* Unassign Tasks - show only if filterMode is 'all' or 'tasks' */}
+                  {(filterMode === 'all' || filterMode === 'tasks') && scheduledTasks.length > 0 && (
                     <div className="mb-4">
                       <button
                         onClick={() => toggleSection('scheduledTasks')}

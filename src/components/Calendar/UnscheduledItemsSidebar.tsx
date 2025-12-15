@@ -27,6 +27,7 @@ interface UnscheduledItemsSidebarProps {
   campaigns: Campaign[]
   projects: Project[]
   tasks: Task[]
+  filterMode?: 'all' | 'projects' | 'campaigns' | 'tasks'
   isCollapsed: boolean
   onToggle: () => void
   setTasks?: (tasks: Task[] | ((prev: Task[]) => Task[])) => void
@@ -84,6 +85,7 @@ export default function UnscheduledItemsSidebar({
   campaigns,
   projects,
   tasks,
+  filterMode = 'all',
   isCollapsed,
   onToggle,
   setTasks,
@@ -105,11 +107,24 @@ export default function UnscheduledItemsSidebar({
   const [activeView, setActiveView] = useState<'unscheduled' | 'scheduled' | 'unassign'>('unscheduled')
 
   // Filter items without dates
-  const unscheduledCampaigns = campaigns.filter(c => !c.startDate && !c.endDate)
-  const unscheduledProjects = projects.filter(p => !p.startDate && !p.endDate)
-  const unscheduledTasks = tasks.filter(t => !t.startDate && !t.dueDate)
+  let unscheduledCampaigns = campaigns.filter(c => !c.startDate && !c.endDate)
+  let unscheduledProjects = projects.filter(p => !p.startDate && !p.endDate)
+  let unscheduledTasks = tasks.filter(t => !t.startDate && !t.dueDate)
   
-  // Filter items WITH dates (scheduled)
+  // Apply filterMode to unscheduled items only
+  if (filterMode === 'projects') {
+    unscheduledCampaigns = []
+    unscheduledTasks = []
+  } else if (filterMode === 'campaigns') {
+    unscheduledProjects = []
+    unscheduledTasks = []
+  } else if (filterMode === 'tasks') {
+    unscheduledProjects = []
+    unscheduledCampaigns = []
+  }
+  // filterMode === 'all' shows everything (no additional filtering needed)
+  
+  // Filter items WITH dates (scheduled) - NO FILTERING, always show all
   const scheduledProjects = projects.filter(p => p.startDate && p.endDate)
   const scheduledCampaigns = campaigns.filter(c => c.startDate && c.endDate)
   const scheduledTasks = tasks.filter(t => t.startDate && t.dueDate)

@@ -865,6 +865,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             campaigns={filteredCampaigns}
             projects={projects}
             tasks={filteredTasks}
+            filterMode={filterMode}
             isCollapsed={sidebarCollapsed}
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
             setTasks={setTasks}
@@ -902,6 +903,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
                 campaigns={filteredCampaigns}
                 projects={projects}
                 tasks={filteredTasks}
+                filterMode={filterMode}
                 isCollapsed={false}
                 onToggle={() => {}}
                 setTasks={setTasks}

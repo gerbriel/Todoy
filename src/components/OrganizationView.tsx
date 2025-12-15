@@ -153,6 +153,29 @@ export default function OrganizationView({
     }
   }
 
+  const handleResendInvite = async (invite: OrgInvite) => {
+    try {
+      // Update the invite with a new expiration date
+      const updatedInvite = {
+        ...invite,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+        invitedAt: new Date().toISOString(),
+      }
+      
+      // In a real app, you'd call an API to resend the email
+      // For now, we'll just show a success message with the invite link
+      const inviteLink = `${window.location.origin}/invite/${invite.id}`
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(inviteLink)
+      
+      toast.success(`Invite link copied to clipboard! Send it to ${invite.email}`)
+    } catch (error) {
+      toast.error('Failed to resend invite')
+      console.error(error)
+    }
+  }
+
   const handleCancelInvite = async (inviteId: string) => {
     try {
       await orgInvitesService.cancel(inviteId)
@@ -502,13 +525,24 @@ export default function OrganizationView({
                               Pending
                             </Badge>
                             {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCancelInvite(invite.id)}
-                              >
-                                <XCircle size={16} className="text-destructive" />
-                              </Button>
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleResendInvite(invite)}
+                                  className="gap-1"
+                                >
+                                  <EnvelopeSimple size={16} />
+                                  Resend
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleCancelInvite(invite.id)}
+                                >
+                                  <XCircle size={16} className="text-destructive" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>

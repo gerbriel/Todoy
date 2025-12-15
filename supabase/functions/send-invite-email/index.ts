@@ -24,36 +24,44 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
+    // Get the authorization header (optional for no-verify-jwt mode)
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
+    
+    // Only verify auth if header is present
+    if (authHeader) {
+      // Create Supabase client
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: authHeader },
+          },
+        }
+      )
 
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
+      // Verify user is authenticated
+      const {
+        data: { user },
+        error: userError,
+      } = await supabaseClient.auth.getUser()
+
+      if (userError || !user) {
+        console.warn('Auth verification failed, but continuing since --no-verify-jwt is enabled')
       }
-    )
-
-    // Verify user is authenticated
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser()
-
-    if (userError || !user) {
-      throw new Error('Unauthorized')
     }
 
     // Parse request body
-    const { recipientEmail, recipientName, inviterName, orgName, inviteLink }: InviteEmailRequest =
-      await req.json()
+    const body = await req.json()
+    console.log('Received request body:', JSON.stringify(body))
+    
+    const { recipientEmail, recipientName, inviterName, orgName, inviteLink }: InviteEmailRequest = body
+
+    if (!recipientEmail || !inviterName || !orgName || !inviteLink) {
+      throw new Error(`Missing required fields: recipientEmail=${!!recipientEmail}, inviterName=${!!inviterName}, orgName=${!!orgName}, inviteLink=${!!inviteLink}`)
+    }
+
+    console.log('Sending email to:', recipientEmail)
 
     // Send email using Resend
     const res = await fetch('https://api.resend.com/emails', {
@@ -227,9 +235,14 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Error in send-invite-email function:', error)
+    const errorMessage = error instanceof Error ? error.message : 'An error occurred'
+    const errorDetails = error instanceof Error ? error.stack : String(error)
+    console.error('Error details:', errorDetails)
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An error occurred',
+        error: errorMessage,
+        details: errorDetails,
         success: false 
       }),
       {

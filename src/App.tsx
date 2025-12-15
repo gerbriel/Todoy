@@ -27,15 +27,32 @@ import { labelsService } from './services/labels.service'
 import { orgMembersService } from './services/orgMembers.service'
 import { orgInvitesService } from './services/orgInvites.service'
 import { stageTemplatesService } from './services/stageTemplates.service'
+import InviteAcceptance from './components/InviteAcceptance'
 
 export type NavigationView = 'all-projects' | 'all-campaigns' | 'all-tasks' | 'project' | 'campaign' | 'master' | 'archive' | 'organization' | 'labels' | 'recently-completed'
 
 function App() {
   const { isAuthenticated } = useAuth()
   
+  // Check if we're on an invite acceptance URL
+  const pathname = window.location.pathname
+  const inviteMatch = pathname.match(/\/invite\/([a-f0-9-]+)/)
+  
   // Show login if not authenticated
   if (!isAuthenticated) {
     return <LoginView />
+  }
+  
+  // Show invite acceptance page if on invite URL
+  if (inviteMatch) {
+    const inviteId = inviteMatch[1]
+    return <InviteAcceptance 
+      inviteId={inviteId} 
+      onAccepted={() => {
+        // Reload to go back to main app
+        window.location.href = window.location.origin + '/Todoy/'
+      }}
+    />
   }
   
   return <MainApp />

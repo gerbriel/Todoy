@@ -48,6 +48,29 @@ export const orgMembersService = {
     }
   },
 
+  async create(member: Omit<OrgMember, 'id'>): Promise<OrgMember> {
+    const { data, error } = await supabase
+      .from('org_members')
+      .insert({
+        user_id: member.userId,
+        org_id: member.orgId,
+        role: member.role,
+        joined_at: member.joinedAt,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      orgId: data.org_id,
+      role: data.role as 'owner' | 'admin' | 'member',
+      joinedAt: data.joined_at,
+    }
+  },
+
   async remove(id: string): Promise<void> {
     const { error } = await supabase
       .from('org_members')

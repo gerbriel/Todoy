@@ -93,6 +93,7 @@ export default function Sidebar({
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null)
   const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const sortedProjects = getProjects(projects).filter(p => !p.archived && !p.completed)
   const standaloneCampaigns = getStandaloneCampaigns(campaigns).filter(c => !c.archived)
@@ -690,8 +691,8 @@ export default function Sidebar({
           )}
         </div>
         
-        <ScrollArea className="flex-1 h-full">
-          <div className="p-2 md:p-2">
+        <ScrollArea ref={scrollRef} className="flex-1 min-h-0 h-full overflow-hidden">
+          <div className="p-2 md:p-2 pb-24">
             <div className="space-y-2 md:space-y-1 mb-3">
               {onNavigateToMaster && (
                 <button
@@ -858,27 +859,29 @@ export default function Sidebar({
                 </div>
               </div>
             )}
+
+            {/* Collapse/Expand Button - Inside scroll area - Hidden on mobile */}
+            <div className={cn(
+              "hidden md:block border-t border-border p-2 bg-card mt-4"
+            )}>
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={cn(
+                  "w-full flex items-center justify-center p-2 rounded",
+                  "hover:bg-muted transition-colors",
+                  isCollapsed && "px-0"
+                )}
+                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isCollapsed ? (
+                  <CaretRight size={20} weight="bold" />
+                ) : (
+                  <CaretLeft size={20} weight="bold" />
+                )}
+              </button>
+            </div>
           </div>
         </ScrollArea>
-
-        {/* Collapse/Expand Button - At bottom of sidebar - Hidden on mobile */}
-        <div className="hidden md:block border-t border-border p-2">
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn(
-              "w-full flex items-center justify-center p-2 rounded",
-              "hover:bg-muted transition-colors",
-              isCollapsed && "px-0"
-            )}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <CaretRight size={20} weight="bold" />
-            ) : (
-              <CaretLeft size={20} weight="bold" />
-            )}
-          </button>
-        </div>
       </aside>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

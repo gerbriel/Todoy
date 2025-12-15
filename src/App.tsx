@@ -464,7 +464,7 @@ function MainApp() {
           setTasks={setTasks}
         />
         
-        <main className="flex-1 overflow-y-auto md:overflow-hidden relative pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto relative pb-16 md:pb-0">
           {navigationView === 'all-projects' && (
             <>
               {viewMode === 'kanban' ? (

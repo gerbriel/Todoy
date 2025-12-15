@@ -25,38 +25,33 @@ DROP POLICY IF EXISTS "Admins and owners can add members" ON org_members;
 
 -- IMPORTANT: Create these functions BEFORE enabling RLS
 -- These functions bypass RLS to avoid infinite recursion
+-- The key is to use a simple direct query without joins
 
--- Create a function to check if a user is a member of an org
-CREATE OR REPLACE FUNCTION is_org_member(check_org_id uuid, check_user_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
+-- Create a function to get all org_ids for a user (bypasses RLS)
+CREATE OR REPLACE FUNCTION user_org_ids(check_user_id uuid)
+RETURNS TABLE(org_id uuid)
+LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
+STABLE
 AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM org_members
-    WHERE org_id = check_org_id
-    AND user_id = check_user_id
-  );
-END;
+  SELECT org_id FROM org_members WHERE user_id = check_user_id;
 $$;
 
--- Create a function to check if a user is an admin or owner
+-- Create a function to check if a user is an admin or owner (bypasses RLS)
 CREATE OR REPLACE FUNCTION is_org_admin(check_org_id uuid, check_user_id uuid)
 RETURNS boolean
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
+STABLE
 AS $$
-BEGIN
-  RETURN EXISTS (
+  SELECT EXISTS (
     SELECT 1 FROM org_members
     WHERE org_id = check_org_id
     AND user_id = check_user_id
     AND role IN ('admin', 'owner')
   );
-END;
 $$;
 
 -- ============================================
@@ -74,11 +69,11 @@ ALTER TABLE org_members ENABLE ROW LEVEL SECURITY;
 -- ============================================
 
 -- Policy: Allow users to view invites for organizations they are members of
--- Uses security definer function to avoid any potential recursion issues
+-- Uses the user_org_ids function which bypasses RLS
 CREATE POLICY "Users can view invites for their organizations"
 ON org_invites FOR SELECT
 USING (
-  is_org_member(org_id, auth.uid())
+  org_id IN (SELECT user_org_ids(auth.uid()))
 );
 
 -- Policy: Allow admins and owners to create invites
@@ -106,13 +101,12 @@ USING (
 -- STEP 5: Create policies for org_members
 -- ============================================
 
--- Policy: Allow users to view their own membership AND other members in their orgs
--- Uses security definer function to avoid infinite recursion
+-- Policy: Allow users to view members in organizations they belong to
+-- Uses the user_org_ids function which bypasses RLS to prevent recursion
 CREATE POLICY "Users can view org members"
 ON org_members FOR SELECT
 USING (
-  user_id = auth.uid()  -- Can see own record
-  OR is_org_member(org_id, auth.uid())  -- OR is member of the org
+  org_id IN (SELECT user_org_ids(auth.uid()))
 );
 
 -- Policy: Allow owners and admins to update member roles

@@ -189,7 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (data.user) {
       // Check for pending invites for this email and auto-accept them
-      console.log('[AuthContext] Checking for pending/accepted invites after login')
       
       const { data: pendingInvites } = await supabase
         .from('org_invites')

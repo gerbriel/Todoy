@@ -121,10 +121,7 @@ export default function ProjectsView({
   const handleArchive = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      console.log('Archiving project:', projectId)
       const result = await projectsService.update(projectId, { archived: true })
-      console.log('Archive result:', JSON.stringify(result, null, 2))
-      console.log('Archived flag value:', result.archived)
       
       // Archive all campaigns for this project
       const projectCampaigns = campaigns.filter(c => c.projectId === projectId && !c.archived)
@@ -133,7 +130,6 @@ export default function ProjectsView({
           campaignsService.update(campaign.id, { archived: true })
         )
         await Promise.all(campaignArchivePromises)
-        console.log(`Archived ${projectCampaigns.length} campaigns`)
       }
       
       // Optimistically remove from view immediately for better UX
@@ -192,8 +188,6 @@ export default function ProjectsView({
       setCampaigns(prev => [...prev, ...newCampaigns])
       setLists(prev => [...prev, ...newLists])
       setTasks(prev => [...prev, ...newTasks])
-      
-      console.log(`Loaded ${newCampaigns.length} campaigns, ${newLists.length} lists, and ${newTasks.length} tasks for duplicated project`)
       
       toast.success('Project duplicated successfully')
       setShowDuplicateDialog(false)

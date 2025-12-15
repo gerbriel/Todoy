@@ -56,8 +56,6 @@ export default function ArchiveView({
         setArchivedProjects(archivedProjs)
         setArchivedCampaigns(archivedCamps)
         
-        console.log('Archived projects:', archivedProjs.length)
-        console.log('Archived campaigns:', archivedCamps.length)
         
         // Load all tasks for archived campaigns
         if (archivedCamps.length > 0) {
@@ -66,7 +64,6 @@ export default function ArchiveView({
           )
           const tasksArrays = await Promise.all(tasksPromises)
           const allArchivedTasks = tasksArrays.flat()
-          console.log('Archived campaign tasks loaded:', allArchivedTasks.length)
           setArchivedCampaignTasks(allArchivedTasks)
         } else {
           setArchivedCampaignTasks([])
@@ -83,12 +80,10 @@ export default function ArchiveView({
 
     // Subscribe to project and campaign changes to reload archived items
     const handleProjectChange = () => {
-      console.log('Project changed, reloading archived items')
       loadArchivedItems()
     }
     
     const handleCampaignChange = () => {
-      console.log('Campaign changed, reloading archived items')
       loadArchivedItems()
     }
 
@@ -227,12 +222,7 @@ export default function ArchiveView({
     const projectTasks = archivedCampaignTasks.filter(task => 
       projectCampaigns.some(campaign => campaign.id === task.campaignId)
     )
-    console.log(`Stats for project ${projectId}:`, {
-      campaigns: projectCampaigns.length,
-      tasks: projectTasks.length,
-      totalArchivedCampaigns: archivedCampaigns.length,
-      totalArchivedTasks: archivedCampaignTasks.length
-    })
+    
     return {
       campaignCount: projectCampaigns.length,
       taskCount: projectTasks.length,

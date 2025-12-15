@@ -399,7 +399,6 @@ export default function CalendarView({
           const isStart = isSameDay(date, stageStart)
           const isEnd = isSameDay(date, stageEnd)
           const position = isStart && isEnd ? 'single' : isStart ? 'start' : isEnd ? 'end' : 'middle'
-          console.log(`Project Stage "${stage.stageName}" on ${format(date, 'MMM d')}: position=${position}, start=${format(stageStart, 'MMM d')}, end=${format(stageEnd, 'MMM d')}`)
           stages.push({ ...stage, position, source: `Project: ${project.title}` })
         }
       })
@@ -415,7 +414,6 @@ export default function CalendarView({
             const isStart = isSameDay(date, stageStart)
             const isEnd = isSameDay(date, stageEnd)
             const position = isStart && isEnd ? 'single' : isStart ? 'start' : isEnd ? 'end' : 'middle'
-            console.log(`Campaign Stage "${stage.stageName}" on ${format(date, 'MMM d')}: position=${position}, start=${format(stageStart, 'MMM d')}, end=${format(stageEnd, 'MMM d')}`)
             stages.push({ ...stage, position, source: campaign.title })
           }
         })
@@ -429,7 +427,6 @@ export default function CalendarView({
             const isStart = isSameDay(date, stageStart)
             const isEnd = isSameDay(date, stageEnd)
             const position = isStart && isEnd ? 'single' : isStart ? 'start' : isEnd ? 'end' : 'middle'
-            console.log(`Campaign Stage "${stage.stageName}" (${campaign.title}) on ${format(date, 'MMM d')}: position=${position}`)
             stages.push({ ...stage, stageName: `${campaign.title}: ${stage.stageName}`, position })
           }
         })
@@ -624,7 +621,6 @@ export default function CalendarView({
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          console.log('Project clicked:', event.title, 'ID:', event.projectId)
                           if (onProjectClick) {
                             onProjectClick(event.projectId)
                           } else {
@@ -665,7 +661,6 @@ export default function CalendarView({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            console.log('Campaign clicked:', event.title, 'ID:', event.campaignId)
                             if (onCampaignClick) {
                               onCampaignClick(event.campaignId)
                             } else {
@@ -735,7 +730,6 @@ export default function CalendarView({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            console.log('Stage clicked:', cleanStageName, 'Stage ID:', stage.id)
                             // Find parent campaign/project and open edit dialog
                             const parentCampaign = campaigns.find(c => 
                               c.stageDates?.some(sd => sd.id === stage.id)
@@ -745,14 +739,12 @@ export default function CalendarView({
                             )
                             
                             if (parentCampaign) {
-                              console.log('Opening campaign:', parentCampaign.title, 'ID:', parentCampaign.id)
                               if (onCampaignClick) {
                                 onCampaignClick(parentCampaign.id)
                               } else {
                                 console.error('onCampaignClick is not defined')
                               }
                             } else if (parentProject) {
-                              console.log('Opening project:', parentProject.title, 'ID:', parentProject.id)
                               if (onProjectClick) {
                                 onProjectClick(parentProject.id)
                               } else {
@@ -808,7 +800,6 @@ export default function CalendarView({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            console.log('Task clicked:', task.title, 'ID:', task.id)
                             
                             // Context-aware navigation based on active filters
                             if (filters.stageNames && filters.stageNames.length > 0) {

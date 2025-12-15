@@ -47,11 +47,9 @@ export function EventBar({
   
   // Handle mouse down on the event bar (for dragging)
   const handleMouseDown = (e: React.MouseEvent) => {
-    console.log('EventBar mouseDown:', event.title)
     
     // Ignore if clicking on resize handle
     if ((e.target as HTMLElement).hasAttribute('data-resize-handle')) {
-      console.log('  -> Clicked on resize handle, ignoring')
       return
     }
     
@@ -66,7 +64,6 @@ export function EventBar({
       
       // If moved more than 5px, start dragging
       if (distance > 5 && !hasMoved) {
-        console.log('  -> Started dragging (moved >5px)')
         hasMoved = true
         onDragStart(event, e)
         document.removeEventListener('mousemove', handleMouseMove)
@@ -81,15 +78,12 @@ export function EventBar({
         const dy = upEvent.clientY - startPos.y
         const distance = Math.sqrt(dx * dx + dy * dy)
         
-        console.log(`  -> Mouse up, distance: ${distance.toFixed(2)}px, hasMoved: ${hasMoved}`)
         
         if (distance <= 5) {
-          console.log('  -> Treating as click, calling onEventClick')
           // Create a synthetic React mouse event for the click handler
           onEventClick(event, e)
         }
       } else {
-        console.log('  -> Mouse up after drag, not treating as click')
       }
       
       document.removeEventListener('mousemove', handleMouseMove)

@@ -31,27 +31,18 @@ export default function LoginView() {
     const pendingInviteId = sessionStorage.getItem('pendingInviteId')
     const pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail')
     
-    console.log('[LoginView] Checking for pending invite:', {
-      pendingInviteId,
-      pendingInviteEmail,
-      hash: window.location.hash
-    })
-    
     if (pendingInviteId) {
-      console.log('[LoginView] Found pending invite, configuring signup mode')
       setHasPendingInvite(true)
       setIsSignup(true)
       
       // Pre-fill email if available
       if (pendingInviteEmail) {
         setEmail(pendingInviteEmail)
-        console.log('[LoginView] Pre-filled email:', pendingInviteEmail)
       }
     }
     
     // Check URL hash for signup intent
     if (window.location.hash === '#signup') {
-      console.log('[LoginView] Hash indicates signup mode')
       setIsSignup(true)
     }
   }, [])

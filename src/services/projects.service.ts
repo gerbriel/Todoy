@@ -421,7 +421,6 @@ export const projectsService = {
       }
 
       if (originalCampaigns && originalCampaigns.length > 0) {
-        console.log(`Duplicating ${originalCampaigns.length} campaigns...`)
         // Duplicate each campaign with its lists and tasks
         for (const originalCampaign of originalCampaigns) {
           // Create new campaign with "Untitled" as the title
@@ -449,11 +448,9 @@ export const projectsService = {
             continue
           }
 
-          console.log(`Created campaign: ${newCampaign.title}`)
 
           if (newCampaign) {
             // Get all lists from the original campaign (force fresh data)
-            console.log(`  Fetching lists for original campaign ID: ${originalCampaign.id}`)
             const { data: originalLists, error: listsError } = await supabase
               .from('lists')
               .select('*')
@@ -464,10 +461,8 @@ export const projectsService = {
               console.error('Error fetching lists:', listsError)
             }
 
-            console.log(`  Found ${originalLists?.length || 0} lists for campaign`)
 
             if (originalLists && originalLists.length > 0) {
-              console.log(`  Duplicating ${originalLists.length} lists for campaign: ${newCampaign.title}`)
               // Duplicate each list and its tasks
               for (const originalList of originalLists) {
                 // Create new list
@@ -486,11 +481,9 @@ export const projectsService = {
                   continue
                 }
 
-                console.log(`    Created list: ${newList.title}`)
 
                 if (newList) {
                   // Get all tasks from the original list (force fresh data)
-                  console.log(`      Fetching tasks for original list ID: ${originalList.id}`)
                   const { data: originalTasks, error: tasksError } = await supabase
                     .from('tasks')
                     .select('*')
@@ -501,10 +494,8 @@ export const projectsService = {
                     console.error('Error fetching tasks:', tasksError)
                   }
 
-                  console.log(`      Found ${originalTasks?.length || 0} tasks for list`)
 
                   if (originalTasks && originalTasks.length > 0) {
-                    console.log(`      Duplicating ${originalTasks.length} tasks for list: ${newList.title}`)
                     // Duplicate each task (without dates, comments, attachments, labels)
                     const newTasks = originalTasks.map(task => ({
                       title: task.title,
@@ -521,7 +512,6 @@ export const projectsService = {
                     if (tasksInsertError) {
                       console.error('Error creating tasks:', tasksInsertError)
                     } else {
-                      console.log(`      Created ${newTasks.length} tasks`)
                     }
                   }
                 }
@@ -531,7 +521,6 @@ export const projectsService = {
         }
       }
 
-      console.log(`Project duplication complete: ${newProject.title}`)
       
       return {
         ...newProject,

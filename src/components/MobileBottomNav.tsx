@@ -75,7 +75,6 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
           <button
             onClick={() => {
               // TODO: Open create campaign dialog
-              console.log('Add Campaign clicked')
             }}
             className="flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
@@ -87,7 +86,6 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
           <button
             onClick={() => {
               // TODO: Open create project dialog
-              console.log('Add Project clicked')
             }}
             className="flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >

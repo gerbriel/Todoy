@@ -180,7 +180,6 @@ export default function ProjectEditDialog({
   const handleArchive = async () => {
     try {
       const result = await projectsService.update(project.id, { archived: true })
-      console.log('Archived project:', result, 'archived flag:', result.archived)
       
       // Archive all campaigns for this project
       const projectCampaigns = campaigns.filter(c => c.projectId === project.id && !c.archived)
@@ -189,7 +188,6 @@ export default function ProjectEditDialog({
           campaignsService.update(campaign.id, { archived: true })
         )
         await Promise.all(campaignArchivePromises)
-        console.log(`Archived ${projectCampaigns.length} campaigns`)
       }
       
       // Optimistically remove from parent view

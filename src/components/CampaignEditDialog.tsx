@@ -191,7 +191,6 @@ export default function CampaignEditDialog({
   const handleArchive = async () => {
     try {
       const result = await campaignsService.update(campaign.id, { archived: true })
-      console.log('Archived campaign:', result, 'archived flag:', result.archived)
       
       // Optimistically remove from parent view
       setCampaigns(prev => prev.filter(c => c.id !== campaign.id))

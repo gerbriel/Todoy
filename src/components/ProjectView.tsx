@@ -203,7 +203,6 @@ export default function ProjectView({
       setLists(prev => [...prev, ...newLists])
       setTasks(prev => [...prev, ...newTasks])
       
-      console.log(`Loaded ${newCampaigns.length} campaigns, ${newLists.length} lists, and ${newTasks.length} tasks for duplicated project`)
       
       toast.success('Project duplicated successfully')
       setShowDuplicateDialog(false)

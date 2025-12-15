@@ -210,7 +210,6 @@ export default function MasterView({
                                 className="font-medium cursor-pointer hover:text-primary"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  console.log('Project clicked:', project.id, 'Handler exists:', !!onNavigateToProject)
                                   if (onNavigateToProject) {
                                     onNavigateToProject(project.id)
                                   }
@@ -287,7 +286,6 @@ export default function MasterView({
                                 className="font-medium cursor-pointer hover:text-primary"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  console.log('Campaign clicked:', campaign.id, 'Handler exists:', !!onNavigateToCampaign)
                                   if (onNavigateToCampaign) {
                                     onNavigateToCampaign(campaign.id)
                                   }
@@ -300,7 +298,6 @@ export default function MasterView({
                                 onClick={(e) => {
                                   if (campaignProject) {
                                     e.stopPropagation()
-                                    console.log('Campaign->Project clicked:', campaignProject.id, 'Handler exists:', !!onNavigateToProject)
                                     if (onNavigateToProject) {
                                       onNavigateToProject(campaignProject.id)
                                     }

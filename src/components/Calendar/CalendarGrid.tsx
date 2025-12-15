@@ -473,9 +473,6 @@ export function CalendarGrid({
   }
   
   const handleNextMonth = () => {
-    console.log('➡️ NEXT CLICKED')
-    console.log('Current date BEFORE:', format(currentDate, 'yyyy-MM-dd'))
-    console.log('View mode:', viewMode)
     
     // Disable scroll updates during navigation
     allowScrollUpdates.current = false
@@ -744,7 +741,6 @@ export function CalendarGrid({
     const weekElement = container.querySelector(`[data-week-start="${dateStr}"]`)
     
     if (weekElement) {
-      console.log('✅ Found week element!')
       const containerRect = container.getBoundingClientRect()
       const elementRect = weekElement.getBoundingClientRect()
       

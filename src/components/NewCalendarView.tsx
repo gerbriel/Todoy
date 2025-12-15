@@ -138,17 +138,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
     const event = calendarEvents.find(e => e.id === eventId)
     if (!event) return
     
-    console.log('🎯 Event Move:', { 
-      eventId, 
-      type: event.type, 
-      newStartDate: newStartDate.toISOString(), 
-      newEndDate: newEndDate.toISOString(),
-      hasCampaignId: !!event.metadata.campaignId,
-      hasProjectId: !!event.metadata.projectId,
-      hasSetCampaigns: !!setCampaigns,
-      hasSetProjects: !!setProjects
-    })
-    
     try {
       // Handle task moves - update both startDate and dueDate
       if (event.type === 'task' && event.metadata.taskId) {
@@ -198,13 +187,10 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
       
       // Handle campaign phase moves
       if (event.type === 'campaign' && event.metadata.campaignId && setCampaigns) {
-        console.log('📅 Campaign Move Detected:', { eventId, campaignId: event.metadata.campaignId })
         const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
         if (!campaign) {
-          console.log('❌ Campaign not found in campaigns array')
           return
         }
-        console.log('✅ Campaign found:', campaign.title)
         
         // Validate: If campaign has a project, must be within project dates
         if (campaign.projectId) {
@@ -228,9 +214,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
           endDate: newEndDate.toISOString()
         }
         
-        console.log('📝 Updating campaign with:', updates)
         await campaignsService.update(event.metadata.campaignId, updates)
-        console.log('✅ Database updated')
         
         // Shift all child tasks if campaign had a previous start date
         const oldStartDate = campaign.startDate
@@ -241,7 +225,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
           const stats = calculateShiftStats(tasks, campaign.id, oldStartDate, newStartDateISO)
           
           if (stats.tasksAffected > 0) {
-            console.log(`🔄 Shifting ${stats.tasksAffected} child task(s)...`)
             
             const updatedTasks = shiftCampaignTasks(
               tasks,
@@ -266,7 +249,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             
             // Update local task state
             setTasks(() => updatedTasks)
-            console.log('✅ Tasks shifted and updated')
           }
         }
         
@@ -275,7 +257,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             c.id === event.metadata.campaignId ? { ...c, ...updates } : c
           )
         )
-        console.log('✅ State updated')
         
         const stats = oldStartDate 
           ? calculateShiftStats(tasks, campaign.id, oldStartDate, newStartDateISO)
@@ -314,7 +295,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
           const stats = calculateProjectShiftStats(campaigns, tasks, project.id, oldStartDate, newStartDateISO)
           
           if (stats.campaignsAffected > 0 || stats.tasksAffected > 0) {
-            console.log(`🔄 Shifting ${stats.campaignsAffected} campaign(s) and ${stats.tasksAffected} task(s)...`)
             
             const { campaigns: updatedCampaigns, tasks: updatedTasks } = shiftProjectCampaignsAndTasks(
               campaigns,
@@ -354,7 +334,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             // Update local state
             setCampaigns(() => updatedCampaigns)
             setTasks(() => updatedTasks)
-            console.log('✅ Campaigns and tasks shifted and updated')
           }
         }
 
@@ -383,13 +362,11 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
       
       // Handle stage moves (campaign stages shown on calendar)
       if (event.type === 'stage' && event.metadata.stageId) {
-        console.log('📊 Stage Move Detected:', { stageId: event.metadata.stageId, campaignId: event.metadata.campaignId, projectId: event.metadata.projectId })
         
         // Handle campaign stage moves
         if (event.metadata.campaignId) {
           const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
           if (!campaign || !campaign.stageDates) {
-            console.log('❌ Campaign or stageDates not found')
             return
           }
           
@@ -399,7 +376,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
               : stage
           )
           
-          console.log('💾 Updating campaign stage dates')
           await campaignsService.update(event.metadata.campaignId, {
             stageDates: updatedStageDates
           })
@@ -414,7 +390,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             )
           }
           
-          console.log('✅ Campaign stage updated')
           toast.success('Stage dates updated')
           return
         }
@@ -423,7 +398,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
         if (event.metadata.projectId && setProjects) {
           const project = projects.find(p => p.id === event.metadata.projectId)
           if (!project || !project.stageDates) {
-            console.log('❌ Project or stageDates not found')
             return
           }
           
@@ -433,7 +407,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
               : stage
           )
           
-          console.log('💾 Updating project stage dates')
           await projectsService.update(event.metadata.projectId, {
             stageDates: updatedStageDates
           })
@@ -446,12 +419,10 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
             )
           )
           
-          console.log('✅ Project stage updated')
           toast.success('Stage dates updated')
           return
         }
         
-        console.log('❌ Stage has no campaignId or projectId')
         return
       }
       
@@ -580,13 +551,10 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
       
       // Handle stage date resizes (for both campaigns and projects)
       if (event.type === 'stage' && event.metadata.stageId) {
-        console.log('  -> Resizing stage:', event.metadata.stageId)
         
         if (event.metadata.campaignId) {
-          console.log('  -> Campaign stage')
           const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
           if (campaign?.stageDates) {
-            console.log('  -> Found campaign with stageDates')
             const updatedStageDates = campaign.stageDates.map(stage =>
               stage.id === event.metadata.stageId
                 ? { 
@@ -597,7 +565,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
                 : stage
             )
             
-            console.log('  -> Updating campaign stageDates')
             await campaignsService.update(event.metadata.campaignId, {
               stageDates: updatedStageDates
             })
@@ -612,16 +579,12 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
               )
             }
             
-            console.log('  -> Campaign stage dates updated successfully')
             toast.success('Stage dates updated')
           } else {
-            console.log('  -> Campaign not found or no stageDates')
           }
         } else if (event.metadata.projectId) {
-          console.log('  -> Project stage')
           const project = projects.find(p => p.id === event.metadata.projectId)
           if (project?.stageDates) {
-            console.log('  -> Found project with stageDates')
             const updatedStageDates = project.stageDates.map(stage =>
               stage.id === event.metadata.stageId
                 ? { 
@@ -632,7 +595,6 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
                 : stage
             )
             
-            console.log('  -> Updating project stageDates')
             await projectsService.update(event.metadata.projectId, {
               stageDates: updatedStageDates
             })
@@ -647,16 +609,12 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
               )
             }
             
-            console.log('  -> Project stage dates updated successfully')
             toast.success('Stage dates updated')
           } else {
-            console.log('  -> Project not found or no stageDates')
           }
         } else {
-          console.log('  -> Stage has no campaignId or projectId!')
         }
       } else {
-        console.log('  -> Event type not handled:', event.type)
       }
       
     } catch (error) {
@@ -666,12 +624,10 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
   }
   
   const handleDateClick = (date: Date) => {
-    console.log('Date clicked:', date)
     // TODO: Could open a "create event" dialog
   }
   
   const handleSidebarItemDrop = async (item: any, date: Date) => {
-    console.log('📦 Sidebar item dropped:', item, 'on date:', date)
     
     try {
       const startDate = startOfDay(date)

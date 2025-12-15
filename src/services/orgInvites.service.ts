@@ -23,6 +23,9 @@ export const orgInvitesService = {
   },
 
   async create(invite: Omit<OrgInvite, 'id'>): Promise<OrgInvite> {
+    // Generate a unique invite code
+    const inviteCode = `${Math.random().toString(36).substring(2, 10)}-${Date.now().toString(36)}`
+    
     const { data, error} = await supabase
       .from('org_invites')
       .insert({
@@ -32,6 +35,7 @@ export const orgInvitesService = {
         invited_by: invite.invitedBy,
         status: 'pending',
         expires_at: invite.expiresAt,
+        invite_code: inviteCode,
       })
       .select()
       .single()

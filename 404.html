@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Todoy - Redirecting...</title>
+    <script>
+        // GitHub Pages SPA redirect hack
+        // This script takes the current url and converts the path into a query string
+        // which is then picked up by the index.html
+        (function() {
+            var pathSegmentsToKeep = 1; // For /Todoy/ base path
+            
+            var location = window.location;
+            var redirect = location.protocol + '//' + location.hostname + 
+                (location.port ? ':' + location.port : '');
+            
+            var pathSegments = location.pathname.split('/').filter(function(segment) {
+                return segment !== '';
+            });
+            
+            // Keep the base path segments (e.g., /Todoy/)
+            for (var i = 0; i < Math.min(pathSegmentsToKeep, pathSegments.length); i++) {
+                redirect += '/' + pathSegments[i];
+            }
+            
+            redirect += '/';
+            
+            // Add remaining path as query parameter
+            if (pathSegments.length > pathSegmentsToKeep) {
+                redirect += '?p=/' + pathSegments.slice(pathSegmentsToKeep).join('/');
+            }
+            
+            // Preserve query string and hash
+            if (location.search) {
+                redirect += (redirect.indexOf('?') === -1 ? '?' : '&') + 
+                    location.search.slice(1);
+            }
+            if (location.hash) {
+                redirect += location.hash;
+            }
+            
+            location.replace(redirect);
+        })();
+    </script>
+</head>
+<body>
+    Redirecting...
+</body>
+</html>

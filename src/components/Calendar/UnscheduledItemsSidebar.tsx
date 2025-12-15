@@ -1164,7 +1164,18 @@ export default function UnscheduledItemsSidebar({
                         return (
                           <div key={project.id} className="space-y-1">
                             <div 
-                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-pointer hover:bg-muted/50 transition-colors" 
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = 'move'
+                                e.dataTransfer.setData('application/json', JSON.stringify({
+                                  id: project.id,
+                                  type: 'project',
+                                  title: project.title,
+                                  metadata: { projectId: project.id },
+                                  fromSidebar: true
+                                }))
+                              }}
+                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-move hover:bg-muted/50 transition-colors" 
                               style={{ borderLeftColor: '#8b5cf6' }}
                               onClick={() => {
                                 if (onNavigateToDate && project.startDate) {
@@ -1214,7 +1225,18 @@ export default function UnscheduledItemsSidebar({
                                   return (
                                     <div key={campaign.id} className="space-y-1">
                                       <div 
-                                        className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2 cursor-pointer hover:bg-muted/40 transition-colors" 
+                                        draggable
+                                        onDragStart={(e) => {
+                                          e.dataTransfer.effectAllowed = 'move'
+                                          e.dataTransfer.setData('application/json', JSON.stringify({
+                                            id: campaign.id,
+                                            type: 'campaign',
+                                            title: campaign.title,
+                                            metadata: { campaignId: campaign.id },
+                                            fromSidebar: true
+                                          }))
+                                        }}
+                                        className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2 cursor-move hover:bg-muted/40 transition-colors" 
                                         style={{ borderLeftColor: '#10b981' }}
                                         onClick={() => {
                                           if (onNavigateToDate && campaign.startDate) {
@@ -1259,8 +1281,19 @@ export default function UnscheduledItemsSidebar({
                                         <div className="ml-5 space-y-1">
                                           {campaignTasks.map(task => (
                                             <div 
-                                              key={task.id} 
-                                              className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-pointer"
+                                              key={task.id}
+                                              draggable
+                                              onDragStart={(e) => {
+                                                e.dataTransfer.effectAllowed = 'move'
+                                                e.dataTransfer.setData('application/json', JSON.stringify({
+                                                  id: task.id,
+                                                  type: 'task',
+                                                  title: task.title,
+                                                  metadata: { taskId: task.id },
+                                                  fromSidebar: true
+                                                }))
+                                              }}
+                                              className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-move"
                                               onClick={() => {
                                                 if (onNavigateToDate && task.startDate) {
                                                   onNavigateToDate(new Date(task.startDate))
@@ -1325,7 +1358,18 @@ export default function UnscheduledItemsSidebar({
                             return (
                               <div key={campaign.id} className="space-y-1">
                                 <div 
-                                  className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-pointer hover:bg-muted/50 transition-colors" 
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.effectAllowed = 'move'
+                                    e.dataTransfer.setData('application/json', JSON.stringify({
+                                      id: campaign.id,
+                                      type: 'campaign',
+                                      title: campaign.title,
+                                      metadata: { campaignId: campaign.id },
+                                      fromSidebar: true
+                                    }))
+                                  }}
+                                  className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 cursor-move hover:bg-muted/50 transition-colors" 
                                   style={{ borderLeftColor: '#10b981' }}
                                   onClick={() => {
                                     if (onNavigateToDate && campaign.startDate) {
@@ -1371,7 +1415,18 @@ export default function UnscheduledItemsSidebar({
                                     {campaignTasks.map(task => (
                                       <div 
                                         key={task.id} 
-                                        className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-pointer"
+                                        draggable
+                                        onDragStart={(e) => {
+                                          e.dataTransfer.effectAllowed = 'move'
+                                          e.dataTransfer.setData('application/json', JSON.stringify({
+                                            id: task.id,
+                                            type: 'task',
+                                            title: task.title,
+                                            metadata: { taskId: task.id },
+                                            fromSidebar: true
+                                          }))
+                                        }}
+                                        className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border cursor-move"
                                         onClick={() => {
                                           if (onNavigateToDate && task.startDate) {
                                             onNavigateToDate(new Date(task.startDate))
@@ -1427,7 +1482,18 @@ export default function UnscheduledItemsSidebar({
                           {scheduledTasks.map(task => (
                             <div 
                               key={task.id} 
-                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors border-blue-500 cursor-pointer"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = 'move'
+                                e.dataTransfer.setData('application/json', JSON.stringify({
+                                  id: task.id,
+                                  type: 'task',
+                                  title: task.title,
+                                  metadata: { taskId: task.id },
+                                  fromSidebar: true
+                                }))
+                              }}
+                              className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors border-blue-500 cursor-move"
                               onClick={() => {
                                 if (onNavigateToDate && task.startDate) {
                                   onNavigateToDate(new Date(task.startDate))

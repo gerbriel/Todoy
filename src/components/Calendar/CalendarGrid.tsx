@@ -879,7 +879,7 @@ export function CalendarGrid({
       </div>
       
       {/* Calendar grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto px-4 pb-4">
         {/* Weekday headers - hide in day view since we only show one cell */}
         {viewMode !== 'day' && (
           <div className="grid grid-cols-7 border-b border-border bg-muted/50 sticky top-0 z-20">

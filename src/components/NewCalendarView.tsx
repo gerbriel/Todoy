@@ -37,6 +37,7 @@ interface NewCalendarViewProps {
   orgId: string
   setCampaigns?: (updater: (campaigns: Campaign[]) => Campaign[]) => void
   onNavigateBack?: () => void
+  filterMode?: 'all' | 'projects' | 'campaigns' | 'tasks'
 }
 
 const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
@@ -57,6 +58,7 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
   orgId,
   setCampaigns,
   onNavigateBack,
+  filterMode = 'all',
 }, ref) => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
@@ -79,10 +81,15 @@ const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
     ? campaigns.filter(c => c.id === activeCampaignId)
     : campaigns
   
+  // Apply filterMode to what's displayed on the calendar
+  const calendarProjects = filterMode === 'campaigns' || filterMode === 'tasks' ? [] : projects
+  const calendarCampaigns = filterMode === 'projects' || filterMode === 'tasks' ? [] : filteredCampaigns
+  const calendarTasks = filterMode === 'projects' || filterMode === 'campaigns' ? [] : filteredTasks
+  
   const calendarEvents = convertToCalendarEvents(
-    filteredTasks,
-    filteredCampaigns,
-    projects
+    calendarTasks,
+    calendarCampaigns,
+    calendarProjects
   )
   
   const handleEventClick = (event: CalendarEvent) => {

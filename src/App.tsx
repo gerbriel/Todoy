@@ -447,8 +447,8 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={[]}
-                  tasks={[]}
+                  campaigns={campaigns || []}
+                  tasks={tasks || []}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
@@ -463,6 +463,7 @@ function MainApp() {
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
+                  filterMode="projects"
                 />
               )}
             </>
@@ -481,14 +482,14 @@ function MainApp() {
               ) : (
                 <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
-                  tasks={[]}
+                  tasks={tasks || []}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={filters}
-                  projects={[]}
+                  projects={projects || []}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="all"
@@ -496,6 +497,7 @@ function MainApp() {
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
+                  filterMode="campaigns"
                 />
               )}
             </>
@@ -517,7 +519,7 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={[]}
+                  campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
                   labels={labels || []}
@@ -525,7 +527,7 @@ function MainApp() {
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={filters}
-                  projects={[]}
+                  projects={projects || []}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="all"
@@ -533,6 +535,7 @@ function MainApp() {
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
+                  filterMode="tasks"
                 />
               )}
             </>
@@ -574,6 +577,7 @@ function MainApp() {
                   onProjectClick={handleNavigateToProject}
                   orgId={organization?.id || ''}
                   setCampaigns={setCampaigns}
+                  filterMode="all"
                 />
               )}
             </>

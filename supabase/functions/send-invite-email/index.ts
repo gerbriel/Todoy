@@ -63,9 +63,9 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Todoy <onboarding@resend.dev>', // Change this to your verified domain
+        from: 'Todoy Project Management <onboarding@resend.dev>',
         to: [recipientEmail],
-        subject: `You've been invited to join ${orgName}`,
+        subject: `🎉 ${inviterName} invited you to join ${orgName} on Todoy`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -80,35 +80,55 @@ serve(async (req) => {
                   max-width: 600px;
                   margin: 0 auto;
                   padding: 20px;
+                  background-color: #f3f4f6;
                 }
                 .container {
                   background-color: #ffffff;
-                  border-radius: 8px;
+                  border-radius: 12px;
                   padding: 40px;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 }
                 .header {
                   text-align: center;
                   margin-bottom: 30px;
+                  padding-bottom: 20px;
+                  border-bottom: 2px solid #2563eb;
                 }
                 .header h1 {
                   color: #2563eb;
+                  margin: 0 0 10px 0;
+                  font-size: 32px;
+                }
+                .header .subtitle {
+                  color: #6b7280;
+                  font-size: 16px;
                   margin: 0;
-                  font-size: 28px;
                 }
                 .content {
                   margin-bottom: 30px;
                 }
+                .content p {
+                  margin: 16px 0;
+                }
+                .highlight-box {
+                  background-color: #eff6ff;
+                  border-left: 4px solid #2563eb;
+                  padding: 16px;
+                  margin: 20px 0;
+                  border-radius: 4px;
+                }
                 .button {
                   display: inline-block;
-                  padding: 12px 24px;
+                  padding: 14px 32px;
                   background-color: #2563eb;
                   color: #ffffff !important;
                   text-decoration: none;
-                  border-radius: 6px;
+                  border-radius: 8px;
                   font-weight: 600;
                   text-align: center;
                   margin: 20px 0;
+                  font-size: 16px;
+                  transition: background-color 0.2s;
                 }
                 .button:hover {
                   background-color: #1d4ed8;
@@ -117,39 +137,75 @@ serve(async (req) => {
                   margin-top: 30px;
                   padding-top: 20px;
                   border-top: 1px solid #e5e7eb;
-                  font-size: 14px;
+                  font-size: 13px;
                   color: #6b7280;
                   text-align: center;
                 }
                 .link {
                   color: #2563eb;
                   word-break: break-all;
+                  text-decoration: none;
+                }
+                .link:hover {
+                  text-decoration: underline;
+                }
+                .features {
+                  background-color: #f9fafb;
+                  padding: 20px;
+                  border-radius: 8px;
+                  margin: 20px 0;
+                }
+                .features ul {
+                  margin: 10px 0;
+                  padding-left: 20px;
+                }
+                .features li {
+                  margin: 8px 0;
+                  color: #4b5563;
                 }
               </style>
             </head>
             <body>
               <div class="container">
                 <div class="header">
-                  <h1>🎉 You're Invited!</h1>
+                  <h1>✨ You're Invited to Todoy!</h1>
+                  <p class="subtitle">Collaborative Project Management Made Simple</p>
                 </div>
                 <div class="content">
                   <p>Hi${recipientName ? ` ${recipientName}` : ''},</p>
-                  <p><strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on Todoy.</p>
-                  <p>Todoy is a collaborative project management platform where you can organize projects, campaigns, and tasks with your team.</p>
+                  <div class="highlight-box">
+                    <p style="margin: 0;"><strong>${inviterName}</strong> has invited you to collaborate in <strong>${orgName}</strong>!</p>
+                  </div>
+                  <p>Todoy helps teams organize and manage projects, campaigns, and tasks seamlessly. Join your team and start collaborating today!</p>
+                  
+                  <div class="features">
+                    <strong>What you can do with Todoy:</strong>
+                    <ul>
+                      <li>📋 Organize projects and campaigns</li>
+                      <li>✅ Track tasks and progress</li>
+                      <li>📅 Manage deadlines with calendar views</li>
+                      <li>👥 Collaborate with your team in real-time</li>
+                      <li>🎯 Stay focused with stage-based workflows</li>
+                    </ul>
+                  </div>
+
                   <p style="text-align: center;">
-                    <a href="${inviteLink}" class="button">Accept Invitation</a>
+                    <a href="${inviteLink}" class="button">🚀 Accept Invitation & Get Started</a>
                   </p>
-                  <p style="font-size: 14px; color: #6b7280;">
+                  <p style="font-size: 13px; color: #6b7280; text-align: center;">
                     Or copy and paste this link into your browser:<br>
                     <a href="${inviteLink}" class="link">${inviteLink}</a>
                   </p>
-                  <p style="font-size: 14px; color: #6b7280;">
-                    This invitation will expire in 7 days.
+                  <p style="font-size: 13px; color: #ef4444; text-align: center;">
+                    ⏱️ This invitation expires in 7 days
                   </p>
                 </div>
                 <div class="footer">
-                  <p>This email was sent because ${inviterName} invited you to join ${orgName}.</p>
-                  <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+                  <p><strong>${inviterName}</strong> invited you to join <strong>${orgName}</strong> on Todoy.</p>
+                  <p>If you weren't expecting this invitation, you can safely ignore this email.</p>
+                  <p style="margin-top: 15px;">
+                    <a href="https://gerbriel.github.io/Todoy" class="link">Visit Todoy</a>
+                  </p>
                 </div>
               </div>
             </body>

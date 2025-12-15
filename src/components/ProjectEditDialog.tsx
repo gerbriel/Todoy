@@ -46,6 +46,7 @@ export default function ProjectEditDialog({
 }: ProjectEditDialogProps) {
   const [title, setTitle] = useState(project.title)
   const [description, setDescription] = useState(project.description)
+  const [budget, setBudget] = useState(project.budget?.toString() || '')
   const [startDate, setStartDate] = useState(
     project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : ''
   )
@@ -54,10 +55,20 @@ export default function ProjectEditDialog({
   )
   const [stageDates, setStageDates] = useState(project.stageDates || [])
 
+  // Calculate actual spend from campaigns and tasks
+  const actualSpend = campaigns
+    .filter(c => c.projectId === project.id)
+    .reduce((sum, c) => sum + (c.actualSpend || 0), 0) +
+    (tasks?.filter(t => {
+      const campaign = campaigns.find(c => c.id === t.campaignId)
+      return campaign?.projectId === project.id
+    }).reduce((sum, t) => sum + (t.actualSpend || 0), 0) || 0)
+
   // Update form when project prop changes (e.g., after drag-and-drop)
   useEffect(() => {
     setTitle(project.title)
     setDescription(project.description)
+    setBudget(project.budget?.toString() || '')
     // Convert ISO dates to YYYY-MM-DD format for date inputs
     setStartDate(project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '')
     setEndDate(project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '')
@@ -78,6 +89,8 @@ export default function ProjectEditDialog({
       const updates = {
         title: title.trim(),
         description: description.trim(),
+        budget: budget ? parseFloat(budget) : undefined,
+        actualSpend,
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         stageDates,
@@ -157,6 +170,7 @@ export default function ProjectEditDialog({
     // Reset to original values
     setTitle(project.title)
     setDescription(project.description)
+    setBudget(project.budget?.toString() || '')
     setStartDate(project.startDate || '')
     setEndDate(project.endDate || '')
     setStageDates(project.stageDates || [])
@@ -217,6 +231,80 @@ export default function ProjectEditDialog({
               placeholder="Describe your project..."
               rows={4}
             />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-semibold">Budget</Label>
+              <p className="text-sm text-muted-foreground">
+                Set project budget and track actual spending
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-budget">Budget ($)</Label>
+                <Input
+                  id="project-budget"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="project-actual-spend">Actual Spend ($)</Label>
+                <Input
+                  id="project-actual-spend"
+                  type="number"
+                  value={actualSpend.toFixed(2)}
+                  disabled
+                  className="bg-muted"
+                  title="Auto-calculated from campaigns and tasks"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Auto-calculated from campaigns and tasks
+                </p>
+              </div>
+            </div>
+            
+            {budget && parseFloat(budget) > 0 && (
+              <div className="p-3 rounded-lg bg-muted/50">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium">Budget Utilization</span>
+                  <span className="text-sm font-semibold">
+                    {((actualSpend / parseFloat(budget)) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-background rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all ${
+                      actualSpend > parseFloat(budget) 
+                        ? 'bg-destructive' 
+                        : actualSpend > parseFloat(budget) * 0.9
+                        ? 'bg-yellow-500'
+                        : 'bg-primary'
+                    }`}
+                    style={{ width: `${Math.min((actualSpend / parseFloat(budget)) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    Remaining: ${(parseFloat(budget) - actualSpend).toFixed(2)}
+                  </span>
+                  {actualSpend > parseFloat(budget) && (
+                    <span className="text-xs text-destructive font-medium">
+                      Over budget by ${(actualSpend - parseFloat(budget)).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />

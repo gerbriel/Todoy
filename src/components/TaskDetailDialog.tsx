@@ -62,6 +62,8 @@ export default function TaskDetailDialog({
   const [description, setDescription] = useState(task.description)
   const [selectedCampaignId, setSelectedCampaignId] = useState(task.campaignId)
   const [selectedListId, setSelectedListId] = useState(task.listId)
+  const [budget, setBudget] = useState(task.budget?.toString() || '')
+  const [actualSpend, setActualSpend] = useState(task.actualSpend?.toString() || '')
   // Convert ISO date strings to YYYY-MM-DD format for date inputs
   const [startDate, setStartDate] = useState(
     task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : ''
@@ -99,6 +101,8 @@ export default function TaskDetailDialog({
         description: description.trim(),
         campaignId: selectedCampaignId,
         listId: selectedListId,
+        budget: budget ? parseFloat(budget) : undefined,
+        actualSpend: actualSpend ? parseFloat(actualSpend) : undefined,
         // Convert YYYY-MM-DD to ISO strings if dates are provided
         startDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
         dueDate: dueDate ? new Date(dueDate + 'T00:00:00').toISOString() : undefined,
@@ -413,6 +417,80 @@ export default function TaskDetailDialog({
                   rows={4}
                 />
               </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div>
+                  <UILabel className="text-base font-semibold">Budget</UILabel>
+                  <p className="text-sm text-muted-foreground">
+                    Set task budget and track actual spending
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <UILabel htmlFor="task-budget">Budget ($)</UILabel>
+                    <Input
+                      id="task-budget"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <UILabel htmlFor="task-actual-spend">Actual Spend ($)</UILabel>
+                    <Input
+                      id="task-actual-spend"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={actualSpend}
+                      onChange={(e) => setActualSpend(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                
+                {budget && parseFloat(budget) > 0 && actualSpend && (
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">Budget Utilization</span>
+                      <span className="text-sm font-semibold">
+                        {((parseFloat(actualSpend) / parseFloat(budget)) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-background rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all ${
+                          parseFloat(actualSpend) > parseFloat(budget) 
+                            ? 'bg-destructive' 
+                            : parseFloat(actualSpend) > parseFloat(budget) * 0.9
+                            ? 'bg-yellow-500'
+                            : 'bg-primary'
+                        }`}
+                        style={{ width: `${Math.min((parseFloat(actualSpend) / parseFloat(budget)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        Remaining: ${(parseFloat(budget) - parseFloat(actualSpend)).toFixed(2)}
+                      </span>
+                      {parseFloat(actualSpend) > parseFloat(budget) && (
+                        <span className="text-xs text-destructive font-medium">
+                          Over budget by ${(parseFloat(actualSpend) - parseFloat(budget)).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

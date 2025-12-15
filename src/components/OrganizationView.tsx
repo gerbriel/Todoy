@@ -209,11 +209,12 @@ export default function OrganizationView({
   }
 
   // Filter org content
-  const orgProjects = projects.filter(p => p.orgId === organization.id)
-  const orgCampaigns = campaigns.filter(c => c.orgId === organization.id)
+  // Include items that either have matching orgId OR no orgId (for backwards compatibility)
+  const orgProjects = projects.filter(p => !p.orgId || p.orgId === organization.id)
+  const orgCampaigns = campaigns.filter(c => !c.orgId || c.orgId === organization.id)
   const orgTasks = tasks.filter(t => {
     const taskCampaign = campaigns.find(c => c.id === t.campaignId)
-    return taskCampaign?.orgId === organization.id
+    return !taskCampaign?.orgId || taskCampaign?.orgId === organization.id
   })
 
   // Filter by selected member

@@ -13,6 +13,8 @@ DROP POLICY IF EXISTS "Admins and owners can update invites" ON org_invites;
 
 -- Drop org_members policies if they exist
 DROP POLICY IF EXISTS "Users can view members of their organizations" ON org_members;
+DROP POLICY IF EXISTS "Users can view their own membership" ON org_members;
+DROP POLICY IF EXISTS "Users can view org members" ON org_members;
 DROP POLICY IF EXISTS "Admins and owners can update member roles" ON org_members;
 DROP POLICY IF EXISTS "Admins and owners can remove members" ON org_members;
 DROP POLICY IF EXISTS "Admins and owners can add members" ON org_members;
@@ -90,14 +92,20 @@ USING (
 -- STEP 4: Create policies for org_members
 -- ============================================
 
--- Policy: Allow users to view org members for organizations they belong to
-CREATE POLICY "Users can view members of their organizations"
+-- Policy: Allow users to view their own org_members record
+-- This is simpler and avoids circular dependency
+CREATE POLICY "Users can view their own membership"
+ON org_members FOR SELECT
+USING (user_id = auth.uid());
+
+-- Policy: Allow users to view other members in same organization
+-- Only after they can see their own membership
+CREATE POLICY "Users can view org members"
 ON org_members FOR SELECT
 USING (
-  EXISTS (
-    SELECT 1 FROM org_members om
-    WHERE om.org_id = org_members.org_id
-    AND om.user_id = auth.uid()
+  org_id IN (
+    SELECT org_id FROM org_members 
+    WHERE user_id = auth.uid()
   )
 );
 
@@ -105,11 +113,10 @@ USING (
 CREATE POLICY "Admins and owners can update member roles"
 ON org_members FOR UPDATE
 USING (
-  EXISTS (
-    SELECT 1 FROM org_members om
-    WHERE om.org_id = org_members.org_id
-    AND om.user_id = auth.uid()
-    AND om.role IN ('admin', 'owner')
+  org_id IN (
+    SELECT org_id FROM org_members 
+    WHERE user_id = auth.uid()
+    AND role IN ('admin', 'owner')
   )
 );
 
@@ -117,28 +124,23 @@ USING (
 CREATE POLICY "Admins and owners can remove members"
 ON org_members FOR DELETE
 USING (
-  EXISTS (
-    SELECT 1 FROM org_members om
-    WHERE om.org_id = org_members.org_id
-    AND om.user_id = auth.uid()
-    AND om.role IN ('admin', 'owner')
+  org_id IN (
+    SELECT org_id FROM org_members 
+    WHERE user_id = auth.uid()
+    AND role IN ('admin', 'owner')
   )
   -- Prevent owners from removing themselves
-  AND NOT (
-    org_members.role = 'owner' 
-    AND org_members.user_id = auth.uid()
-  )
+  AND NOT (role = 'owner' AND user_id = auth.uid())
 );
 
 -- Policy: Allow new members to be added by admins/owners
 CREATE POLICY "Admins and owners can add members"
 ON org_members FOR INSERT
 WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM org_members om
-    WHERE om.org_id = org_members.org_id
-    AND om.user_id = auth.uid()
-    AND om.role IN ('admin', 'owner')
+  org_id IN (
+    SELECT org_id FROM org_members 
+    WHERE user_id = auth.uid()
+    AND role IN ('admin', 'owner')
   )
 );
 

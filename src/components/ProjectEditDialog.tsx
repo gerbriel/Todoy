@@ -7,7 +7,7 @@ import { Label } from './ui/label'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
 import { Separator } from './ui/separator'
-import { Archive, DotsThree } from '@phosphor-icons/react'
+import { Archive, DotsThree, CalendarCheck, CalendarX } from '@phosphor-icons/react'
 import { projectsService } from '@/services/projects.service'
 import { campaignsService } from '@/services/campaigns.service'
 import { tasksService } from '@/services/tasks.service'
@@ -250,6 +250,137 @@ export default function ProjectEditDialog({
                 />
               </div>
             </div>
+            
+            {/* Date Management Actions */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!setCampaigns) return
+                  
+                  if (!startDate || !endDate) {
+                    toast.error('Project must have dates assigned first')
+                    return
+                  }
+                  
+                  const projectCampaigns = campaigns.filter(c => c.projectId === project.id)
+                  
+                  if (projectCampaigns.length === 0) {
+                    toast.info('No campaigns found in this project')
+                    return
+                  }
+                  
+                  try {
+                    const startDateISO = new Date(startDate).toISOString()
+                    const endDateISO = new Date(endDate).toISOString()
+                    
+                    for (const campaign of projectCampaigns) {
+                      await campaignsService.update(campaign.id, {
+                        startDate: startDateISO,
+                        endDate: endDateISO
+                      })
+                    }
+                    
+                    setCampaigns(prevCampaigns =>
+                      prevCampaigns.map(c =>
+                        projectCampaigns.some(pc => pc.id === c.id)
+                          ? { ...c, startDate: startDateISO, endDate: endDateISO }
+                          : c
+                      )
+                    )
+                    
+                    toast.success(`Synced ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''} to project dates`)
+                  } catch (error) {
+                    console.error('Error syncing campaign dates:', error)
+                    toast.error('Failed to sync campaign dates')
+                  }
+                }}
+                className="flex-1"
+                title="Sync all campaign dates to match project dates"
+              >
+                <CalendarCheck className="mr-2" size={16} weight="bold" />
+                Sync Campaigns
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!setCampaigns) return
+                  
+                  const projectCampaigns = campaigns.filter(c => c.projectId === project.id && (c.startDate || c.endDate))
+                  
+                  if (projectCampaigns.length === 0) {
+                    toast.info('No campaigns with dates found in this project')
+                    return
+                  }
+                  
+                  try {
+                    // Unassign all campaigns
+                    for (const campaign of projectCampaigns) {
+                      await campaignsService.update(campaign.id, {
+                        startDate: null as any,
+                        endDate: null as any
+                      })
+                    }
+                    
+                    setCampaigns(prevCampaigns =>
+                      prevCampaigns.map(c =>
+                        projectCampaigns.some(pc => pc.id === c.id)
+                          ? { ...c, startDate: undefined, endDate: undefined }
+                          : c
+                      )
+                    )
+                    
+                    // Also unassign all tasks in those campaigns
+                    if (tasks && setTasks) {
+                      const campaignIds = projectCampaigns.map(c => c.id)
+                      const campaignTasks = tasks.filter(t => 
+                        campaignIds.includes(t.campaignId || '') && (t.startDate || t.dueDate)
+                      )
+                      
+                      if (campaignTasks.length > 0) {
+                        for (const task of campaignTasks) {
+                          await tasksService.update(task.id, {
+                            startDate: null as any,
+                            dueDate: null as any
+                          })
+                        }
+                        
+                        setTasks(prevTasks =>
+                          prevTasks.map(t =>
+                            campaignTasks.some(ct => ct.id === t.id)
+                              ? { ...t, startDate: undefined, dueDate: undefined }
+                              : t
+                          )
+                        )
+                        
+                        toast.success(`Removed dates from ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''} and ${campaignTasks.length} task${campaignTasks.length > 1 ? 's' : ''}`)
+                      } else {
+                        toast.success(`Removed dates from ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''}`)
+                      }
+                    } else {
+                      toast.success(`Removed dates from ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''}`)
+                    }
+                  } catch (error) {
+                    console.error('Error removing campaign dates:', error)
+                    toast.error('Failed to remove campaign dates')
+                  }
+                }}
+                className="flex-1"
+                title="Remove dates from all campaigns and tasks in this project"
+              >
+                <CalendarX className="mr-2" size={16} weight="bold" />
+                Unassign All
+              </Button>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              <strong>Sync:</strong> Set all campaigns to project dates • <strong>Unassign:</strong> Remove dates from campaigns and tasks
+            </p>
           </div>
 
           <Separator />

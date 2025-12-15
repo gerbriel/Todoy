@@ -16,6 +16,8 @@ interface DateCellProps {
   onDrop: (date: Date, e: React.DragEvent) => void
   maxVisibleEvents?: number
   isDragging?: boolean
+  isInFocusPeriod?: boolean
+  viewMode?: 'month' | 'week' | 'day'
   'data-calendar-cell'?: boolean
 }
 
@@ -29,7 +31,9 @@ export function DateCell({
   onDragOver,
   onDrop,
   maxVisibleEvents = 3,
-  isDragging = false
+  isDragging = false,
+  isInFocusPeriod = true,
+  viewMode = 'month'
 }: DateCellProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [showPopover, setShowPopover] = useState(false)
@@ -37,6 +41,9 @@ export function DateCell({
   const isCurrentMonth = isSameMonth(date, currentMonth)
   const isToday = isSameDay(date, today)
   const dayEvents = getEventsForDate(events, date)
+  
+  // Calculate min height based on view mode
+  const minHeight = viewMode === 'day' ? 700 : viewMode === 'week' ? 500 : 180
   
   const visibleEvents = dayEvents.slice(0, maxVisibleEvents)
   const hiddenCount = dayEvents.length - maxVisibleEvents
@@ -57,12 +64,16 @@ export function DateCell({
         data-calendar-cell
         data-date={date.toISOString()}
         className={cn(
-          'relative min-h-[120px] border-r border-b border-border p-2',
+          'relative border-b border-border p-2',
+          viewMode !== 'day' && 'border-r', // Only show right border if not day view
           'hover:bg-accent/5 transition-colors cursor-pointer',
           !isCurrentMonth && 'bg-muted/30',
           isToday && 'bg-accent/10',
-          isDragOver && 'bg-accent/20 ring-2 ring-accent ring-inset'
+          isDragOver && 'bg-accent/20 ring-2 ring-accent ring-inset',
+          // Only apply opacity dimming in month view
+          viewMode === 'month' && !isInFocusPeriod && 'opacity-40'
         )}
+        style={{ minHeight: `${minHeight}px` }}
         onClick={() => {
           // Don't trigger date click when dragging
           if (!isDragging) {
@@ -81,7 +92,7 @@ export function DateCell({
           onDrop(date, e)
         }}
       >
-        {/* Date number */}
+        {/* Date number - keep standard size across all views */}
         <div
           className={cn(
             'text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full',
@@ -101,21 +112,7 @@ export function DateCell({
             />
           ))}
           
-          {hiddenCount > 0 && (
-            <button
-              className={cn(
-                'text-xs font-medium px-2 py-1 rounded',
-                'hover:bg-accent hover:text-accent-foreground',
-                'transition-colors'
-              )}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowPopover(true)
-              }}
-            >
-              + {hiddenCount} more
-            </button>
-          )}
+          {/* Old "+ X more" button removed - now handled by ShowMoreButton in CalendarGrid */}
         </div>
       </div>
       

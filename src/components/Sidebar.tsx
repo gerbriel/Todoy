@@ -553,7 +553,7 @@ export default function Sidebar({
                 e.stopPropagation()
                 toggleProject(project.id)
               }}
-              className="p-1 hover:bg-muted rounded transition-colors"
+              className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
             >
               {isExpanded ? (
                 <CaretDown size={14} weight="bold" />
@@ -562,7 +562,7 @@ export default function Sidebar({
               )}
             </button>
           ) : (
-            <div className="w-6" />
+            <div className="w-6 flex-shrink-0" />
           )}
           
           {isEditing ? (

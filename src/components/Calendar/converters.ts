@@ -132,6 +132,7 @@ export function projectsToCalendarEvents(projects: Project[]): CalendarEvent[] {
 
 /**
  * Convert all data to calendar events
+ * Order: Projects first (at top), then Campaigns, then Tasks (at bottom)
  */
 export function convertToCalendarEvents(
   tasks: Task[],
@@ -139,8 +140,8 @@ export function convertToCalendarEvents(
   projects: Project[]
 ): CalendarEvent[] {
   return [
-    ...tasksToCalendarEvents(tasks, campaigns),
+    ...projectsToCalendarEvents(projects),
     ...campaignsToCalendarEvents(campaigns),
-    ...projectsToCalendarEvents(projects)
+    ...tasksToCalendarEvents(tasks, campaigns)
   ]
 }

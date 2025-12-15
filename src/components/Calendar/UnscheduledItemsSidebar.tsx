@@ -12,10 +12,14 @@ import {
   CheckSquare,
   Flag,
   Lightning,
-  ArrowsClockwise
+  ArrowsClockwise,
+  CalendarCheck,
+  CalendarX
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { tasksService } from '@/services/tasks.service'
+import { campaignsService } from '@/services/campaigns.service'
+import { projectsService } from '@/services/projects.service'
 import { toast } from 'sonner'
 import { addDays } from 'date-fns'
 
@@ -95,8 +99,10 @@ export default function UnscheduledItemsSidebar({
     scheduledCampaigns: false,
     scheduledTasks: false
   })
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
-  const [activeView, setActiveView] = useState<'unscheduled' | 'scheduled'>('unscheduled')
+  const [activeView, setActiveView] = useState<'unscheduled' | 'scheduled' | 'unassign'>('unscheduled')
 
   // Filter items without dates
   const unscheduledCampaigns = campaigns.filter(c => !c.startDate && !c.endDate)
@@ -139,6 +145,30 @@ export default function UnscheduledItemsSidebar({
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const toggleProject = (projectId: string) => {
+    setExpandedProjects(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId)
+      } else {
+        newSet.add(projectId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleCampaign = (campaignId: string) => {
+    setExpandedCampaigns(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(campaignId)) {
+        newSet.delete(campaignId)
+      } else {
+        newSet.add(campaignId)
+      }
+      return newSet
+    })
   }
 
   const handleAutoScheduleTasks = async () => {
@@ -398,6 +428,218 @@ export default function UnscheduledItemsSidebar({
     }
   }
 
+  const handleAutoScheduleProjectCampaigns = async (project: Project) => {
+    if (!setCampaigns) {
+      toast.error('Auto-schedule function not available')
+      return
+    }
+
+    if (!project.startDate || !project.endDate) {
+      toast.error('Project must have start and end dates assigned first')
+      return
+    }
+
+    // Find all campaigns belonging to this project
+    const projectCampaigns = campaigns.filter(c => c.projectId === project.id)
+
+    if (projectCampaigns.length === 0) {
+      toast.info('No campaigns found in this project')
+      return
+    }
+
+    try {
+      const startDateISO = project.startDate
+      const endDateISO = project.endDate
+
+      // Update all campaigns in database
+      for (const campaign of projectCampaigns) {
+        await campaignsService.update(campaign.id, {
+          startDate: startDateISO,
+          endDate: endDateISO
+        })
+      }
+
+      // Update local state
+      setCampaigns(prevCampaigns =>
+        prevCampaigns.map(c =>
+          projectCampaigns.some(pc => pc.id === c.id)
+            ? { ...c, startDate: startDateISO, endDate: endDateISO }
+            : c
+        )
+      )
+
+      toast.success(`Synced ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''} to project dates`)
+    } catch (error) {
+      console.error('Error syncing campaign dates:', error)
+      toast.error('Failed to sync campaign dates')
+    }
+  }
+
+  const handleUnassignTask = async (task: Task) => {
+    if (!setTasks) {
+      toast.error('Unassign function not available')
+      return
+    }
+
+    try {
+      await tasksService.update(task.id, {
+        startDate: null as any,
+        dueDate: null as any
+      })
+
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === task.id
+            ? { ...t, startDate: undefined, dueDate: undefined }
+            : t
+        )
+      )
+
+      toast.success('Task dates removed')
+    } catch (error) {
+      console.error('Error unassigning task:', error)
+      toast.error('Failed to remove task dates')
+    }
+  }
+
+  const handleUnassignCampaign = async (campaign: Campaign, cascadeTasks: boolean = false) => {
+    if (!setCampaigns) {
+      toast.error('Unassign function not available')
+      return
+    }
+
+    try {
+      // Unassign the campaign
+      await campaignsService.update(campaign.id, {
+        startDate: null as any,
+        endDate: null as any
+      })
+
+      setCampaigns(prevCampaigns =>
+        prevCampaigns.map(c =>
+          c.id === campaign.id
+            ? { ...c, startDate: undefined, endDate: undefined }
+            : c
+        )
+      )
+
+      // If cascading, also unassign all tasks in this campaign
+      if (cascadeTasks && setTasks) {
+        const campaignTasks = tasks.filter(t => t.campaignId === campaign.id && (t.startDate || t.dueDate))
+        
+        if (campaignTasks.length > 0) {
+          for (const task of campaignTasks) {
+            await tasksService.update(task.id, {
+              startDate: null as any,
+              dueDate: null as any
+            })
+          }
+
+          setTasks(prevTasks =>
+            prevTasks.map(t =>
+              campaignTasks.some(ct => ct.id === t.id)
+                ? { ...t, startDate: undefined, dueDate: undefined }
+                : t
+            )
+          )
+
+          toast.success(`Removed dates from campaign and ${campaignTasks.length} task${campaignTasks.length > 1 ? 's' : ''}`)
+        } else {
+          toast.success('Campaign dates removed')
+        }
+      } else {
+        toast.success('Campaign dates removed')
+      }
+    } catch (error) {
+      console.error('Error unassigning campaign:', error)
+      toast.error('Failed to remove campaign dates')
+    }
+  }
+
+  const handleUnassignProject = async (project: Project, cascadeCampaigns: boolean = false) => {
+    if (!setProjects) {
+      toast.error('Unassign function not available')
+      return
+    }
+
+    try {
+      // Unassign the project
+      await projectsService.update(project.id, {
+        startDate: null as any,
+        endDate: null as any
+      })
+
+      setProjects(prevProjects =>
+        prevProjects.map(p =>
+          p.id === project.id
+            ? { ...p, startDate: undefined, endDate: undefined }
+            : p
+        )
+      )
+
+      // If cascading, also unassign all campaigns (and their tasks) in this project
+      if (cascadeCampaigns && setCampaigns) {
+        const projectCampaigns = campaigns.filter(c => c.projectId === project.id && (c.startDate || c.endDate))
+        
+        if (projectCampaigns.length > 0) {
+          // Unassign all campaigns
+          for (const campaign of projectCampaigns) {
+            await campaignsService.update(campaign.id, {
+              startDate: null as any,
+              endDate: null as any
+            })
+          }
+
+          setCampaigns(prevCampaigns =>
+            prevCampaigns.map(c =>
+              projectCampaigns.some(pc => pc.id === c.id)
+                ? { ...c, startDate: undefined, endDate: undefined }
+                : c
+            )
+          )
+
+          // Also unassign all tasks in those campaigns
+          if (setTasks) {
+            const campaignIds = projectCampaigns.map(c => c.id)
+            const campaignTasks = tasks.filter(t => 
+              campaignIds.includes(t.campaignId || '') && (t.startDate || t.dueDate)
+            )
+
+            if (campaignTasks.length > 0) {
+              for (const task of campaignTasks) {
+                await tasksService.update(task.id, {
+                  startDate: null as any,
+                  dueDate: null as any
+                })
+              }
+
+              setTasks(prevTasks =>
+                prevTasks.map(t =>
+                  campaignTasks.some(ct => ct.id === t.id)
+                    ? { ...t, startDate: undefined, dueDate: undefined }
+                    : t
+                )
+              )
+
+              toast.success(`Removed dates from project, ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''}, and ${campaignTasks.length} task${campaignTasks.length > 1 ? 's' : ''}`)
+            } else {
+              toast.success(`Removed dates from project and ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''}`)
+            }
+          } else {
+            toast.success(`Removed dates from project and ${projectCampaigns.length} campaign${projectCampaigns.length > 1 ? 's' : ''}`)
+          }
+        } else {
+          toast.success('Project dates removed')
+        }
+      } else {
+        toast.success('Project dates removed')
+      }
+    } catch (error) {
+      console.error('Error unassigning project:', error)
+      toast.error('Failed to remove project dates')
+    }
+  }
+
   const handleReassignAll = async () => {
     if (!setTasks) {
       toast.error('Reassign function not available')
@@ -507,7 +749,7 @@ export default function UnscheduledItemsSidebar({
 
   return (
     <div className="border-l bg-background w-80 flex flex-col h-full overflow-hidden">
-      {/* Header with Toggle Buttons */}
+      {/* Header */}
       <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Items</h3>
@@ -516,34 +758,44 @@ export default function UnscheduledItemsSidebar({
           </Button>
         </div>
         
-        {/* View Toggle Buttons */}
-        <div className="flex gap-2">
+        {/* View Toggle Buttons - stacked layout */}
+        <div className="space-y-1">
           <Button
             variant={activeView === 'unscheduled' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveView('unscheduled')}
-            className="flex-1"
+            className="w-full justify-between"
           >
-            Unscheduled
+            <span>Unscheduled</span>
             {totalUnscheduled > 0 && (
-              <Badge variant={activeView === 'unscheduled' ? 'secondary' : 'outline'} className="ml-2">
+              <Badge variant={activeView === 'unscheduled' ? 'secondary' : 'outline'}>
                 {totalUnscheduled}
               </Badge>
             )}
           </Button>
-          <Button
-            variant={activeView === 'scheduled' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveView('scheduled')}
-            className="flex-1"
-          >
-            Scheduled
-            {totalScheduled > 0 && (
-              <Badge variant={activeView === 'scheduled' ? 'secondary' : 'outline'} className="ml-2">
-                {totalScheduled}
-              </Badge>
-            )}
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant={activeView === 'scheduled' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveView('scheduled')}
+              className="flex-1 justify-between"
+            >
+              <span>Scheduled</span>
+              {totalScheduled > 0 && (
+                <Badge variant={activeView === 'scheduled' ? 'secondary' : 'outline'}>
+                  {totalScheduled}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              variant={activeView === 'unassign' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveView('unassign')}
+              className="flex-1"
+            >
+              <span>Unassign</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -582,18 +834,57 @@ export default function UnscheduledItemsSidebar({
                     </Badge>
                   </button>
                   {expandedSections.campaigns && (
-                    <div className="space-y-1 ml-6">
-                      {unscheduledCampaigns.map(campaign => (
-                        <DraggableItem
-                          key={campaign.id}
-                          id={campaign.id}
-                          type="campaign"
-                          title={campaign.title}
-                          icon={<Target size={16} />}
-                          color="#10b981"
-                          metadata={{ campaignId: campaign.id }}
-                        />
-                      ))}
+                    <div className="space-y-2 ml-6">
+                      {unscheduledCampaigns.map(campaign => {
+                        const campaignTasks = unscheduledTasks.filter(t => t.campaignId === campaign.id)
+                        const isCampaignExpanded = expandedCampaigns.has(campaign.id)
+                        
+                        return (
+                          <div key={campaign.id} className="space-y-1">
+                            <div className="flex items-start gap-2">
+                              {campaignTasks.length > 0 && (
+                                <button
+                                  onClick={() => toggleCampaign(campaign.id)}
+                                  className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-2"
+                                >
+                                  {isCampaignExpanded ? (
+                                    <CaretDown size={14} weight="bold" />
+                                  ) : (
+                                    <CaretRight size={14} weight="bold" />
+                                  )}
+                                </button>
+                              )}
+                              {campaignTasks.length === 0 && <div className="w-6 flex-shrink-0" />}
+                              <div className="flex-1">
+                                <DraggableItem
+                                  id={campaign.id}
+                                  type="campaign"
+                                  title={campaign.title}
+                                  icon={<Target size={16} />}
+                                  color="#10b981"
+                                  metadata={{ campaignId: campaign.id }}
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Show tasks when expanded */}
+                            {isCampaignExpanded && campaignTasks.length > 0 && (
+                              <div className="ml-6 space-y-1">
+                                {campaignTasks.map(task => (
+                                  <DraggableItem
+                                    key={task.id}
+                                    id={task.id}
+                                    type="task"
+                                    title={task.title}
+                                    icon={<CheckSquare size={14} />}
+                                    metadata={{ taskId: task.id }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -618,18 +909,58 @@ export default function UnscheduledItemsSidebar({
                     </Badge>
                   </button>
                   {expandedSections.projects && (
-                    <div className="space-y-1 ml-6">
-                      {unscheduledProjects.map(project => (
-                        <DraggableItem
-                          key={project.id}
-                          id={project.id}
-                          type="project"
-                          title={project.title}
-                          icon={<Folder size={16} />}
-                          color="#8b5cf6"
-                          metadata={{ projectId: project.id }}
-                        />
-                      ))}
+                    <div className="space-y-2 ml-6">
+                      {unscheduledProjects.map(project => {
+                        const projectCampaigns = unscheduledCampaigns.filter(c => c.projectId === project.id)
+                        const isProjectExpanded = expandedProjects.has(project.id)
+                        
+                        return (
+                          <div key={project.id} className="space-y-1">
+                            <div className="flex items-start gap-2">
+                              {projectCampaigns.length > 0 && (
+                                <button
+                                  onClick={() => toggleProject(project.id)}
+                                  className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-2"
+                                >
+                                  {isProjectExpanded ? (
+                                    <CaretDown size={14} weight="bold" />
+                                  ) : (
+                                    <CaretRight size={14} weight="bold" />
+                                  )}
+                                </button>
+                              )}
+                              {projectCampaigns.length === 0 && <div className="w-6 flex-shrink-0" />}
+                              <div className="flex-1">
+                                <DraggableItem
+                                  id={project.id}
+                                  type="project"
+                                  title={project.title}
+                                  icon={<Folder size={16} />}
+                                  color="#8b5cf6"
+                                  metadata={{ projectId: project.id }}
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Show campaigns when expanded */}
+                            {isProjectExpanded && projectCampaigns.length > 0 && (
+                              <div className="ml-6 space-y-1">
+                                {projectCampaigns.map(campaign => (
+                                  <DraggableItem
+                                    key={campaign.id}
+                                    id={campaign.id}
+                                    type="campaign"
+                                    title={campaign.title}
+                                    icon={<Target size={14} />}
+                                    color="#10b981"
+                                    metadata={{ campaignId: campaign.id }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -797,22 +1128,60 @@ export default function UnscheduledItemsSidebar({
                     <div className="space-y-2 ml-6">
                       {scheduledProjects.map(project => {
                         const projectCampaigns = scheduledCampaigns.filter(c => c.projectId === project.id)
+                        const isProjectExpanded = expandedProjects.has(project.id)
+                        
                         return (
                           <div key={project.id} className="space-y-1">
                             <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2" style={{ borderLeftColor: '#8b5cf6' }}>
+                              {projectCampaigns.length > 0 && (
+                                <button
+                                  onClick={() => toggleProject(project.id)}
+                                  className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                >
+                                  {isProjectExpanded ? (
+                                    <CaretDown size={14} weight="bold" />
+                                  ) : (
+                                    <CaretRight size={14} weight="bold" />
+                                  )}
+                                </button>
+                              )}
+                              {projectCampaigns.length === 0 && <div className="w-6 flex-shrink-0" />}
                               <Folder size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                               <span className="text-xs font-medium flex-1 break-words leading-snug">{project.title}</span>
-                              {/* No auto functions for projects - manual only */}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5 flex-shrink-0"
+                                onClick={() => handleAutoScheduleProjectCampaigns(project)}
+                                title="Sync all campaigns to project dates"
+                              >
+                                <CalendarCheck size={12} weight="bold" />
+                              </Button>
                             </div>
                             
                             {/* Campaigns under this project */}
-                            {projectCampaigns.length > 0 && (
-                              <div className="ml-4 space-y-1">
+                            {isProjectExpanded && projectCampaigns.length > 0 && (
+                              <div className="ml-6 space-y-1">
                                 {projectCampaigns.map(campaign => {
                                   const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
+                                  const isCampaignExpanded = expandedCampaigns.has(campaign.id)
+                                  
                                   return (
                                     <div key={campaign.id} className="space-y-1">
                                       <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2" style={{ borderLeftColor: '#10b981' }}>
+                                        {campaignTasks.length > 0 && (
+                                          <button
+                                            onClick={() => toggleCampaign(campaign.id)}
+                                            className="w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                          >
+                                            {isCampaignExpanded ? (
+                                              <CaretDown size={12} weight="bold" />
+                                            ) : (
+                                              <CaretRight size={12} weight="bold" />
+                                            )}
+                                          </button>
+                                        )}
+                                        {campaignTasks.length === 0 && <div className="w-5 flex-shrink-0" />}
                                         <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                                         <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
                                         <Button
@@ -827,8 +1196,8 @@ export default function UnscheduledItemsSidebar({
                                       </div>
                                       
                                       {/* Tasks under this campaign */}
-                                      {campaignTasks.length > 0 && (
-                                        <div className="ml-4 space-y-1">
+                                      {isCampaignExpanded && campaignTasks.length > 0 && (
+                                        <div className="ml-5 space-y-1">
                                           {campaignTasks.map(task => (
                                             <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border">
                                               <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -858,6 +1227,284 @@ export default function UnscheduledItemsSidebar({
                   )}
                 </div>
               )}
+                </>
+              )}
+            </>
+          )}
+
+          {/* Unassign View */}
+          {activeView === 'unassign' && (
+            <>
+              {totalScheduled === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  <CalendarIcon size={32} className="mx-auto mb-2 opacity-50" />
+                  <p>No scheduled items to unassign</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <CalendarX size={16} />
+                      Remove Dates
+                    </h4>
+                  </div>
+
+                  {/* Unassign Projects */}
+                  {scheduledProjects.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSection('scheduledProjects')}
+                        className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {expandedSections.scheduledProjects ? (
+                          <CaretDown size={16} />
+                        ) : (
+                          <CaretRight size={16} />
+                        )}
+                        <Folder size={16} />
+                        <span>Projects</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {scheduledProjects.length}
+                        </Badge>
+                      </button>
+                      {expandedSections.scheduledProjects && (
+                        <div className="space-y-2 ml-6">
+                          {scheduledProjects.map(project => {
+                            const projectCampaigns = scheduledCampaigns.filter(c => c.projectId === project.id)
+                            const isProjectExpanded = expandedProjects.has(project.id)
+                            
+                            return (
+                              <div key={project.id} className="space-y-1">
+                                <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30 border-l-2 hover:bg-muted/50 transition-colors" style={{ borderLeftColor: '#8b5cf6' }}>
+                                  {projectCampaigns.length > 0 && (
+                                    <button
+                                      onClick={() => toggleProject(project.id)}
+                                      className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                    >
+                                      {isProjectExpanded ? (
+                                        <CaretDown size={14} weight="bold" />
+                                      ) : (
+                                        <CaretRight size={14} weight="bold" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {projectCampaigns.length === 0 && <div className="w-6 flex-shrink-0" />}
+                                  <Folder size={14} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                  <span className="text-xs font-medium flex-1 break-words leading-snug">{project.title}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-5 w-5 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleUnassignProject(project, true)}
+                                    title="Remove dates from project and all campaigns/tasks"
+                                  >
+                                    <CalendarX size={12} weight="bold" />
+                                  </Button>
+                                </div>
+                                
+                                {/* Show campaigns when expanded */}
+                                {isProjectExpanded && projectCampaigns.length > 0 && (
+                                  <div className="ml-6 space-y-1">
+                                    {projectCampaigns.map(campaign => {
+                                      const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
+                                      const isCampaignExpanded = expandedCampaigns.has(campaign.id)
+                                      
+                                      return (
+                                        <div key={campaign.id} className="space-y-1">
+                                          <div className="flex items-start gap-2 p-1.5 rounded-md bg-muted/20 border-l-2 hover:bg-muted/40 transition-colors" style={{ borderLeftColor: '#10b981' }}>
+                                            {campaignTasks.length > 0 && (
+                                              <button
+                                                onClick={() => toggleCampaign(campaign.id)}
+                                                className="w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                              >
+                                                {isCampaignExpanded ? (
+                                                  <CaretDown size={12} weight="bold" />
+                                                ) : (
+                                                  <CaretRight size={12} weight="bold" />
+                                                )}
+                                              </button>
+                                            )}
+                                            {campaignTasks.length === 0 && <div className="w-5 flex-shrink-0" />}
+                                            <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                            <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-4 w-4 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                              onClick={() => handleUnassignCampaign(campaign, true)}
+                                              title="Remove dates from campaign and all tasks"
+                                            >
+                                              <CalendarX size={10} weight="bold" />
+                                            </Button>
+                                          </div>
+                                          
+                                          {/* Show tasks when campaign is expanded */}
+                                          {isCampaignExpanded && campaignTasks.length > 0 && (
+                                            <div className="ml-5 space-y-0.5">
+                                              {campaignTasks.map(task => (
+                                                <div key={task.id} className="flex items-start gap-2 p-1 rounded-md hover:bg-muted/50 border-l border-transparent hover:border-border transition-colors">
+                                                  <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                  <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
+                                                  <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-3 w-3 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => handleUnassignTask(task)}
+                                                    title="Remove task dates"
+                                                  >
+                                                    <CalendarX size={8} weight="bold" />
+                                                  </Button>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                                
+                                {/* Show campaign count when collapsed */}
+                                {!isProjectExpanded && projectCampaigns.length > 0 && (
+                                  <div className="ml-10 text-xs text-muted-foreground">
+                                    Will also unassign {projectCampaigns.length} campaign{projectCampaigns.length > 1 ? 's' : ''} and their tasks
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Unassign Campaigns */}
+                  {scheduledCampaigns.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSection('scheduledCampaigns')}
+                        className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {expandedSections.scheduledCampaigns ? (
+                          <CaretDown size={16} />
+                        ) : (
+                          <CaretRight size={16} />
+                        )}
+                        <Target size={16} />
+                        <span>Campaigns</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {scheduledCampaigns.length}
+                        </Badge>
+                      </button>
+                      {expandedSections.scheduledCampaigns && (
+                        <div className="space-y-2 ml-6">
+                          {scheduledCampaigns.map(campaign => {
+                            const campaignTasks = scheduledTasks.filter(t => t.campaignId === campaign.id)
+                            const isCampaignExpanded = expandedCampaigns.has(campaign.id)
+                            
+                            return (
+                              <div key={campaign.id} className="space-y-1">
+                                <div className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border-l-2 hover:bg-muted/40 transition-colors" style={{ borderLeftColor: '#10b981' }}>
+                                  {campaignTasks.length > 0 && (
+                                    <button
+                                      onClick={() => toggleCampaign(campaign.id)}
+                                      className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                                    >
+                                      {isCampaignExpanded ? (
+                                        <CaretDown size={12} weight="bold" />
+                                      ) : (
+                                        <CaretRight size={12} weight="bold" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {campaignTasks.length === 0 && <div className="w-6 flex-shrink-0" />}
+                                  <Target size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                  <span className="text-xs flex-1 break-words leading-snug">{campaign.title}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-5 w-5 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleUnassignCampaign(campaign, true)}
+                                    title="Remove dates from campaign and all tasks"
+                                  >
+                                    <CalendarX size={12} weight="bold" />
+                                  </Button>
+                                </div>
+                                
+                                {/* Show tasks when expanded */}
+                                {isCampaignExpanded && campaignTasks.length > 0 && (
+                                  <div className="ml-6 space-y-0.5">
+                                    {campaignTasks.map(task => (
+                                      <div key={task.id} className="flex items-start gap-2 p-1 rounded-md hover:bg-muted/50 border-l border-transparent hover:border-border transition-colors">
+                                        <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                        <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-3 w-3 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() => handleUnassignTask(task)}
+                                          title="Remove task dates"
+                                        >
+                                          <CalendarX size={8} weight="bold" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {/* Show task count when collapsed */}
+                                {!isCampaignExpanded && campaignTasks.length > 0 && (
+                                  <div className="ml-8 text-xs text-muted-foreground">
+                                    Will also unassign {campaignTasks.length} task{campaignTasks.length > 1 ? 's' : ''}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Unassign Tasks */}
+                  {scheduledTasks.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => toggleSection('scheduledTasks')}
+                        className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {expandedSections.scheduledTasks ? (
+                          <CaretDown size={16} />
+                        ) : (
+                          <CaretRight size={16} />
+                        )}
+                        <CheckSquare size={16} />
+                        <span>Tasks</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {scheduledTasks.length}
+                        </Badge>
+                      </button>
+                      {expandedSections.scheduledTasks && (
+                        <div className="space-y-1 ml-6">
+                          {scheduledTasks.map(task => (
+                            <div key={task.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/50 border-l-2 border-transparent hover:border-border transition-colors">
+                              <CheckSquare size={10} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <span className="text-xs flex-1 break-words leading-snug">{task.title}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-4 w-4 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleUnassignTask(task)}
+                                title="Remove task dates"
+                              >
+                                <CalendarX size={10} weight="bold" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </>

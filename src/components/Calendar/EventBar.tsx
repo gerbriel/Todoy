@@ -107,7 +107,7 @@ export function EventBar({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'absolute h-8 px-2 py-1.5 cursor-pointer select-none',
+        'group absolute h-8 px-2 py-1.5 cursor-pointer select-none',
         'transition-all duration-150',
         'flex items-center gap-1',
         'border-t-2 border-b-2',
@@ -135,9 +135,11 @@ export function EventBar({
         <div
           data-resize-handle
           className={cn(
-            'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-20',
-            'hover:bg-current hover:opacity-30 active:opacity-50',
-            'transition-opacity'
+            'absolute left-0 top-0 bottom-0 w-5 cursor-ew-resize z-20',
+            'hover:bg-white hover:opacity-40 active:opacity-60',
+            'transition-all duration-150',
+            '-ml-2 rounded-l-md', // Extend beyond edge and match event radius
+            'group-hover:opacity-20' // Subtle hint when hovering over event
           )}
           onMouseDown={(e) => {
             e.stopPropagation()
@@ -153,14 +155,14 @@ export function EventBar({
         className="relative z-10 flex items-center gap-1 flex-1 min-w-0 px-1"
         style={{ pointerEvents: 'auto' }}
       >
-        {/* Event content */}
+        {/* Event content - aggressively remove any "+X more" patterns */}
         {showFullTitle ? (
           <span className="text-sm font-medium truncate flex-1">
-            {event.title}
+            {event.title.split(/[\+\s]*\d+\s*more/i)[0].trim()}
           </span>
         ) : (
           <span className="text-sm font-medium w-full text-center">
-            {event.title.substring(0, 3).toUpperCase()}
+            {event.title.split(/[\+\s]*\d+\s*more/i)[0].trim().substring(0, 3).toUpperCase()}
           </span>
         )}
         
@@ -175,9 +177,11 @@ export function EventBar({
         <div
           data-resize-handle
           className={cn(
-            'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize z-20',
-            'hover:bg-current hover:opacity-30 active:opacity-50',
-            'transition-opacity'
+            'absolute right-0 top-0 bottom-0 w-5 cursor-ew-resize z-20',
+            'hover:bg-white hover:opacity-40 active:opacity-60',
+            'transition-all duration-150',
+            '-mr-2 rounded-r-md', // Extend beyond edge and match event radius
+            'group-hover:opacity-20' // Subtle hint when hovering over event
           )}
           onMouseDown={(e) => {
             e.stopPropagation()

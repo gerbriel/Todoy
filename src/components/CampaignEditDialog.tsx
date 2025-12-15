@@ -8,7 +8,7 @@ import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
 import { Separator } from './ui/separator'
-import { Folder, Archive, DotsThree, ArrowsLeftRight, Copy } from '@phosphor-icons/react'
+import { Folder, Archive, DotsThree, ArrowsLeftRight, Copy, ArrowsClockwise, CalendarX } from '@phosphor-icons/react'
 import { campaignsService } from '@/services/campaigns.service'
 import { listsService } from '@/services/lists.service'
 import { tasksService } from '@/services/tasks.service'
@@ -25,6 +25,7 @@ import {
 } from './ui/dropdown-menu'
 import StageDateManager from './StageDateManager'
 import DuplicateDialog from './DuplicateDialog'
+import { addDays } from 'date-fns'
 
 interface CampaignEditDialogProps {
   campaign: Campaign
@@ -401,6 +402,109 @@ export default function CampaignEditDialog({
                 />
               </div>
             </div>
+            
+            {/* Date Management Actions */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!tasks || !setTasks) return
+                  
+                  if (!startDate || !endDate) {
+                    toast.error('Campaign must have dates assigned first')
+                    return
+                  }
+                  
+                  const campaignTasks = tasks.filter(t => t.campaignId === campaign.id && t.dueDate)
+                  
+                  if (campaignTasks.length === 0) {
+                    toast.info('No scheduled tasks found in this campaign')
+                    return
+                  }
+                  
+                  try {
+                    const campaignStartDate = new Date(startDate)
+                    const dueDate = addDays(campaignStartDate, 1)
+                    const startDateISO = campaignStartDate.toISOString()
+                    const dueDateISO = dueDate.toISOString()
+                    
+                    for (const task of campaignTasks) {
+                      await tasksService.update(task.id, {
+                        startDate: startDateISO,
+                        dueDate: dueDateISO
+                      })
+                    }
+                    
+                    setTasks(prevTasks =>
+                      prevTasks.map(t =>
+                        campaignTasks.some(ct => ct.id === t.id)
+                          ? { ...t, startDate: startDateISO, dueDate: dueDateISO }
+                          : t
+                      )
+                    )
+                    
+                    toast.success(`Reassigned ${campaignTasks.length} task(s) to campaign start date`)
+                  } catch (error) {
+                    console.error('Error reassigning tasks:', error)
+                    toast.error('Failed to reassign tasks')
+                  }
+                }}
+                className="flex-1"
+                title="Reassign all tasks to campaign start date"
+              >
+                <ArrowsClockwise className="mr-2" size={16} weight="bold" />
+                Reassign Tasks
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!tasks || !setTasks) return
+                  
+                  const campaignTasks = tasks.filter(t => t.campaignId === campaign.id && (t.startDate || t.dueDate))
+                  
+                  if (campaignTasks.length === 0) {
+                    toast.info('No scheduled tasks found in this campaign')
+                    return
+                  }
+                  
+                  try {
+                    for (const task of campaignTasks) {
+                      await tasksService.update(task.id, {
+                        startDate: null as any,
+                        dueDate: null as any
+                      })
+                    }
+                    
+                    setTasks(prevTasks =>
+                      prevTasks.map(t =>
+                        campaignTasks.some(ct => ct.id === t.id)
+                          ? { ...t, startDate: undefined, dueDate: undefined }
+                          : t
+                      )
+                    )
+                    
+                    toast.success(`Removed dates from ${campaignTasks.length} task(s)`)
+                  } catch (error) {
+                    console.error('Error removing task dates:', error)
+                    toast.error('Failed to remove task dates')
+                  }
+                }}
+                className="flex-1"
+                title="Remove dates from all tasks in this campaign"
+              >
+                <CalendarX className="mr-2" size={16} weight="bold" />
+                Unassign Tasks
+              </Button>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              <strong>Reassign:</strong> Move all scheduled tasks to campaign start date • <strong>Unassign:</strong> Remove dates from all tasks
+            </p>
           </div>
 
           <Separator />

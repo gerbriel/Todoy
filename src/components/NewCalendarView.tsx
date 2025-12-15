@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { tasksService } from '@/services/tasks.service'
 import { campaignsService } from '@/services/campaigns.service'
 import { projectsService } from '@/services/projects.service'
-import { shiftCampaignTasks, calculateShiftStats } from '@/lib/campaignDateShift'
+import { shiftCampaignTasks, calculateShiftStats, shiftProjectCampaignsAndTasks, calculateProjectShiftStats } from '@/lib/campaignDateShift'
 import TaskDetailDialog from './TaskDetailDialog'
 import CampaignEditDialog from './CampaignEditDialog'
 import ProjectEditDialog from './ProjectEditDialog'
@@ -111,6 +111,33 @@ export default function NewCalendarView({
     try {
       // Handle task moves - update both startDate and dueDate
       if (event.type === 'task' && event.metadata.taskId) {
+        // Validate: Task must have campaign and campaign must have dates
+        const task = tasks.find(t => t.id === event.metadata.taskId)
+        if (!task) {
+          toast.error('Task not found')
+          return
+        }
+        
+        if (!task.campaignId) {
+          toast.error('Task must be assigned to a campaign')
+          return
+        }
+        
+        const campaign = campaigns.find(c => c.id === task.campaignId)
+        if (!campaign || !campaign.startDate || !campaign.endDate) {
+          toast.error('Campaign must have dates assigned')
+          return
+        }
+        
+        // Validate: Task dates must be within campaign dates
+        const campaignStart = startOfDay(new Date(campaign.startDate))
+        const campaignEnd = startOfDay(new Date(campaign.endDate))
+        
+        if (newStartDate < campaignStart || newEndDate > campaignEnd) {
+          toast.error(`Task must remain within campaign dates (${new Date(campaign.startDate).toLocaleDateString()} - ${new Date(campaign.endDate).toLocaleDateString()})`)
+          return
+        }
+        
         await tasksService.update(event.metadata.taskId, {
           startDate: newStartDate.toISOString(),
           dueDate: newEndDate.toISOString()
@@ -138,12 +165,29 @@ export default function NewCalendarView({
         }
         console.log('✅ Campaign found:', campaign.title)
         
+        // Validate: If campaign has a project, must be within project dates
+        if (campaign.projectId) {
+          const project = projects.find(p => p.id === campaign.projectId)
+          if (!project || !project.startDate || !project.endDate) {
+            toast.error('Project must have dates assigned')
+            return
+          }
+          
+          const projectStart = startOfDay(new Date(project.startDate))
+          const projectEnd = startOfDay(new Date(project.endDate))
+          
+          if (newStartDate < projectStart || newEndDate > projectEnd) {
+            toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+            return
+          }
+        }
+        
         const updates: Partial<Campaign> = {
           startDate: newStartDate.toISOString(),
           endDate: newEndDate.toISOString()
         }
         
-        console.log(' Updating campaign with:', updates)
+        console.log('📝 Updating campaign with:', updates)
         await campaignsService.update(event.metadata.campaignId, updates)
         console.log('✅ Database updated')
         
@@ -209,20 +253,90 @@ export default function NewCalendarView({
       
       // Handle project moves
       if (event.type === 'project' && event.metadata.projectId && setProjects) {
+        const project = projects.find(p => p.id === event.metadata.projectId)
+        if (!project) {
+          toast.error('Project not found')
+          return
+        }
+
         await projectsService.update(event.metadata.projectId, {
           startDate: newStartDate.toISOString(),
           endDate: newEndDate.toISOString()
         })
         
+        // Shift all child campaigns and tasks if project had a previous start date
+        const oldStartDate = project.startDate
+        const newStartDateISO = newStartDate.toISOString()
+        const newEndDateISO = newEndDate.toISOString()
+        
+        if (oldStartDate && setCampaigns && setTasks) {
+          const stats = calculateProjectShiftStats(campaigns, tasks, project.id, oldStartDate, newStartDateISO)
+          
+          if (stats.campaignsAffected > 0 || stats.tasksAffected > 0) {
+            console.log(`🔄 Shifting ${stats.campaignsAffected} campaign(s) and ${stats.tasksAffected} task(s)...`)
+            
+            const { campaigns: updatedCampaigns, tasks: updatedTasks } = shiftProjectCampaignsAndTasks(
+              campaigns,
+              tasks,
+              project.id,
+              oldStartDate,
+              newStartDateISO,
+              newEndDateISO,
+              true // clamp to project bounds
+            )
+            
+            // Update campaigns in database
+            const campaignsToUpdate = updatedCampaigns.filter(c => 
+              c.projectId === project.id && c.startDate
+            )
+            
+            for (const campaign of campaignsToUpdate) {
+              await campaignsService.update(campaign.id, {
+                startDate: campaign.startDate,
+                endDate: campaign.endDate
+              })
+            }
+            
+            // Update tasks in database
+            const tasksToUpdate = updatedTasks.filter(t => {
+              const campaign = updatedCampaigns.find(c => c.id === t.campaignId)
+              return campaign && campaign.projectId === project.id && t.dueDate
+            })
+            
+            for (const task of tasksToUpdate) {
+              await tasksService.update(task.id, {
+                startDate: task.startDate,
+                dueDate: task.dueDate
+              })
+            }
+            
+            // Update local state
+            setCampaigns(() => updatedCampaigns)
+            setTasks(() => updatedTasks)
+            console.log('✅ Campaigns and tasks shifted and updated')
+          }
+        }
+
         setProjects(prevProjects =>
           prevProjects.map(p =>
             p.id === event.metadata.projectId
-              ? { ...p, startDate: newStartDate.toISOString(), endDate: newEndDate.toISOString() }
+              ? { ...p, startDate: newStartDateISO, endDate: newEndDateISO }
               : p
           )
         )
         
-        toast.success('Project dates updated')
+        const stats = oldStartDate 
+          ? calculateProjectShiftStats(campaigns, tasks, project.id, oldStartDate, newStartDateISO)
+          : null
+        
+        if (stats && (stats.campaignsAffected > 0 || stats.tasksAffected > 0)) {
+          toast.success(
+            `Project moved. ${stats.campaignsAffected} campaign(s) and ${stats.tasksAffected} task(s) shifted ${Math.abs(stats.daysDifference)} day(s) ${stats.direction}`
+          )
+        } else {
+          toast.success('Project dates updated')
+        }
+        
         return
       }
       
@@ -313,6 +427,33 @@ export default function NewCalendarView({
     try {
       // Handle task resizes - update both startDate and dueDate
       if (event.type === 'task' && event.metadata.taskId) {
+        // Validate: Task must have campaign and campaign must have dates
+        const task = tasks.find(t => t.id === event.metadata.taskId)
+        if (!task) {
+          toast.error('Task not found')
+          return
+        }
+        
+        if (!task.campaignId) {
+          toast.error('Task must be assigned to a campaign')
+          return
+        }
+        
+        const campaign = campaigns.find(c => c.id === task.campaignId)
+        if (!campaign || !campaign.startDate || !campaign.endDate) {
+          toast.error('Campaign must have dates assigned')
+          return
+        }
+        
+        // Validate: Task dates must be within campaign dates
+        const campaignStart = startOfDay(new Date(campaign.startDate))
+        const campaignEnd = startOfDay(new Date(campaign.endDate))
+        
+        if (newStartDate < campaignStart || newEndDate > campaignEnd) {
+          toast.error(`Task must remain within campaign dates (${new Date(campaign.startDate).toLocaleDateString()} - ${new Date(campaign.endDate).toLocaleDateString()})`)
+          return
+        }
+        
         await tasksService.update(event.metadata.taskId, {
           startDate: newStartDate.toISOString(),
           dueDate: newEndDate.toISOString()
@@ -334,6 +475,23 @@ export default function NewCalendarView({
       if (event.type === 'campaign' && event.metadata.campaignId) {
         const campaign = campaigns.find(c => c.id === event.metadata.campaignId)
         if (!campaign) return
+        
+        // Validate: If campaign has a project, must be within project dates
+        if (campaign.projectId) {
+          const project = projects.find(p => p.id === campaign.projectId)
+          if (!project || !project.startDate || !project.endDate) {
+            toast.error('Project must have dates assigned')
+            return
+          }
+          
+          const projectStart = startOfDay(new Date(project.startDate))
+          const projectEnd = startOfDay(new Date(project.endDate))
+          
+          if (newStartDate < projectStart || newEndDate > projectEnd) {
+            toast.error(`Campaign must remain within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+            return
+          }
+        }
         
         const updates: Partial<Campaign> = {
           startDate: newStartDate.toISOString(),
@@ -480,6 +638,39 @@ export default function NewCalendarView({
       const endDate = startOfDay(addDays(date, 1))
       
       if (item.type === 'task' && item.metadata.taskId) {
+        // Validate: Task must have a campaign assigned
+        const task = tasks.find(t => t.id === item.metadata.taskId)
+        if (!task) {
+          toast.error('Task not found')
+          return
+        }
+        
+        if (!task.campaignId) {
+          toast.error('Task must be assigned to a campaign before scheduling')
+          return
+        }
+        
+        // Validate: Campaign must have dates
+        const campaign = campaigns.find(c => c.id === task.campaignId)
+        if (!campaign) {
+          toast.error('Campaign not found')
+          return
+        }
+        
+        if (!campaign.startDate || !campaign.endDate) {
+          toast.error('Campaign must have dates assigned before scheduling tasks')
+          return
+        }
+        
+        // Validate: Task dates must be within campaign dates
+        const campaignStart = startOfDay(new Date(campaign.startDate))
+        const campaignEnd = startOfDay(new Date(campaign.endDate))
+        
+        if (startDate < campaignStart || endDate > campaignEnd) {
+          toast.error(`Task must be scheduled within campaign dates (${new Date(campaign.startDate).toLocaleDateString()} - ${new Date(campaign.endDate).toLocaleDateString()})`)
+          return
+        }
+        
         await tasksService.update(item.metadata.taskId, {
           startDate: startDate.toISOString(),
           dueDate: endDate.toISOString()
@@ -495,6 +686,36 @@ export default function NewCalendarView({
         
         toast.success('Task scheduled')
       } else if (item.type === 'campaign' && item.metadata.campaignId && setCampaigns) {
+        // Validate: Campaign must have a project assigned if there are projects
+        const campaign = campaigns.find(c => c.id === item.metadata.campaignId)
+        if (!campaign) {
+          toast.error('Campaign not found')
+          return
+        }
+        
+        if (campaign.projectId) {
+          // Campaign has a project - validate project has dates
+          const project = projects.find(p => p.id === campaign.projectId)
+          if (!project) {
+            toast.error('Project not found')
+            return
+          }
+          
+          if (!project.startDate || !project.endDate) {
+            toast.error('Project must have dates assigned before scheduling campaigns')
+            return
+          }
+          
+          // Validate: Campaign dates must be within project dates
+          const projectStart = startOfDay(new Date(project.startDate))
+          const projectEnd = startOfDay(new Date(project.endDate))
+          
+          if (startDate < projectStart || endDate > projectEnd) {
+            toast.error(`Campaign must be scheduled within project dates (${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()})`)
+            return
+          }
+        }
+        
         await campaignsService.update(item.metadata.campaignId, {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString()

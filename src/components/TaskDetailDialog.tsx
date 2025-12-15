@@ -7,7 +7,7 @@ import { Label as UILabel } from './ui/label'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
-import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight, UploadSimple, Copy } from '@phosphor-icons/react'
+import { Target, Trash, ChatCircle, Paperclip, Tag, Plus, X, Link, File, Archive, DotsThree, ArrowsLeftRight, UploadSimple, Copy, Lightning, CalendarX } from '@phosphor-icons/react'
 import { Separator } from './ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
@@ -15,6 +15,7 @@ import { ScrollArea } from './ui/scroll-area'
 import { generateId, formatDate } from '@/lib/helpers'
 import { tasksService } from '@/services/tasks.service'
 import { attachmentsService } from '@/services/attachments.service'
+import { addDays } from 'date-fns'
 import ConfirmDialog from './ConfirmDialog'
 import DuplicateDialog from './DuplicateDialog'
 import {
@@ -473,6 +474,105 @@ export default function TaskDetailDialog({
                   />
                 </div>
               </div>
+              
+              {/* Date Management Actions */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!task.campaignId) {
+                      toast.error('Task must be assigned to a campaign')
+                      return
+                    }
+                    
+                    const campaign = campaigns.find(c => c.id === task.campaignId)
+                    
+                    if (!campaign) {
+                      toast.error('Campaign not found')
+                      return
+                    }
+                    
+                    if (!campaign.startDate || !campaign.endDate) {
+                      toast.error('Campaign must have start and end dates assigned first')
+                      return
+                    }
+                    
+                    try {
+                      const campaignStartDate = new Date(campaign.startDate)
+                      const dueDateVal = addDays(campaignStartDate, 1)
+                      
+                      const updates = {
+                        startDate: campaignStartDate.toISOString(),
+                        dueDate: dueDateVal.toISOString()
+                      }
+                      
+                      await tasksService.update(task.id, updates)
+                      
+                      setTasks(prevTasks =>
+                        prevTasks.map(t =>
+                          t.id === task.id
+                            ? { ...t, ...updates }
+                            : t
+                        )
+                      )
+                      
+                      setStartDate(campaignStartDate.toISOString().split('T')[0])
+                      setDueDate(dueDateVal.toISOString().split('T')[0])
+                      
+                      toast.success(`Task reassigned to ${campaign.title} start date`)
+                    } catch (error) {
+                      console.error('Error reassigning task:', error)
+                      toast.error('Failed to reassign task')
+                    }
+                  }}
+                  className="flex-1"
+                  title="Reassign task to campaign start date"
+                >
+                  <Lightning className="mr-2" size={16} weight="bold" />
+                  Reassign to Campaign
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await tasksService.update(task.id, {
+                        startDate: null as any,
+                        dueDate: null as any
+                      })
+                      
+                      setTasks(prevTasks =>
+                        prevTasks.map(t =>
+                          t.id === task.id
+                            ? { ...t, startDate: undefined, dueDate: undefined }
+                            : t
+                        )
+                      )
+                      
+                      setStartDate('')
+                      setDueDate('')
+                      
+                      toast.success('Task dates removed')
+                    } catch (error) {
+                      console.error('Error removing task dates:', error)
+                      toast.error('Failed to remove task dates')
+                    }
+                  }}
+                  className="flex-1"
+                  title="Remove dates from this task"
+                >
+                  <CalendarX className="mr-2" size={16} weight="bold" />
+                  Unassign Dates
+                </Button>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                <strong>Reassign:</strong> Move task to campaign start date • <strong>Unassign:</strong> Remove all dates
+              </p>
 
               <Separator />
 

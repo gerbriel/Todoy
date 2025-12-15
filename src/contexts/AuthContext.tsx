@@ -149,11 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             setOrganization(org)
 
-            // Load all org members
+            // Load all org members using RPC function to bypass RLS
             const { data: allMembers } = await supabase
-              .from('org_members')
-              .select('*')
-              .eq('org_id', orgData.id)
+              .rpc('get_my_org_members')
 
             if (allMembers) {
               setOrgMembers(

@@ -447,8 +447,8 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={campaigns || []}
-                  tasks={tasks || []}
+                  campaigns={[]}
+                  tasks={[]}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
@@ -488,7 +488,7 @@ function MainApp() {
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={filters}
-                  projects={projects || []}
+                  projects={[]}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="all"
@@ -517,7 +517,7 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={campaigns || []}
+                  campaigns={[]}
                   tasks={tasks || []}
                   setTasks={setTasks}
                   labels={labels || []}
@@ -525,7 +525,7 @@ function MainApp() {
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={filters}
-                  projects={projects || []}
+                  projects={[]}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="all"
@@ -606,15 +606,15 @@ function MainApp() {
                 />
               ) : (
                 <NewCalendarView ref={calendarViewRef}
-                  campaigns={campaigns || []}
-                  tasks={tasks || []}
+                  campaigns={(campaigns || []).filter(c => c.completed)}
+                  tasks={(tasks || []).filter(t => t.completed)}
                   setTasks={setTasks}
                   labels={labels || []}
                   setLabels={setLabels}
                   lists={lists || []}
                   activeCampaignId={null}
                   filters={filters}
-                  projects={projects || []}
+                  projects={(projects || []).filter(p => p.completed)}
                   setProjects={setProjects}
                   users={users || []}
                   viewLevel="all"

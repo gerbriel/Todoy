@@ -61,16 +61,16 @@ const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }:
       draggable
       onDragStart={handleDragStart}
       className={cn(
-        "flex items-start gap-1.5 p-1.5 rounded-md cursor-move",
+        "flex items-center gap-1.5 p-3 rounded-md cursor-move min-h-[64px]",
         "hover:bg-accent transition-colors",
         "border border-transparent hover:border-border"
       )}
       style={{ borderLeftColor: color, borderLeftWidth: color ? 3 : 1 }}
     >
-      <div className="text-muted-foreground flex-shrink-0 mt-0.5">
+      <div className="text-muted-foreground flex-shrink-0">
         {icon}
       </div>
-      <span className="text-sm flex-1 break-words leading-tight">{title}</span>
+      <span className="text-sm flex-1 break-words leading-normal">{title}</span>
       {actionButton && (
         <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           {actionButton}
@@ -748,16 +748,9 @@ export default function UnscheduledItemsSidebar({
   }
 
   return (
-    <div className="border-l bg-background w-80 flex flex-col h-full overflow-hidden">
-      {/* Header */}
+    <div className="bg-background w-full md:w-80 md:border-l flex flex-col h-full overflow-hidden">
+      {/* Header - removed title and toggle button */}
       <div className="p-2 border-b flex-shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-sm">Items</h3>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
-            <CaretRight size={16} />
-          </Button>
-        </div>
-        
         {/* View Toggle Buttons - stacked layout */}
         <div className="space-y-0.5">
           <Button

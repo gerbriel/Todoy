@@ -8,7 +8,6 @@ import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
-import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
 import { toast } from 'sonner'
 import { 
@@ -321,10 +320,9 @@ export default function OrganizationView({
           </TabsList>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-4 sm:p-6">
-              <TabsContent value="overview" className="mt-0 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 sm:p-6">
+            <TabsContent value="overview" className="mt-0 space-y-6 flex-none">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Organization Details</h3>
                 <div className="space-y-3 bg-muted/30 rounded-lg p-3 sm:p-4">
@@ -355,7 +353,7 @@ export default function OrganizationView({
               </div>
             </TabsContent>
 
-            <TabsContent value="members" className="mt-0 space-y-4">
+            <TabsContent value="members" className="mt-0 space-y-4 flex-none">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Team Members</h3>
                 {isAdmin && (
@@ -446,7 +444,7 @@ export default function OrganizationView({
               </div>
             </TabsContent>
 
-            <TabsContent value="invites" className="mt-0 space-y-4">
+            <TabsContent value="invites" className="mt-0 space-y-4 flex-none">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Pending Invitations</h3>
                 {isAdmin && (
@@ -552,7 +550,7 @@ export default function OrganizationView({
               )}
             </TabsContent>
 
-            <TabsContent value="content" className="mt-0 space-y-6">
+            <TabsContent value="content" className="mt-0 space-y-6 flex-none">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <h3 className="text-lg font-semibold">Organization Content</h3>
                 <Select value={selectedMember} onValueChange={setSelectedMember}>
@@ -685,7 +683,7 @@ export default function OrganizationView({
               </div>
             </TabsContent>
 
-            <TabsContent value="reports" className="mt-0 space-y-6">
+            <TabsContent value="reports" className="mt-0 space-y-6 flex-none">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -976,7 +974,6 @@ export default function OrganizationView({
               </div>
             </TabsContent>
           </div>
-        </ScrollArea>
         </div>
       </Tabs>
 

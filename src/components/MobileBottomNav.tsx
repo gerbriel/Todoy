@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X, Plus, Copy } from '@phosphor-icons/react'
+import { Folder, Kanban, CheckSquare, Archive, Tag, Briefcase, Stack, X, Plus, Copy, ListBullets } from '@phosphor-icons/react'
 import { NavigationView } from '@/App'
 import { cn } from '@/lib/utils'
 import Sidebar from './Sidebar'
@@ -29,6 +29,7 @@ interface MobileBottomNavProps {
   onNavigateToCampaign: (campaignId: string) => void
   filters: FilterState
   setFilters: (filters: FilterState) => void
+  onShowItemsPanel?: () => void
 }
 
 type SlideView = 'projects' | 'campaigns' | 'tasks' | 'archive' | 'labels' | 'organization' | null
@@ -55,19 +56,19 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
     <>
       {/* Bottom Navigation Bar - Mobile Only */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-[60]">
-        <div className="grid grid-cols-3 gap-2 px-4 py-1">
+        <div className="grid grid-cols-4 gap-1 px-4 py-1">
           {/* Projects */}
           <button
             onClick={() => openSlide('projects', 'left')}
             className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors",
+              "flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors",
               props.navigationView === 'all-projects' || props.navigationView === 'project'
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
-            <Folder size={24} weight="duotone" />
-            <span className="text-xs mt-1">Projects</span>
+            <Folder size={20} weight="duotone" />
+            <span className="text-[10px] mt-0.5">Projects</span>
           </button>
 
           {/* Add Campaign */}
@@ -76,10 +77,10 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
               // TODO: Open create campaign dialog
               console.log('Add Campaign clicked')
             }}
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <Plus size={24} weight="bold" />
-            <span className="text-xs mt-1">Campaign</span>
+            <Plus size={20} weight="bold" />
+            <span className="text-[10px] mt-0.5">Campaign</span>
           </button>
 
           {/* Add Project */}
@@ -88,10 +89,19 @@ export default function MobileBottomNav(props: MobileBottomNavProps) {
               // TODO: Open create project dialog
               console.log('Add Project clicked')
             }}
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <Plus size={24} weight="bold" />
-            <span className="text-xs mt-1">Project</span>
+            <Plus size={20} weight="bold" />
+            <span className="text-[10px] mt-0.5">Project</span>
+          </button>
+
+          {/* Items Panel */}
+          <button
+            onClick={() => props.onShowItemsPanel?.()}
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+          >
+            <ListBullets size={20} weight="bold" />
+            <span className="text-[10px] mt-0.5">Items</span>
           </button>
         </div>
       </nav>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Project, Campaign, List, Task, Label, ViewMode, FilterState, StageTemplate, OrgMember, OrgInvite } from './lib/types'
 import { Toaster } from './components/ui/sonner'
 import { toast } from 'sonner'
@@ -7,7 +7,7 @@ import LoginView from './components/LoginView'
 import Sidebar from './components/Sidebar'
 import MobileBottomNav from './components/MobileBottomNav'
 import KanbanView from './components/KanbanView'
-import NewCalendarView from './components/NewCalendarView'
+import NewCalendarView, { CalendarViewHandle } from './components/NewCalendarView'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import ProjectsView from './components/ProjectsView'
@@ -173,6 +173,10 @@ function MainApp() {
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(() => {
     return localStorage.getItem('activeCampaignId') || null
   })
+  
+  // Ref for calendar view to access its methods
+  const calendarViewRef = useRef<CalendarViewHandle>(null)
+  
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const cached = localStorage.getItem('viewMode')
     return (cached as ViewMode) || 'kanban'
@@ -396,6 +400,7 @@ function MainApp() {
           onNavigateToCampaign={handleNavigateToCampaign}
           filters={filters}
           setFilters={setFilters}
+          onShowItemsPanel={() => calendarViewRef.current?.openItemsPanel()}
         />
         
         <Header
@@ -441,7 +446,7 @@ function MainApp() {
                   onNavigateToProject={handleNavigateToProject}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -474,7 +479,7 @@ function MainApp() {
                   onNavigateToCampaign={handleNavigateToCampaign}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -511,7 +516,7 @@ function MainApp() {
                   orgId={organization?.id || ''}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -552,7 +557,7 @@ function MainApp() {
                   orgId={organization?.id || ''}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -600,7 +605,7 @@ function MainApp() {
                   onNavigateToProject={handleNavigateToProject}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -666,7 +671,7 @@ function MainApp() {
                   onNavigateBack={handleNavigateToAllProjects}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}
@@ -707,7 +712,7 @@ function MainApp() {
                   onNavigateBack={activeProject ? () => handleNavigateToProject(activeProject.id) : handleNavigateToAllProjects}
                 />
               ) : (
-                <NewCalendarView
+                <NewCalendarView ref={calendarViewRef}
                   campaigns={campaigns || []}
                   tasks={tasks || []}
                   setTasks={setTasks}

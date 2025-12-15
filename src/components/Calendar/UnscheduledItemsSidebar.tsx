@@ -61,7 +61,7 @@ const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }:
       draggable
       onDragStart={handleDragStart}
       className={cn(
-        "flex items-start gap-2 p-2 rounded-md cursor-move",
+        "flex items-start gap-1.5 p-1.5 rounded-md cursor-move",
         "hover:bg-accent transition-colors",
         "border border-transparent hover:border-border"
       )}
@@ -70,7 +70,7 @@ const DraggableItem = ({ id, type, title, icon, color, metadata, actionButton }:
       <div className="text-muted-foreground flex-shrink-0 mt-0.5">
         {icon}
       </div>
-      <span className="text-sm flex-1 break-words leading-snug">{title}</span>
+      <span className="text-sm flex-1 break-words leading-tight">{title}</span>
       {actionButton && (
         <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           {actionButton}
@@ -750,21 +750,21 @@ export default function UnscheduledItemsSidebar({
   return (
     <div className="border-l bg-background w-80 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold">Items</h3>
-          <Button variant="ghost" size="icon" onClick={onToggle}>
-            <CaretRight size={20} />
+      <div className="p-2 border-b flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-sm">Items</h3>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
+            <CaretRight size={16} />
           </Button>
         </div>
         
         {/* View Toggle Buttons - stacked layout */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <Button
             variant={activeView === 'unscheduled' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveView('unscheduled')}
-            className="w-full justify-between"
+            className="w-full justify-between h-8 text-xs"
           >
             <span>Unscheduled</span>
             {totalUnscheduled > 0 && (
@@ -773,16 +773,16 @@ export default function UnscheduledItemsSidebar({
               </Badge>
             )}
           </Button>
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             <Button
               variant={activeView === 'scheduled' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setActiveView('scheduled')}
-              className="flex-1 justify-between"
+              className="flex-1 justify-between h-8 text-xs"
             >
               <span>Scheduled</span>
               {totalScheduled > 0 && (
-                <Badge variant={activeView === 'scheduled' ? 'secondary' : 'outline'}>
+                <Badge variant={activeView === 'scheduled' ? 'secondary' : 'outline'} className="text-[10px] h-4">
                   {totalScheduled}
                 </Badge>
               )}
@@ -791,7 +791,7 @@ export default function UnscheduledItemsSidebar({
               variant={activeView === 'unassign' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setActiveView('unassign')}
-              className="flex-1"
+              className="flex-1 h-8 text-xs"
             >
               <span>Unassign</span>
             </Button>
@@ -802,7 +802,7 @@ export default function UnscheduledItemsSidebar({
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
+          <div className="p-2 space-y-2">
           
           {/* Unscheduled View */}
           {activeView === 'unscheduled' && (
@@ -820,47 +820,47 @@ export default function UnscheduledItemsSidebar({
                 <div>
                   <button
                     onClick={() => toggleSection('campaigns')}
-                    className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                    className="flex items-center gap-1.5 w-full text-xs font-medium mb-1 hover:text-foreground text-muted-foreground transition-colors"
                   >
                     {expandedSections.campaigns ? (
-                      <CaretDown size={16} />
+                      <CaretDown size={14} />
                     ) : (
-                      <CaretRight size={16} />
+                      <CaretRight size={14} />
                     )}
-                    <Target size={16} />
+                    <Target size={14} />
                     <span>Campaigns</span>
-                    <Badge variant="secondary" className="ml-auto">
+                    <Badge variant="secondary" className="ml-auto text-[10px] h-4">
                       {unscheduledCampaigns.length}
                     </Badge>
                   </button>
                   {expandedSections.campaigns && (
-                    <div className="space-y-2 ml-6">
+                    <div className="space-y-0.5 ml-4">
                       {unscheduledCampaigns.map(campaign => {
                         const campaignTasks = unscheduledTasks.filter(t => t.campaignId === campaign.id)
                         const isCampaignExpanded = expandedCampaigns.has(campaign.id)
                         
                         return (
-                          <div key={campaign.id} className="space-y-1">
-                            <div className="flex items-start gap-2">
+                          <div key={campaign.id} className="space-y-0.5">
+                            <div className="flex items-start gap-1.5">
                               {campaignTasks.length > 0 && (
                                 <button
                                   onClick={() => toggleCampaign(campaign.id)}
-                                  className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-2"
+                                  className="w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-1.5"
                                 >
                                   {isCampaignExpanded ? (
-                                    <CaretDown size={14} weight="bold" />
+                                    <CaretDown size={12} weight="bold" />
                                   ) : (
-                                    <CaretRight size={14} weight="bold" />
+                                    <CaretRight size={12} weight="bold" />
                                   )}
                                 </button>
                               )}
-                              {campaignTasks.length === 0 && <div className="w-6 flex-shrink-0" />}
+                              {campaignTasks.length === 0 && <div className="w-5 flex-shrink-0" />}
                               <div className="flex-1">
                                 <DraggableItem
                                   id={campaign.id}
                                   type="campaign"
                                   title={campaign.title}
-                                  icon={<Target size={16} />}
+                                  icon={<Target size={14} />}
                                   color="#10b981"
                                   metadata={{ campaignId: campaign.id }}
                                 />
@@ -869,14 +869,14 @@ export default function UnscheduledItemsSidebar({
                             
                             {/* Show tasks when expanded */}
                             {isCampaignExpanded && campaignTasks.length > 0 && (
-                              <div className="ml-6 space-y-1">
+                              <div className="ml-5 space-y-0.5">
                                 {campaignTasks.map(task => (
                                   <DraggableItem
                                     key={task.id}
                                     id={task.id}
                                     type="task"
                                     title={task.title}
-                                    icon={<CheckSquare size={14} />}
+                                    icon={<CheckSquare size={12} />}
                                     metadata={{ taskId: task.id }}
                                   />
                                 ))}
@@ -895,47 +895,47 @@ export default function UnscheduledItemsSidebar({
                 <div>
                   <button
                     onClick={() => toggleSection('projects')}
-                    className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                    className="flex items-center gap-1.5 w-full text-xs font-medium mb-1 hover:text-foreground text-muted-foreground transition-colors"
                   >
                     {expandedSections.projects ? (
-                      <CaretDown size={16} />
+                      <CaretDown size={14} />
                     ) : (
-                      <CaretRight size={16} />
+                      <CaretRight size={14} />
                     )}
-                    <Folder size={16} />
+                    <Folder size={14} />
                     <span>Projects</span>
-                    <Badge variant="secondary" className="ml-auto">
+                    <Badge variant="secondary" className="ml-auto text-[10px] h-4">
                       {unscheduledProjects.length}
                     </Badge>
                   </button>
                   {expandedSections.projects && (
-                    <div className="space-y-2 ml-6">
+                    <div className="space-y-0.5 ml-4">
                       {unscheduledProjects.map(project => {
                         const projectCampaigns = unscheduledCampaigns.filter(c => c.projectId === project.id)
                         const isProjectExpanded = expandedProjects.has(project.id)
                         
                         return (
-                          <div key={project.id} className="space-y-1">
-                            <div className="flex items-start gap-2">
+                          <div key={project.id} className="space-y-0.5">
+                            <div className="flex items-start gap-1.5">
                               {projectCampaigns.length > 0 && (
                                 <button
                                   onClick={() => toggleProject(project.id)}
-                                  className="w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-2"
+                                  className="w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 pt-1.5"
                                 >
                                   {isProjectExpanded ? (
-                                    <CaretDown size={14} weight="bold" />
+                                    <CaretDown size={12} weight="bold" />
                                   ) : (
-                                    <CaretRight size={14} weight="bold" />
+                                    <CaretRight size={12} weight="bold" />
                                   )}
                                 </button>
                               )}
-                              {projectCampaigns.length === 0 && <div className="w-6 flex-shrink-0" />}
+                              {projectCampaigns.length === 0 && <div className="w-5 flex-shrink-0" />}
                               <div className="flex-1">
                                 <DraggableItem
                                   id={project.id}
                                   type="project"
                                   title={project.title}
-                                  icon={<Folder size={16} />}
+                                  icon={<Folder size={14} />}
                                   color="#8b5cf6"
                                   metadata={{ projectId: project.id }}
                                 />
@@ -944,14 +944,14 @@ export default function UnscheduledItemsSidebar({
                             
                             {/* Show campaigns when expanded */}
                             {isProjectExpanded && projectCampaigns.length > 0 && (
-                              <div className="ml-6 space-y-1">
+                              <div className="ml-5 space-y-0.5">
                                 {projectCampaigns.map(campaign => (
                                   <DraggableItem
                                     key={campaign.id}
                                     id={campaign.id}
                                     type="campaign"
                                     title={campaign.title}
-                                    icon={<Target size={14} />}
+                                    icon={<Target size={12} />}
                                     color="#10b981"
                                     metadata={{ campaignId: campaign.id }}
                                   />
@@ -971,28 +971,28 @@ export default function UnscheduledItemsSidebar({
                 <div>
                   <button
                     onClick={() => toggleSection('stages')}
-                    className="flex items-center gap-2 w-full text-sm font-medium mb-2 hover:text-foreground text-muted-foreground transition-colors"
+                    className="flex items-center gap-1.5 w-full text-xs font-medium mb-1 hover:text-foreground text-muted-foreground transition-colors"
                   >
                     {expandedSections.stages ? (
-                      <CaretDown size={16} />
+                      <CaretDown size={14} />
                     ) : (
-                      <CaretRight size={16} />
+                      <CaretRight size={14} />
                     )}
-                    <Flag size={16} />
+                    <Flag size={14} />
                     <span>Stages</span>
-                    <Badge variant="secondary" className="ml-auto">
+                    <Badge variant="secondary" className="ml-auto text-[10px] h-4">
                       {unscheduledStages.length}
                     </Badge>
                   </button>
                   {expandedSections.stages && (
-                    <div className="space-y-1 ml-6">
+                    <div className="space-y-0.5 ml-4">
                       {unscheduledStages.map(stage => (
                         <DraggableItem
                           key={stage.id}
                           id={stage.id}
                           type="stage"
                           title={`${stage.stageName} (${stage.parentTitle})`}
-                          icon={<Flag size={16} />}
+                          icon={<Flag size={14} />}
                           color={stage.color}
                           metadata={{
                             stageId: stage.id,
@@ -1008,19 +1008,19 @@ export default function UnscheduledItemsSidebar({
               {/* Tasks */}
               {unscheduledTasks.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 mb-1">
                     <button
                       onClick={() => toggleSection('tasks')}
-                      className="flex items-center gap-2 flex-1 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors"
+                      className="flex items-center gap-1.5 flex-1 text-xs font-medium hover:text-foreground text-muted-foreground transition-colors"
                     >
                       {expandedSections.tasks ? (
-                        <CaretDown size={16} />
+                        <CaretDown size={14} />
                       ) : (
-                        <CaretRight size={16} />
+                        <CaretRight size={14} />
                       )}
-                      <CheckSquare size={16} />
+                      <CheckSquare size={14} />
                       <span>Tasks</span>
-                      <Badge variant="secondary" className="ml-auto">
+                      <Badge variant="secondary" className="ml-auto text-[10px] h-4">
                         {unscheduledTasks.length}
                       </Badge>
                     </button>
@@ -1030,15 +1030,15 @@ export default function UnscheduledItemsSidebar({
                         variant="outline"
                         onClick={handleAutoScheduleTasks}
                         disabled={isAutoScheduling}
-                        className="h-7 text-xs"
+                        className="h-6 text-[10px] px-2"
                         title="Auto-schedule all tasks within their campaign date ranges"
                       >
-                        {isAutoScheduling ? 'Scheduling...' : 'Auto-schedule'}
+                        {isAutoScheduling ? 'Scheduling...' : 'Auto'}
                       </Button>
                     )}
                   </div>
                   {expandedSections.tasks && (
-                    <div className="space-y-1 ml-6">
+                    <div className="space-y-0.5 ml-4">
                       {unscheduledTasks.map(task => {
                         const taskCampaign = campaigns.find(c => c.id === task.campaignId)
                         const titleWithCampaign = taskCampaign 
@@ -1051,18 +1051,18 @@ export default function UnscheduledItemsSidebar({
                             id={task.id}
                             type="task"
                             title={titleWithCampaign}
-                            icon={<CheckSquare size={16} />}
+                            icon={<CheckSquare size={12} />}
                             metadata={{ taskId: task.id }}
                             actionButton={
                               setTasks && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6"
+                                  className="h-5 w-5"
                                   onClick={() => handleAutoScheduleTask(task)}
                                   title="Auto-schedule this task to campaign start date"
                                 >
-                                  <Lightning size={14} weight="fill" />
+                                  <Lightning size={12} weight="fill" />
                                 </Button>
                               )
                             }

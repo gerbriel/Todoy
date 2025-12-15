@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, forwardRef, useImperativeHandle } from 'react'
 import { Campaign, Task, Project, Label, List, FilterState, User } from '@/lib/types'
 import { CalendarGrid } from './Calendar/CalendarGrid'
 import { CalendarEvent } from './Calendar/types'
@@ -13,6 +13,11 @@ import TaskDetailDialog from './TaskDetailDialog'
 import CampaignEditDialog from './CampaignEditDialog'
 import ProjectEditDialog from './ProjectEditDialog'
 import UnscheduledItemsSidebar from './Calendar/UnscheduledItemsSidebar'
+import { X } from '@phosphor-icons/react'
+
+export interface CalendarViewHandle {
+  openItemsPanel: () => void
+}
 
 interface NewCalendarViewProps {
   campaigns: Campaign[]
@@ -34,7 +39,7 @@ interface NewCalendarViewProps {
   onNavigateBack?: () => void
 }
 
-export default function NewCalendarView({
+const NewCalendarView = forwardRef<CalendarViewHandle, NewCalendarViewProps>(({
   campaigns,
   tasks,
   setTasks,
@@ -52,12 +57,18 @@ export default function NewCalendarView({
   orgId,
   setCampaigns,
   onNavigateBack,
-}: NewCalendarViewProps) {
+}, ref) => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [showMobileItemsPanel, setShowMobileItemsPanel] = useState(false)
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    openItemsPanel: () => setShowMobileItemsPanel(true)
+  }))
   
   // Convert data to calendar events
   const filteredTasks = activeCampaignId 
@@ -819,17 +830,59 @@ export default function NewCalendarView({
           />
         </div>
         
-        <UnscheduledItemsSidebar
-          campaigns={filteredCampaigns}
-          projects={projects}
-          tasks={filteredTasks}
-          isCollapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-          setTasks={setTasks}
-          setCampaigns={setCampaigns}
-          setProjects={setProjects}
-        />
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <UnscheduledItemsSidebar
+            campaigns={filteredCampaigns}
+            projects={projects}
+            tasks={filteredTasks}
+            isCollapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            setTasks={setTasks}
+            setCampaigns={setCampaigns}
+            setProjects={setProjects}
+          />
+        </div>
       </div>
+
+      {/* Mobile Full-Page Items Panel */}
+      {showMobileItemsPanel && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] animate-in fade-in duration-300"
+            onClick={() => setShowMobileItemsPanel(false)}
+          />
+          
+          {/* Full-Page Panel */}
+          <div className="md:hidden fixed inset-0 bg-card z-[80] animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold">Items</h2>
+              <button
+                onClick={() => setShowMobileItemsPanel(false)}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                <X size={24} weight="bold" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="h-[calc(100%-4rem)] overflow-auto">
+              <UnscheduledItemsSidebar
+                campaigns={filteredCampaigns}
+                projects={projects}
+                tasks={filteredTasks}
+                isCollapsed={false}
+                onToggle={() => {}}
+                setTasks={setTasks}
+                setCampaigns={setCampaigns}
+                setProjects={setProjects}
+              />
+            </div>
+          </div>
+        </>
+      )}
       
       {selectedTask && (
         <TaskDetailDialog
@@ -877,4 +930,8 @@ export default function NewCalendarView({
       )}
     </>
   )
-}
+})
+
+NewCalendarView.displayName = 'NewCalendarView'
+
+export default NewCalendarView

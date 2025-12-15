@@ -15,6 +15,7 @@ interface InviteEmailRequest {
   inviterName: string
   orgName: string
   inviteLink: string
+  inviteCode?: string
 }
 
 serve(async (req) => {
@@ -55,7 +56,7 @@ serve(async (req) => {
     const body = await req.json()
     console.log('Received request body:', JSON.stringify(body))
     
-    const { recipientEmail, recipientName, inviterName, orgName, inviteLink }: InviteEmailRequest = body
+    const { recipientEmail, recipientName, inviterName, orgName, inviteLink, inviteCode }: InviteEmailRequest = body
 
     if (!recipientEmail || !inviterName || !orgName || !inviteLink) {
       throw new Error(`Missing required fields: recipientEmail=${!!recipientEmail}, inviterName=${!!inviterName}, orgName=${!!orgName}, inviteLink=${!!inviteLink}`)
@@ -204,6 +205,14 @@ serve(async (req) => {
                     Or copy and paste this link into your browser:<br>
                     <a href="${inviteLink}" class="link">${inviteLink}</a>
                   </p>
+                  ${inviteCode ? `
+                  <div class="highlight-box" style="background-color: #f0fdf4; border-left-color: #22c55e; margin-top: 20px;">
+                    <p style="margin: 0; text-align: center;">
+                      <strong>Or use this invite code during signup:</strong><br>
+                      <span style="font-size: 24px; font-family: 'Courier New', monospace; color: #16a34a; font-weight: bold; letter-spacing: 2px;">${inviteCode}</span>
+                    </p>
+                  </div>
+                  ` : ''}
                   <p style="font-size: 13px; color: #ef4444; text-align: center;">
                     ⏱️ This invitation expires in 7 days
                   </p>

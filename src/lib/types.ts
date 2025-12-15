@@ -40,6 +40,7 @@ export interface OrgInvite {
   invitedAt: string
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   expiresAt: string
+  inviteCode?: string
 }
 
 export interface JoinRequest {

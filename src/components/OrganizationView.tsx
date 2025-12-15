@@ -158,6 +158,7 @@ export default function OrganizationView({
           inviterName: currentUser?.name || 'Someone',
           orgName: organization.name,
           inviteLink: inviteLink,
+          inviteCode: newInvite.inviteCode,
         },
       })
 

@@ -51,6 +51,7 @@ export const orgInvitesService = {
       invitedAt: data.invited_at,
       status: data.status as 'pending' | 'accepted' | 'declined' | 'expired',
       expiresAt: data.expires_at,
+      inviteCode: data.invite_code,
     }
   },
 

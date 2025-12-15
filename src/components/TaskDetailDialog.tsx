@@ -335,8 +335,8 @@ export default function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription className="sr-only">
@@ -374,8 +374,8 @@ export default function TaskDetailDialog({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="comments" className="gap-2">
               <ChatCircle size={16} weight="duotone" />
@@ -391,7 +391,7 @@ export default function TaskDetailDialog({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-4 pr-4">
+          <ScrollArea className="flex-1 mt-4 pr-4 overflow-y-auto">
             <TabsContent value="details" className="space-y-4 m-0 p-1">
               <div className="space-y-2">
                 <UILabel htmlFor="task-title">Title</UILabel>
